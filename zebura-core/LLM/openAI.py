@@ -1,17 +1,22 @@
 # 使用异步方法调用openAI的GPT-3.5-turbo模型
-
+import sys
 import os
 import pandas as pd
 import asyncio
 from openai import AsyncOpenAI
 
-client = AsyncOpenAI(
-    api_key="sk-xxxxxxxxxxxxxx"
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from settings import load_config
 
+if not os.environ.get("OPENAI_API_KEY"):
+   load_config()
+
+client = AsyncOpenAI(
+    api_key=os.environ["OPENAI_API_KEY"],
 )
 
 # define the task of async
-async def callGPT(query): 
+async def askGPT_query(query): 
     print(f'say {query} to GPT')
     chat_completion = await client.chat.completions.create(
         messages=[
@@ -30,23 +35,23 @@ async def callGPT(query):
     
     return chat_completion.choices[0].message.content
 
+# 所有query存于csv第一列
+# 格式 query, context
+async def askGPT_file(fileName,prompt):
     
-async def main() -> None:
-    
-    df_answer =  pd.read_excel("doublePara.xlsx")
+    df_answer =  pd.read_excel(fileName)
     #append a new colum to df_answer
-    df_answer['GPT'] = ''
+    df_answer['answer'] = ''
     print(df_answer.shape)
 
     # create a task list
     tasks = []
-    prompt = "请对下面句子进行改写，要求用中文并且保持原意不变\n"
     for i in range(df_answer.shape[0]):
-        query= prompt + df_answer.loc[i, "指代问题的上一轮问题"] # + "\n" + df_answer.loc[i, "指代问题"]
-        task = asyncio.create_task(callGPT(query))
+        query= prompt + df_answer.loc[i, "query"] # + "\n" + df_answer.loc[i, "context"]
+        task = asyncio.create_task(askGPT_query(query))
         tasks = tasks + [task]
 
-    print(len(tasks))
+    print(f"{fileName}: total {len(tasks)} queries")    
     
     # 每次只执行100个任务
     batch_size = 100
@@ -57,12 +62,12 @@ async def main() -> None:
     for i, task in enumerate(tasks):
         
         new_answer = task.result()
-        df_answer.loc[i, "GPT"] = new_answer
+        df_answer.loc[i, "answer"] = new_answer
 
     # save the dataframe to excel file
     print(df_answer.shape)
-    df_answer.to_excel("answer.xlsx", index=False)
+    df_answer.to_excel(f"{fileName}_gpt.xlsx", index=False)
 
     print("Done!")
 
-asyncio.run(main())
+asyncio.run(askGPT_query("联想智能插座多少钱一只？"))
