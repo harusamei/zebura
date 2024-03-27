@@ -1,0 +1,4 @@
+遗留问题
+    1。'zebura-core\knowledges\sql-patterns.yml'， 类似这种信息在哪里设置
+    
+
