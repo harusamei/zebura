@@ -1,6 +1,12 @@
-import re
+import os
 import sys
-sys.path.insert(0, 'zebura_core/knowledges')
+sys.path.insert(0, os.getcwd())
+import settings
+print(settings.config.get('Paths', 'ModulePath'))
+import re
+
+sys.exit(0)
+
 import info_loader
 class Extractor:
     def __init__(self):
