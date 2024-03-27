@@ -1,5 +1,7 @@
 import re
-from zebura-core import knowledges.info_loader as load_sql_re
+import sys
+sys.path.insert(0, 'zebura_core/knowledges')
+import info_loader
 class Extractor:
     def __init__(self):
         self.pattern = r"SELECT\s+(.*?)\s+FROM\s+(.*?)\s*;"
