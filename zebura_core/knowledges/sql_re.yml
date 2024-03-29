@@ -19,13 +19,12 @@ order_by: ORDER BY\s+(.*); #SELECT * FROM table_name ORDER BY column1;
 as: AS\s+(\S+)\s+FROM #SELECT column1 AS alias1 FROM table_name;
 # LIKE：用于搜索某种模式的值
 like: LIKE\s+(.*?)(\s+|;) # SELECT * FROM Employees WHERE FirstName LIKE 'J%';
-################## todo ##################
-# JOIN：用于结合行来自两个或更多的表，基于这些表之间的共同字段。例如：
-join: SELECT Orders.OrderID, Customers.CustomerName FROM Orders INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID;
-# UNION：用于结合两个或更多的SELECT语句的结果集（只选择不同的值）。例如：
-union: SELECT column_name(s) FROM table1 UNION SELECT column_name(s) FROM table2;
-# HAVING：让我们能够过滤分组后的数据。例如：
-having: SELECT column1, COUNT(column2) FROM table_name GROUP BY column1 HAVING COUNT(column2) > 1;
-# FETCH: 用于从结果集中检索行的一部分。
-fetch: SELECT column1 FROM table_name ORDER BY column1 FETCH FIRST 10 ROWS ONLY;
-# 以上就是一些与SELECT语句相关的SQL关键字。
+################## UNDO ##################
+# # JOIN：用于结合行来自两个或更多的表，基于这些表之间的共同字段。例如：
+# join: SELECT Orders.OrderID, Customers.CustomerName FROM Orders INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID;
+# # UNION：用于结合两个或更多的SELECT语句的结果集（只选择不同的值）。例如：
+# union: SELECT column_name(s) FROM table1 UNION SELECT column_name(s) FROM table2;
+# # HAVING：让我们能够过滤分组后的数据。例如：
+# having: SELECT column1, COUNT(column2) FROM table_name GROUP BY column1 HAVING COUNT(column2) > 1;
+# # FETCH: 用于从结果集中检索行的一部分。
+# fetch: SELECT column1 FROM table_name ORDER BY column1 FETCH FIRST 10 ROWS ONLY;
