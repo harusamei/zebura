@@ -4,15 +4,11 @@ import os
 import pandas as pd
 import asyncio
 from openai import AsyncOpenAI
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from settings import load_config
-
-if not os.environ.get("OPENAI_API_KEY"):
-   load_config()
-
+sys.path.insert(0, os.getcwd())
+import settings
+    
 client = AsyncOpenAI(
-    api_key=os.environ["OPENAI_API_KEY"],
+    api_key=os.environ["OPENAI_KEY"],
 )
 
 # define the task of async

@@ -4,18 +4,17 @@ import requests
 import json
 import asyncio
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from settings import load_config
+sys.path.insert(0, os.getcwd())
+import settings
 
 async def askGPT_agent(queries,prompt):
 
-    if not os.environ.get("GPT_AGENT_API_KEY"):
-        load_config()
-
+    api_key = os.environ.get("GPT_AGENT_KEY")
+    # print(api_key)
     url = "https://openai-lr-ai-platform-cv.openai.azure.com/openai/deployments/IntentTest/chat/completions?api-version=2023-07-01-preview"
     header = {
         "Content-Type": "application/json",
-        "api-key": "d500066ba22d46a982d7db918b512707"  # Replace with your actual GPT-4 Turbo API key
+        "api-key": api_key 
     }
     messages = [{"role": "system", "content": prompt}]
     messages.append({"role": "user", "content": "\n".join(queries)})  # Convert the list of queries to a string with newlines between the]

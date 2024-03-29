@@ -3,8 +3,9 @@ import sys
 import os
 import asyncio
 import re
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from LLM.gptAgent import askGPT_agent
+sys.path.insert(0, os.getcwd())
+import settings
+from gptAgent import askGPT_agent
 
 class normalizer:
     

@@ -1,13 +1,12 @@
 import os
 import sys
-sys.path.insert(0, os.getcwd())
-import settings
-print(settings.config.get('Paths', 'ModulePath'))
 import re
 
-sys.exit(0)
-
+sys.path.insert(0, os.getcwd())
+import settings
 import info_loader
+
+
 class Extractor:
     def __init__(self):
         self.pattern = r"SELECT\s+(.*?)\s+FROM\s+(.*?)\s*;"
