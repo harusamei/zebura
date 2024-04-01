@@ -1,3 +1,4 @@
+# 解析sql语句，提取sql语句中的信息
 import os
 import sys
 import re
