@@ -1,6 +1,6 @@
 import csv
 import json
-
+import os
 class pcsv:
 
     def read_csv(self,csv_filename, rows=-1):
@@ -45,11 +45,14 @@ class pcsv:
 if __name__ == '__main__':
 
     my_pcsv = pcsv()
-    csv_filename = 'data/pSch.csv'
+    curPath = os.path.dirname(os.path.abspath(__file__))
+    print(curPath)
+    csv_filename = curPath+'\\metadata.csv'
 
     csv_rows = my_pcsv.read_csv(csv_filename)
-    aJson=my_pcsv.oneRow2json(csv_rows[1])
-    with open('data/meta.json', 'w',encoding='utf-8-sig') as json_file:
-        json_file.write(aJson)
+    #aJson=my_pcsv.oneRow2json(csv_rows[1])
+    allJson=my_pcsv.csv2json(csv_rows)
+    with open(curPath+'\\metadata.json', 'w',encoding='utf-8-sig') as json_file:
+        json_file.write(allJson)
            
     

@@ -18,7 +18,7 @@ async def askGPT_query(query):
         messages=[
             {
                 "role": "system",
-                "content":"你是一个编程助手，可以将自然语言的查询转换为SQL查询。"
+                "content":"你是一个编程助手，你能够将用户的自然语言查询转换为SQL"
             },
             {
                 "role": "user",
@@ -34,8 +34,8 @@ async def askGPT_query(query):
 # 所有query存于csv第一列
 # 格式 query, context
 async def askGPT_file(fileName,prompt):
-    
-    df_answer =  pd.read_excel(fileName)
+    print(f"Start to process {fileName}")
+    df_answer =  pd.read_csv(fileName,encoding='utf-8-sig')
     #append a new colum to df_answer
     df_answer['answer'] = ''
     print(df_answer.shape)
@@ -62,8 +62,13 @@ async def askGPT_file(fileName,prompt):
 
     # save the dataframe to excel file
     print(df_answer.shape)
-    df_answer.to_excel(f"{fileName}_gpt.xlsx", index=False)
+    df_answer.to_csv(f"{fileName}_gpt.csv",encoding='utf-8-sig')
 
     print("Done!")
 
-asyncio.run(askGPT_query("联想智能插座多少钱一只？"))
+if __name__ == '__main__':
+    
+    prompt = "下面自然语言如果与查询产品相关，请转换为sql，如果不相关直接输出no sql\n"
+    asyncio.run(askGPT_query(prompt + "请问联想的智能投影仪多少钱一台？"))
+    # path = os.getcwd()
+    # asyncio.run(askGPT_file(path+"\datasets\samples.csv",prompt))
