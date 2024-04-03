@@ -1,0 +1,43 @@
+﻿,query,answer
+0,找出所有白色的笔记本电脑。,"```sql
+SELECT * FROM products 
+WHERE color = '白色' 
+AND category = '笔记本电脑';
+```"
+1,搜索所有价格在1000到1500美元之间的智能手机。,"```sql
+SELECT * FROM products
+WHERE category = 'smartphone' AND price >= 1000 AND price <= 1500;
+```"
+2,列出所有折叠型的平板电脑。,"```
+SELECT * FROM Products
+WHERE category = 'Tablet' AND type = 'Foldable';
+```"
+3,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,"```
+SELECT * FROM products
+WHERE category = 'Game Desktop'
+AND gpu_series = 'NVIDIA GeForce'
+AND cpu_speed > 3.0;
+```"
+4,显示所有已经下架的产品。,"```sql
+SELECT * FROM products WHERE status = '下架';
+```"
+5,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,"```sql
+SELECT * FROM products
+WHERE category = '笔记本电脑'
+AND brand = '华硕'
+AND screen_size >= 13
+AND screen_size <= 15;
+```"
+6,找出所有内存容量大于16 GB的服务器。,"```sql
+SELECT * FROM servers WHERE memory_capacity > 16;
+```"
+7,搜索所有配备Intel处理器的笔记本电脑。,"```sql
+SELECT * FROM laptops WHERE processor = 'Intel';
+```"
+8,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,"```sql
+SELECT * FROM products
+WHERE brand = '苹果' AND screen_size > 15 AND price < 2000;
+```"
+9,找出所有兼容Windows 10操作系统的台式电脑。,"```sql
+SELECT * FROM desktop WHERE compatibility = 'Windows 10';
+```"
