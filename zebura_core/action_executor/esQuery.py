@@ -3,7 +3,7 @@ from elasticsearch import Elasticsearch
 
 class ESQuery:
 
-    def __init__(self, host='localhost', port='9200'):
+    def __init__(self, host, port='9200'):
         self.host = host
         self.port = port
         self.es = Elasticsearch(hosts=[{'host': self.host, 'port': self.port,'scheme': 'http'}])
@@ -156,6 +156,7 @@ class ESQuery:
         print("Got %d Hits:" % response['hits']['total']['value'])
         for hit in response['hits']['hits']:
             print(hit["_source"]) 
+            
     @staticmethod
     def field_result(response, field):
         for hit in response['hits']['hits']:
@@ -169,8 +170,11 @@ class ESQuery:
 
 
 def main():
+
+    ES_HOST = "10.110.153.75"
+    ES_PORT = 9200
     # Call the query_es_index function
-    es = ESQuery('10.110.153.75', 9200)
+    es = ESQuery(ES_HOST, ES_PORT)
     index="leproducts"
     result = es.query_word(index, {"product_name": "小新"})
     es.list_result(result)
