@@ -1,8 +1,6 @@
 ﻿{
-    "_comment":"需要查询的数据配置及schema信息,每张表在tables中为一个dict",
-    "host":"10.110.153.75",
-    "port":"9200",
-    "type":"elasticsearch",
+    "_comment":"需要查询的data的metadata,每张表在tables中为一个dict",
+    "table_list":["product"],
     "tables":[
         {
             "table" : "product",

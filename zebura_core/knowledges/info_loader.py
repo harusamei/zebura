@@ -7,23 +7,26 @@ if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 from settings import z_config
 from typing import Dict
-# 读metadata of table
 
+# 读metadata of table
 class InfoLoader:
     def __init__(self):
         self._info = self.load_tableInfo()
-        self.tables = self._info["tables"]
+        self.tables = self._info["tables"] # [{}],每个表一个dict
         
     def load_tableInfo(self) -> Dict[str,str]:
         cwd = os.getcwd()
         path = z_config['Paths','KnowledgePath']
         name = z_config['Info','table_info']  
         file = os.path.join(cwd, path, name)
-        print(file)
         # Load the config file
         with open(file, 'r',encoding='utf-8-sig') as file:
             info_dict = json.load(file)
         return info_dict
+    
+    @property
+    def tableList(self):
+        return self._info.get("table_list")
     
     def get_table(self,tableName) -> Dict[str,str]:
         tDict = next((table for table in self.tables if table["table"] == tableName), None)
@@ -71,7 +74,8 @@ class PatLoader:
 if __name__ == '__main__':
     # Load the SQL patterns
     loader = InfoLoader()
-    print(loader['host'])
+    print(loader.tableList)
+    print(loader.tables[0]["table"])
     print(loader.get_column('product','brand'))
     print(loader.get_table('product').get('alias_en'))
 
