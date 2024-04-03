@@ -24,9 +24,6 @@ class InfoLoader:
             info_dict = json.load(file)
         return info_dict
     
-    @property
-    def tableList(self):
-        return self._info.get("table_list")
     
     def get_table(self,tableName) -> Dict[str,str]:
         tDict = next((table for table in self.tables if table["table"] == tableName), None)
@@ -37,7 +34,10 @@ class InfoLoader:
         columns = self.get_table(tableName).get("columns")
         result = next((column for column in columns if column["column_en"] == columnName), None)
         return result
-
+    
+    def get_columnList(self, tableName):
+        return  self.get_table(tableName).get("columns")
+    
     def __getitem__(self, key):
         return self._info.get(key)
     
@@ -74,7 +74,6 @@ class PatLoader:
 if __name__ == '__main__':
     # Load the SQL patterns
     loader = InfoLoader()
-    print(loader.tableList)
     print(loader.tables[0]["table"])
     print(loader.get_column('product','brand'))
     print(loader.get_table('product').get('alias_en'))
