@@ -1,5 +1,5 @@
 import sqlparse
-from sqlparse.sql import Where, Identifier
+from sqlparse.sql import Where
 
 def parse_sql(sql):
 
@@ -10,9 +10,9 @@ def parse_sql(sql):
     if not parsed:
         print("Can't parse this SQL")
         return None
-    
-    slots = dict.fromkeys(['columns','from', 'conditions', 'distinct', 'limit', 'offset', 'as', 'like'])
-    
+    # 可以解析的信息
+    slots = dict.fromkeys(['columns','from', 'conditions', 'distinct', 'limit', 'offset','order by','group by'])
+
     tokens = parsed[0].tokens
     kwords = []
     for token in tokens:
@@ -50,7 +50,7 @@ def parse_sql(sql):
                 if item.is_whitespace or item.value in ['WHERE',';']:
                     continue
                 slots['conditions'].append(item.value)
-    print(slots)   
+    return slots   
        
         
 # example usage    
@@ -78,10 +78,10 @@ if __name__ == '__main__':
         AND department = 'Marketing';
     """
     sql= """
-SELECT * 
-FROM products
-WHERE product_name LIKE '%apple%';
-"""
+        SELECT * 
+        FROM products
+        WHERE product_name LIKE "%apple%" AND price > 1000;
+    """
     parse_sql(sql)
         
         
