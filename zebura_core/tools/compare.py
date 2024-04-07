@@ -45,7 +45,17 @@ class similarity:
                 avg_score += self.getMeteor(gen_sent, ref_sent)
 
         return avg_score/len(methods)
-        
+
+    def getUpperSimil(self, gen_sent, ref_sent,n_gram=3, beta=2): 
+        score = 0
+        rouge = self.getRouge(gen_sent, ref_sent)[0]
+        score = max(score, rouge['rouge-1']['f'])
+        chrf = self.getChrf(gen_sent, ref_sent, n_gram, beta)
+        score = max(score, chrf)
+        score = max(score, self.getMeteor(gen_sent, ref_sent))
+        return score
+
+
     def getRouge(self, gen_sent, ref_sent):
         """
         基于word级别的召回率评估，使用召回率直接作为分数
@@ -106,18 +116,15 @@ class similarity:
 
 # examples usage
 if __name__ == '__main__':
-    ref = "product name"
-    gent = "productName"
     sim = similarity()
-    print(sim.getRouge(gent, ref))
-    print(sim.getSimilarity(gent, ref))
+    temList = ['Price Tag']
+    gent = "Category"
+    for ref in temList:
+        print(gent,ref)
+        print(sim.getRouge(gent, ref))
+        print(sim.getChrf(gent, ref))
+        print(sim.getMeteor(gent, ref))
+        print(sim.getUpperSimil(gent, ref))
 
-    candidates = ["product", "product name", "product price"]
-    print(diffence.getClosedMatch(gent, candidates))
 
-    s1 = ["product name", "product price", "product description"]
-    s2 = ["product", "product name", "product cost"]
-    diffence = diffence()
-    print(diffence.find_difference(s1, s2))
-         
 
