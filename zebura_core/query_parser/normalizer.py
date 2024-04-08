@@ -10,13 +10,12 @@ from gptAgent import askGPT_agent
 class Normalizer:
     
     def __init__(self):
-        self.table_name = ""
+        pass
 
     def getPrompt(self, table_name):
 
         return f"有一张表名为{table_name}，下面句子如果是关于查询{table_name}请转换为SQL查询，如果不是，请直接输出not sql"
 
-    
     def convert_to_sql(self,table_name, query):
         # Ask the GPT agent to convert the query to SQL
         querys = [self.getPrompt(table_name),query]          

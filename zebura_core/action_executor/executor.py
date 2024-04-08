@@ -4,60 +4,85 @@ if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
 from esQuery import ESQuery
-from action_executor import constants
 
+# 数据存放方式不同，需要重新设计
 class Executor:
 
     def __init__(self):
-        host = os.environ['ES_HOST']
-        port = int(os.environ['ES_PORT'])
-        self.es = ESQuery(host,port)
-        self.history = []
-
-    # SELECT Category FROM Products WHERE ProductName = '鼠标'; 
-    # ['select','sql_from', 'where', 'distinct', 'limit', 'offset', 'group_by', 'order_by', 'as', 'like']
-    def assign_action(self, action):
-
-        do_func = action['do']
-        output_func = action['output']
-        result = []
-        temStr = f'result =self.{do_func(action)})'
-        exec(temStr)
-        temStr = f'result = self.{output_func}(result)'
-        return result
         
-    def select_columns(self, action):
-        self.history.append(action)
-        index = action['sql_from']
-        fields = action['select']
-        return "select_columns"
+        self.es = ESQuery()
 
-    # def select_columns_where(self, index, field, value):
-    #     return self.es.query_where(index, field, value)
+        self.results = None
+        self.history = []
+        self.tracks = []
+
+    # 任务分发, action是一个字典，包含了需要执行的任务
+    # 假设一个action中只有一个table，一个doFunc和一个showFunc
+    # assume action 信息已经check，不存在低级错误
+    def assign_tasks(self, action):
+        
+        index = action.get('table')
+        do_func = action.get('doFunc')
+        show_func = action.get('showFunc')
+        
+        funcName = do_func.get('func')
+        kwargs = do_func.get('kwargs')
+        kwargs['index'] = index
+        # 通过getattr获取方法并调用
+        flag = getattr(self, funcName)(**kwargs)
+        if not flag:
+            self.tracks.append(f'failed when call {funcName}')    
+            return False
+        
+        if show_func is None:
+            return True
+        funcName = show_func.get('func')
+        kwargs = show_func.get('kwargs')
+        flag = getattr(self, funcName)(**kwargs)
+        if not flag:
+            self.tracks.append(f'failed when call {funcName}')
+            return False
+        
+        return True
     
-    # def select_all(self, index):
-    #     return self.es.query_all(index)
-    
-    # def get_range(self, index, field, upper, lower):
-    #     return self.es.query_range(index, field, upper, lower)
+    # query records where field = value
+    def search_by_field(self, **kwargs):
+        # 实际函数需要的参数
+        index = kwargs.get('index')
+        field = kwargs.get('field')
+        value = kwargs.get('value')
+        if not (index and field and value):
+            return False
+        
+        self.results = self.es.query_word(index,field,value)
+        
+        return True
 
-    # def get_avg(self, index, field):
-    #     return self.es.query_average(index, field)
+    def output_fields(self, **kwargs):
+        input = self.results
+        fields = kwargs.get('fields')
+        print(f"output_fields: {input}, {fields}")
+        return True
 
-    # def get_max_min(self, index, field, most):
-    #     return self.es.query_max_min(index, field, most)
-
-    # def get_table_info(self):
-    #     return self.es.query_table_info()
-
-    # def get_table_head(self):
-    #     return self.es.query_table_head()
-
-    # def get_table_column(self, column):
-    #     return self.es.query_table_column(column)
-
-    # def get_sql_pat(self, key):
-    #     return self.es.query_sql_pat(key)
-    
+   
+# Example usage  
 if __name__ == '__main__':
-    executor = Executor()
+    ex = Executor()
+    action = {'table':'leproducts',
+              'doFunc': {
+                  'func':'search_by_field', 
+                  'kwargs':{
+                      'field':'product_name',
+                      'value':'小新'
+                       }
+                    },
+                'showFunc': {
+                    'func':'output_fields',
+                    'kwargs':{
+                        'fields':['product_name','category']
+                    }
+                }       
+             }
+    #ex.assign_tasks(action)
+    print(ex.es.cat.indices(format='json'))
+    #ex.search_by_field(field='product_name',value=None,index='products')

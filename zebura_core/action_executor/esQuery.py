@@ -1,23 +1,34 @@
+import os
+import sys
+if os.getcwd().lower() not in sys.path:
+    sys.path.insert(0, os.getcwd().lower())
+import settings
 from elasticsearch import Elasticsearch
-#from esIndex import test_field_analyzer
+from action_executor import constants
 
 class ESQuery:
 
-    def __init__(self, host, port='9200'):
-        self.host = host
-        self.port = port
+    def __init__(self):
+
+        self.host = os.environ['ES_HOST']
+        self.port = int(os.environ['ES_PORT'])
         self.es = Elasticsearch(hosts=[{'host': self.host, 'port': self.port,'scheme': 'http'}])
         if not self.es.ping():
             raise ValueError("Connection failed")
         else:
             print("Connected to Elasticsearch")
 
+    def get_all_indices(self):
+        return self.es.cat.indices(format='json')
+    
     #field-query = {product_name: "小新"}   
-    def query_word(self,index, fq):
+    def query_word(self,index, field, word):
+        kw = {field: word}
+
         query = {
             "size": 3,  # Return top3 results
             "query": {
-                "match": fq
+                "match": kw
             }
         }
         # Execute the query
@@ -168,16 +179,17 @@ class ESQuery:
         print("about %s, Got %d Hits:" % (query,response['hits']['total']['value']))
         print(response)
 
-
+# Example usage
 def main():
 
-    ES_HOST = "10.110.153.75"
-    ES_PORT = 9200
+    # ES_HOST = "10.110.153.75"
+    # ES_PORT = 9200
     # Call the query_es_index function
-    es = ESQuery(ES_HOST, ES_PORT)
-    index="leproducts"
-    result = es.query_word(index, {"product_name": "小新"})
-    es.list_result(result)
+    es = ESQuery()
+    # index="leproducts"
+    # result = es.query_word(index, "product_name","小新")
+    # es.list_result(result)
+    print(es.get_all_indices())
 
 if __name__ == '__main__':
     main()
