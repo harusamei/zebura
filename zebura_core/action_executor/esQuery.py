@@ -13,26 +13,37 @@ class ESQuery:
         self.host = os.environ['ES_HOST']
         self.port = int(os.environ['ES_PORT'])
         self.es = Elasticsearch(hosts=[{'host': self.host, 'port': self.port,'scheme': 'http'}])
+        self.limit = int(os.environ['OUTPUT_LIMIT'])
+
         if not self.es.ping():
             raise ValueError("Connection failed")
         else:
             print("Connected to Elasticsearch")
 
-    def get_all_indices(self):
+    @property
+    def all_indices(self):
         return self.es.cat.indices(format='json')
+    
+
+    def get_fields(self,index):
+        fields= self.es.indices.get_mapping(index=index)
+        return list(fields.get(index).get('mappings').get('properties').keys())
     
     #field-query = {product_name: "小新"}   
     def query_word(self,index, field, word):
-        kw = {field: word}
 
+        kw = {field: word}
         query = {
-            "size": 3,  # Return top3 results
+            "size": self.limit,  # Return top3 results
             "query": {
                 "match": kw
             }
         }
         # Execute the query
-        return self.es.search(index=index, body=query)
+        try:
+            return self.es.search(index=index, body=query)
+        except Exception as e:
+            return False
 
     #可使用"fields": ["*"], 表示所有字段
     def query_multi_fields(self,index,word,fieldList):
