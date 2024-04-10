@@ -200,7 +200,7 @@ def main():
     # index="leproducts"
     # result = es.query_word(index, "product_name","小新")
     # es.list_result(result)
-    print(es.get_all_indices())
+    print(es.all_indices)
 
 if __name__ == '__main__':
     main()
