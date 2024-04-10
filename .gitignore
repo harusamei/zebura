@@ -1,3 +1,5 @@
 config.yml
 config.*
 temp.py
+discard/
+docs/
