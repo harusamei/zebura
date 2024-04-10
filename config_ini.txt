@@ -1,0 +1,22 @@
+# 这是个框架，实际用时把文件名改为config.ini
+[General]
+ProjectName = Zebura
+Version = 1.0.0
+
+# 基于\zebura的相对路径，结尾没有\
+[Paths]
+ModulePath = zebura_core
+KnowledgePath = zebura_core\knowledges
+
+[Logging]
+LogLevel = INFO
+Log = /path/to/logfile.log
+
+[LLM]
+OPENAI_KEY = 
+GPT_AGENT_KEY = 
+
+# 用于Reasoning的资源配置
+[REASONING]
+
+
