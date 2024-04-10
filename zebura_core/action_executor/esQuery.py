@@ -1,9 +1,9 @@
+from elasticsearch import Elasticsearch
 import os
 import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
-from elasticsearch import Elasticsearch
 from action_executor import constants
 
 class ESQuery:
@@ -191,7 +191,7 @@ class ESQuery:
         print(response)
 
 # Example usage
-def main():
+if __name__ == '__main__':
 
     # ES_HOST = "10.110.153.75"
     # ES_PORT = 9200
@@ -202,5 +202,4 @@ def main():
     # es.list_result(result)
     print(es.all_indices)
 
-if __name__ == '__main__':
-    main()
+
