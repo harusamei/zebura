@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import settings
-from knowledges.info_loader import InfoLoader
+from knowledges.info_loader import SchemaLoader
 from compare import similarity
 
 # schema linking, for table, column
@@ -10,7 +10,7 @@ class Sch_linking:
 
     def __init__(self):
         self.similarity = similarity()
-        self.info_loader = InfoLoader()
+        self.info_loader = SchemaLoader()
 
     def substitute(self, term, tableName='', type='table'):
 

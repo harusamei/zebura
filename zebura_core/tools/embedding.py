@@ -32,10 +32,9 @@ class Embedding:
     
 # Example usage
 if __name__ == '__main__':
-    #texts1 = ["胡子长得太快怎么办？", "在香港哪里买手表好"]
-    #texts2 = ["胡子长得快怎么办？", "怎样使胡子不浓密！", "香港买手表哪里好", "在杭州手机到哪里买"]
-    texts1=['products','产品']
-    texts2=['product_name', '产品名', 'Item Name', 'Product Title', 'Merchandise Name', '商品名称', ' 产品名称', ' 产品型号', ' 商品型号']
+    texts1 = ["胡子长得太快怎么办？", "在香港哪里买手表好"]
+    texts2 = ["胡子长得快怎么办？", "怎样使胡子不浓密！", "香港买手表哪里好", "在杭州手机到哪里买"]
+    
     model = Embedding()
     embs1 = model.get_embedding(texts1)
     embs2 = model.get_embedding(texts2)

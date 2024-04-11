@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import sys
 class pcsv:
 
     def read_csv(self,csv_filename, rows=-1):
@@ -38,6 +39,9 @@ class pcsv:
     def json2dict(self,json_str):
         return json.loads(json_str)
 
+    def dict2json(self,dict):
+        return json.dumps(dict, indent=4, ensure_ascii=False)
+    
     def deleteKey(self,csv_rows, key):
         for row in csv_rows:
             row.pop(key)
@@ -45,14 +49,18 @@ class pcsv:
 if __name__ == '__main__':
 
     my_pcsv = pcsv()
-    curPath = os.path.dirname(os.path.abspath(__file__))
-    print(curPath)
-    csv_filename = curPath+'\\metadata.csv'
-
+    sys.path.insert(0, os.getcwd().lower())
+    curPath = os.getcwd().lower()
+    csv_filename = 'datasets\\goodcases_schema.csv'
+    print(csv_filename)
     csv_rows = my_pcsv.read_csv(csv_filename)
-    #aJson=my_pcsv.oneRow2json(csv_rows[1])
+    # aJson=my_pcsv.oneRow2json(csv_rows[0])
     allJson=my_pcsv.csv2json(csv_rows)
-    with open(curPath+'\\metadata.json', 'w',encoding='utf-8-sig') as json_file:
-        json_file.write(allJson)
+
+    temDict= {'table':'none','es_index':'none'}
+    temDict['columns'] =my_pcsv.json2dict(allJson)
+    
+    with open(curPath+'\\datasets\\goodcases_info_tables.json', 'w',encoding='utf-8-sig') as json_file:
+        json_file.write(my_pcsv.dict2json({'tables':[temDict]}))
            
     
