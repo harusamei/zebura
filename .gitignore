@@ -3,4 +3,3 @@ config.*
 temp.py
 discard/
 docs/
-tests/
