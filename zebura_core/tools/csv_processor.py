@@ -3,16 +3,21 @@ import json
 import os
 import sys
 class pcsv:
+    
+    def __init__(self):
+        self.max_rows = 1000000
 
-    def read_csv(self,csv_filename, rows=-1):
+    def read_csv(self,csv_filename, rows=None):
         csv_rows = []
+        if not rows or rows > self.max_rows or rows < 0:
+            rows = self.max_rows
         try:
-            with open(csv_filename, 'r',encoding='utf-8-sig') as csv_file:
+            with open(csv_filename, 'r', encoding='utf-8-sig') as csv_file:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     row = {k.lstrip('\ufeff'): v for k, v in row.items()}
                     csv_rows.append(row)
-                    if rows > 0 and len(csv_rows) >= rows:
+                    if len(csv_rows) >= rows:
                         break
         except Exception as e:
             print(f"Error: {e}")
