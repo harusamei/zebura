@@ -21,7 +21,7 @@ class ESIndex:
         if not self.es.ping():
             raise ValueError("Connection failed")
         else:
-            print("Connect Elasticsearch to create index")
+            print("Connect Elasticsearch")
 
         self.model = None 
         self.info_loader = None
@@ -134,7 +134,8 @@ class ESIndex:
         
         return True
     
-    def load_csv_data(self,index_name, data_filename, size=10):
+    # size=负数,None，表示全部加载
+    def load_csv_data(self,index_name, data_filename, size=-1):
 
         mypcsv = pcsv()
         csv_rows = mypcsv.read_csv(data_filename,size)
@@ -234,12 +235,15 @@ class ESIndex:
     
 # examples usage
 if __name__ == '__main__':
-    
+
     cwd = os.getcwd()
     name = 'datasets\\gcases_schema.json'
     sch_file = os.path.join(cwd, name)
     
     escreator = ESIndex()
-    escreator.set_schema(sch_file)
-    escreator.store_table('gcases', 'datasets\\goodcases.csv')
+    # escreator.set_schema(sch_file)
+    # 'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
+    # escreator.store_table('gcases', 'datasets\\goodcases.csv')
+    results = escreator.search('goldencases', {'query': '鼠标'})
+    print(results)
 
