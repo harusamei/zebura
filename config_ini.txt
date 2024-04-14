@@ -1,0 +1,24 @@
+[General]
+ProjectName = Zebura
+Version = 1.0.0
+
+# 基于\zebura的相对路径，结尾没有\
+[Paths]
+ModulePath = zebura_core
+
+[Logging]
+LogLevel = INFO
+Log = /path/to/logfile.log
+
+[LLM]
+OPENAI_KEY = sk-XXXXXXXXXXXXXXXXX
+GPT_AGENT_KEY = 
+
+[Eleasticsearch]
+host = 
+port = 9200
+
+#待查询的表, 所有表的schema放在一个文件中
+[Tables]
+schema = zebura_core\knowledges\products_info_tables.json
+

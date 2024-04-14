@@ -1,5 +1,5 @@
 ﻿{
-    "_comment":"需要查询的data的metadata,每张表在tables中为一个dict",
+    "_comment":"需要查询的data的schema,每张表在tables中为一个dict",
     "tables":[
         {
             "table" : "product",
@@ -203,14 +203,14 @@
                     "column_zh": "产品分类",
                     "description": "Major category to which the product belongs.",
                     "alias_zh": "商品类型, 商品分类, 产品种类, 类别",
-                    "alias_en": "Merchandise Category,Item Classification,Product Group"
+                    "alias_en": "Category, type, division, Item Classification,Product Group"
                 },
                 {
                     "column_en": "product_cate2",
                     "column_zh": "一级子类",
                     "description": "First-level subcategory of the product.",
                     "alias_zh": "主分类, 一级分类, 大类, 主要类别",
-                    "alias_en": "Primary Subcategory,Main Category,Primary Division"
+                    "alias_en": "sub category,Main Category,Primary Division"
                 },
                 {
                     "column_en": "product_item_name",
