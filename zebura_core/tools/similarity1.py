@@ -5,6 +5,7 @@ from nltk.translate import meteor
 from nltk.translate.bleu_score import sentence_bleu
 from nltk import word_tokenize
 import re
+import difflib
 #from bleurt import score
 
 class similarity:
@@ -81,23 +82,15 @@ class similarity:
         
         return meteor([ref_sent.split()],gen_sent.split())
     
-
-
-# def getScores(metrics: list, ref_sent, gen_sent):
-#     # ALLmetrics = ['rouge','chrf','bertscore',]
-#     result = {}
-#     for metric in metrics:
-#         if metric == 'rouge':
-#             result['rouge'] = getRouge(ref_sent, gen_sent)
-#         elif metric == 'chrf':
-#             result['chrf'] = getChrf(ref_sent, gen_sent)
-#         elif metric == 'bleu':
-#             result['bleu'] = getBleu(ref_sent, gen_sent)
-#         elif metric == 'meteor':
-#             result['meteor'] = getMeteor(ref_sent, gen_sent)
-#         else:
-#             raise Exception('no such metric like {}'.format(metric))
-#     return result
+    # longest common substring
+    @staticmethod
+    def getLCS(s1,s2):
+        match = difflib.SequenceMatcher(None, s1, s2).find_longest_match(0, len(s1), 0, len(s2))
+        return s1[match.a: match.a + match.size]
+    @staticmethod
+    def getCloseMatches(word,candidates):
+        return difflib.get_close_matches(word, candidates)
+    
 
 # examples usage
 if __name__ == '__main__':
@@ -111,7 +104,8 @@ if __name__ == '__main__':
     score= simi.getRouge(" ".join('这是一本书'), " ".join('这是一本好看的书'))
     print(score[0]['rouge-l']['f'])
     score= simi.getChrf(" ".join('这是一本书'), " ".join('这是一本好看的书'))
-    print(score)
-    score= simi.getMeteor(ref,gent)
-    print(score)
+    print(simi.getLCS('这是一本书','这是一本好看的书'))
+    print(simi.getCloseMatches('productName',['Product','Product Name','product_name']))
+
+    
     

@@ -1,11 +1,12 @@
-import json
+import tensorflow_hub as hub
 
-# Specify the path to your JSON file
-file_path = '/path/to/your/file.json'
+# Load the Universal Sentence Encoder's TF Hub module
+model = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
-# Open the JSON file and load its contents into a dictionary
-with open(file_path, 'r') as file:
-    data = json.load(file)
+# Compute a representation for each message
+messages = ["Hello, world!", "The quick brown fox jumps over the lazy dog."]
+message_embeddings = model(messages)
 
-# Now you can access the data as a dictionary
-print(data)
+for i, message_embedding in enumerate(message_embeddings):
+    print(f"Message: {messages[i]}")
+    print(f"Embedding: {message_embedding.numpy()}")
