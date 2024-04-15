@@ -25,7 +25,7 @@ class ESIndex:
             print("Connect Elasticsearch to create index")
 
         self.model = Embedding()
-        self.schema = {}        # 索引的schema
+        self.index_schema = {}        # 索引的schema
 
     def is_index_exist(self,index_name):
 
@@ -61,7 +61,7 @@ class ESIndex:
     def create_index(self,index_name):
 
         # 定义索引主分片个数和分析器
-        body = self.schema
+        body = self.index_schema
 
         index_mapping = {
                 "settings": {
@@ -129,12 +129,12 @@ class ESIndex:
             del doc[key]
         # data type check, 日期，整数，浮点数
         dateSet= shortSet = floatSet = {}  
-        for key in self.schema.keys():
-            if self.schema[key]['type'] == 'date':
+        for key in self.index_schema.keys():
+            if self.index_schema[key]['type'] == 'date':
                 dateSet.append(key)
-            elif self.schema[key]['type'] == 'integer':
+            elif self.index_schema[key]['type'] == 'integer':
                 shortSet.append(key)
-            elif self.schema[key]['type'] == 'float':
+            elif self.index_schema[key]['type'] == 'float':
                 floatSet.append(key)
         # date format
         for key in dateSet:
