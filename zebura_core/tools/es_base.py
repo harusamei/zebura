@@ -1,11 +1,11 @@
 # ES 各种操作的基类
-from elasticsearch import Elasticsearch
 import os
 import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 from settings import z_config
 from tools.embedding import Embedding
+from elasticsearch import Elasticsearch
 
 class ES_BASE:
 
@@ -60,15 +60,40 @@ class ES_BASE:
             return None
 
     def search_vector(self,index, field, embs, size=5):
-        query = {
-            "knn": {"field": field, "query_vector": embs, "k": 100, "num_candidates": 100, "boost": 1},
-            "size": size
-        }
+        query = self.generate_knn_query(field, embs, size)
+
         try:
             return self.es.search(index=index, body=query)
         except Exception as e:
             print(e)
             return None
+    
+    def generate_knn_query(self,field_name, vec, size):
+        
+        query = {
+            "knn": {"field": field_name, "query_vector": vec, "k": 100, "num_candidates": 100, "boost": 1},
+            "size": size
+        }
+        return query
+    
+    def generate_cosine_query(self,field_name, vec, size):
+        query = {
+                    "query": {
+                        "script_score": {
+                            "query": {
+                                "match_all": {}
+                            },
+                            "script": {
+                                "source": f"cosineSimilarity(params.queryVector, '{field_name}') + 1.0",
+                                "params": {
+                                    "queryVector": vec
+                                }
+                            }
+                        }
+                    },
+                    "size": size
+                }
+        return query
     
     #查询是否存在一组fields
     def is_exist_field(self,index, fieldList):
@@ -78,5 +103,3 @@ class ES_BASE:
                 print(f"Field {field} not found in index {index}")
                 return False
         return True
-
-    

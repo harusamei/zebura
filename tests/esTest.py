@@ -3,23 +3,16 @@ import sys
 import os
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-from settings import z_config
+import settings
+from tools.es_base import ES_BASE
 from tools.embedding import Embedding
 
-class ESTester:
+# base methods ['all_indices', 'get_fields', 'is_exist_field', 'search_vector', 'search_word']
+class ESTester(ES_BASE):
     
     def __init__(self):
-        
-        host = z_config['Eleasticsearch','host']
-        port = int(z_config['Eleasticsearch','port'])
-        self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
-        self.embedding = None
-        if not self.es.ping():
-            raise ValueError("Connection failed")
-        else:
-            print("Connect Elasticsearch")
-        info = self.es.info()
-        print(f"es version: {info['version']['number']}")
+        super().__init__()
+        print(self.es_version)
 
         
     def get_indices(self):
@@ -40,10 +33,6 @@ class ESTester:
         else:
             print(f"Index '{index_name}' does not exist.")
 
-    def get_all_fields(self, index_name):
-        mapping = self.es.indices.get_mapping(index=index_name)
-        fields = mapping[index_name]['mappings']['properties']
-        return fields
 
     def get_count(self, index_name):
         count = self.es.count(index=index_name)['count']
@@ -80,7 +69,7 @@ class ESTester:
         result = self.es.search(index=index_name, body={"query": {"match_all": {}}})
         print(result)
 
-    def search_embedding(self,index_name, field_name, embedding):
+    def search_embedding(self,index_name, field_name, emb):
         # 默认cosine距离
         query = {
                     "query": {
@@ -91,28 +80,20 @@ class ESTester:
                             "script": {
                                 "source": f"cosineSimilarity(params.queryVector, '{field_name}') + 1.0",
                                 "params": {
-                                    "queryVector": embedding
+                                    "queryVector": emb
                                 }
                             }
                         }
                     },
                     "size": 10
                 }
-        # query = self.generate_knn_query(field_name,embedding,2)
-        print(f'{len(embedding)}: {embedding[0:5]}')
+        print(f'{len(emb)}: {emb[0:5]}')
         result = self.es.search(index=index_name, body=query)
         return result
     
-    def generate_knn_query(self,field_name, vec, size):
-        
-        query = {
-            "knn": {"field": field_name, "query_vector": vec, "k": 100, "num_candidates": 100, "boost": 1},
-            "size": size
-        }
-        return query
 
     def test_field_search(self, index_name, field_name,query):
-        fields = self.get_all_fields(index_name)
+        fields = self.get_fields(index_name)
         
         if not fields.get(field_name):
             print(f"Field {field_name} not found in index {index_name}")
@@ -132,7 +113,7 @@ class ESTester:
     
     def output_result(self, index_name, result, size=3):
 
-        fields = self.get_all_fields(index_name)
+        fields = self.get_fields(index_name)
         dv_fields = []
         for field_name in fields.keys():
             if fields[field_name].get('type') == 'dense_vector':
@@ -153,7 +134,7 @@ if __name__ == '__main__':
 
     tester = ESTester()
     tester.get_indices()
-    fields = tester.get_all_fields('goldencases')
+    fields = tester.get_fields('goldencases')
     print(fields)
 
     result = tester.test_field_search('goldencases', 'query', '列出所有电子产品分类下的产品')   

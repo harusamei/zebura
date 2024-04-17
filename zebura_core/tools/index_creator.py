@@ -1,29 +1,28 @@
-from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import RequestError
-from csv_processor import pcsv
-from datetime import datetime
 import sys
 import os
-import re
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-from settings import z_config
+import settings
 from embedding import Embedding
 from knowledges.info_loader import Loader
+from tools.es_base import ES_BASE
+from csv_processor import pcsv
+from datetime import datetime
+import re
+from elasticsearch.exceptions import RequestError
 
 # 创建索引
-class ESIndex:
+class ESIndex(ES_BASE):
+     
     def __init__(self):
-        
-        host = z_config['Eleasticsearch','host']
-        port = int(z_config['Eleasticsearch','port'])
-        self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
-        if not self.es.ping():
-            raise ValueError("Connection failed")
-        else:
-            print("Connect Elasticsearch")
+        super().__init__()
+        print(self.es_version)
 
-        self.model = None 
+        base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
+        base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
+        print("base attributes",base_attrs)
+        print("base methods",base_methods)
+
         self.info_loader = None
         # 创建index的schema
         self.index_schema = {}
@@ -58,7 +57,8 @@ class ESIndex:
         self.info_loader = Loader(schema_file)
 
     def set_embedding(self):
-        self.model = Embedding()
+        if not self.embedding:
+            self.embedding = Embedding()
     # 设置要创建索引的table名和数据文件
     # table的列信息，index name等默认已经放在info_loader中
     # info_loader 已经加载了schema信息
@@ -157,7 +157,7 @@ class ESIndex:
                 denseSet.append(field)
 
         # 如果有dense_vector字段，需要计算embedding
-        if len(denseSet) >0 and not self.model:
+        if len(denseSet) >0:
             self.set_embedding()
 
         for doc in docs:
@@ -165,7 +165,7 @@ class ESIndex:
             # embedding之前该field存放原始文本
             for field in denseSet:
                 texts.append(doc[field])
-            embs = self.model.get_embedding(texts)
+            embs = self.embedding.get_embedding(texts)
             for i, field in enumerate(denseSet):
                 doc[field] = embs[i].tolist()
                 
