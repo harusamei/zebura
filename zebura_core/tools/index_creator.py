@@ -71,6 +71,10 @@ class ESIndex(ES_BASE):
             print("table info loaded.")
         
         table_info = self.info_loader.get_table_info(table_name)
+        if not table_info:
+            print(f"Table '{table_name}' not found in schema.")
+            return False
+        
         index_name = table_info["es_index"]
         
         # 从table的columns中抽取index的schema
@@ -241,9 +245,9 @@ if __name__ == '__main__':
     sch_file = os.path.join(cwd, name)
     
     escreator = ESIndex()
-    # escreator.set_schema(sch_file)
-    # 'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
-    # escreator.store_table('gcases', 'datasets\\goodcases.csv')
+    escreator.set_schema(sch_file)
+    #'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
+    escreator.store_table('gcases', 'datasets\\goodcases.csv')
     results = escreator.search('goldencases', {'query': '鼠标'})
     print(results)
 
