@@ -27,7 +27,6 @@ class SentenceCutter:
 
         paras = text.split('\n')
         avg_len = len(text) / len(paras)
-        print(avg_len)
 
         regex = r'(?<=['+''.join(self.end_punct)+'])'
         all_sents = []
