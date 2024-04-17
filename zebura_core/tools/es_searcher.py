@@ -1,83 +1,20 @@
-from elasticsearch import Elasticsearch
 import os
 import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-from settings import z_config
-from tools.embedding import Embedding
+import settings
+from tools.es_base import ES_BASE
 
-class ESearcher:
+class ESearcher(ES_BASE):
 
     def __init__(self):
-
-        host = z_config['Eleasticsearch','host']
-        port = int(z_config['Eleasticsearch','port'])
-        self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
-        self.embedding = None
-        if not self.es.ping():
-            raise ValueError("Connection failed")
-        else:
-            print("Connect Elasticsearch")
-
-    @property
-    def all_indices(self):
-        return self.es.cat.indices(format='json')
-    
-
-    def get_fields(self,index):
-        mapping= self.es.indices.get_mapping(index=index)
-        fields = mapping[index]['mappings']['properties']
-        return fields
-    
-    #field-query = {product_name: "小新"}   
-    def search_word(self,index, field, word,size=5):
-
-        if not self.is_exist_field(index, [field]):
-            return None
-        
-        # vector search
-        if fields.get(field).get('type') == 'dense_vector':
-            if self.embedding is None:
-                self.embedding = Embedding()
-            embs = self.embedding.get_embedding(word)
-            return self.search_vector(index, field, embs, size)
-
-        # string search
-        kw = {field: word}
-        query = {
-            "size": size,  # Return top3 results
-            "query": {
-                "match": kw
-            }
-        }
-        # Execute the query
-        try:
-            return self.es.search(index=index, body=query)
-        except Exception as e:
-            print(e)
-            return None
-
-    def search_vector(self,index, field, embs, size=5):
-        query = {
-            "knn": {"field": field, "query_vector": embs, "k": 100, "num_candidates": 100, "boost": 1},
-            "size": size
-        }
-        try:
-            return self.es.search(index=index, body=query)
-        except Exception as e:
-            print(e)
-            return None
-    
-    #查询是否存在一组fields
-    def is_exist_field(self,index, fieldList):
-        fields = self.get_fields(index=index)
-        for field in fieldList:
-            if not fields.get(field):
-                print(f"Field {field} not found in index {index}")
-                return False
-        return True
-    
-    # 在多个field中找同一个word
+       super().__init__()
+       print(self.es_version)
+       base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
+       base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
+       print("base attributes",base_attrs)
+       print("base methods",base_methods)
+       
     # 使用"fields": ["*"], 表示所有字段
     def search_fields(self,index,word,fieldList):
         if not self.is_exist_field(index, fieldList):

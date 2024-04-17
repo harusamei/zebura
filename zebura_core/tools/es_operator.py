@@ -1,24 +1,20 @@
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 from csv_processor import pcsv
-import sys
 import os
+import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-from settings import z_config
+import settings
+from tools.es_base import ES_BASE
 
-class ESOps:
+class ESOps(ES_BASE):
 
     def __init__(self):
         
-        host = z_config['Eleasticsearch','host']
-        port = int(z_config['Eleasticsearch','port'])
-        self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
-        if not self.es.ping():
-            raise ValueError("Connection failed")
-        else:
-            print("Connect Elasticsearch to", host, port)
-    
+        super().__init__()
+        print(self.es_version)
+
     # docs是一个list，每个元素是一个dict
     def insert_docs(self, index_name, docs):
               
