@@ -26,14 +26,13 @@ class SentenceCutter:
             return sent_tokenize(text, language=lang)
 
         paras = text.split('\n')
-        avg_len = len(text) / len(paras)
-
         regex = r'(?<=['+''.join(self.end_punct)+'])'
         all_sents = []
         for para in paras:
             sents = re.split(regex, para)
             all_sents.extend(sents)
-
+        avg_len = len(text) / len(all_sents)
+        
         new_sents = [all_sents[0]]
         for sent in all_sents[1:]:
             flag = False
@@ -43,7 +42,7 @@ class SentenceCutter:
             if len(sent) <= 1:
                 flag = True
             # 太长也不能合并
-            if flag and len(last_sent)<2*avg_len > 0:
+            if flag and len(last_sent)< 2*avg_len:
                 new_sents[-1] += sent
             else:
                 new_sents.append(sent)
@@ -85,5 +84,5 @@ if __name__ == '__main__':
     sc = SentenceCutter()
     print(sc.left_punct)
     print(sc.to_full_width(''.join(sc.left_punct)))
-    txt = '【请问是否有叫小新的产品？有的。等等…[]{}\n有的。等等。。。[]{}\n\nthis is book.'
+    txt = '【请问是否有叫小新的产品？有的。等等…[]{}\n[有的。等等。。。[]{}\n\nthis is book.'
     print(sc.cut_sentences(txt))
