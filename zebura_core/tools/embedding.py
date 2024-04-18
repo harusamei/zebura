@@ -1,7 +1,15 @@
 from sentence_transformers import SentenceTransformer
-
+import time
 class Embedding:
-    def __init__(self, model_name='DMetaSoul/Dmeta-embedding'):
+    # 这个是北京数元灵科技有限公司开源的语义向量模型，在中文 STS上当时榜单TOP1
+    # 首次使用通过默认model_name安装在C:\Users\<Your Username>\.cache
+    # 智源的BGE模型在https://www.modelscope.cn 有，不需要翻墙
+    # dmeta, bge
+    def __init__(self, model_name='dmeta'):
+        if model_name == 'dmeta':
+            model_name = 'C:\something\\transformer\DMetaSoul-embedding'    # 这里是你的模型路径
+        else:
+            model_name = 'C:\something\\transformer\\bge-base-zh-v1.5'
         self.model = SentenceTransformer(model_name)
 
     def get_embedding(self, texts):
@@ -32,13 +40,17 @@ class Embedding:
     
 # Example usage
 if __name__ == '__main__':
-    texts1 = ["胡子长得太快怎么办？", "在香港哪里买手表好"]
-    texts2 = ["胡子长得快怎么办？", "怎样使胡子不浓密！", "香港买手表哪里好", "在杭州手机到哪里买"]
+    texts1 = ["鼠标多少钱？", "新上市的产品有哪些","what the difference between desktop and laptop?"]
+    texts2 = ["鼠标属于哪个分类","远程数据恢复属于哪个分类","计算机属于哪个分类",
+              "新上市的产品有哪些","价格在1000~15000的电脑有哪些","价格低于50的鼠标有哪些","台式机与笔记本有什么区别"]
     
+    start_time = time.time()
     model = Embedding()
+    end_time = time.time()
+    print(f"Time taken: {end_time - start_time} seconds")
     embs1 = model.get_embedding(texts1)
     embs2 = model.get_embedding(texts2)
-    embs3 = model.get_embedding(["在香港哪里买手表好"])
+    embs3 = model.get_embedding(["what the difference between desktop and laptop?"])
     print(embs1.shape, embs2.shape, embs3.shape)
     print(model.calc_similarity(embs1, embs2))
 
