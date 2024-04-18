@@ -1,2 +1,4 @@
 # zebura
-a framework for querying data using natural language
+talk to your data
+
+![let's talk data](image.png)
