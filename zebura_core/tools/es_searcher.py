@@ -150,13 +150,19 @@ class ESearcher(ES_BASE):
     def list_results(response):
         #满足查询条件的文档数
         print("Got %d Hits:" % response['hits']['total']['value'])
+        hits = []
         for hit in response['hits']['hits']:
-            print(hit["_source"]) 
-            
+            # print(hit["_source"])
+            hits.append(hit["_source"])
+        return hits
+     
     @staticmethod
     def filter_results(response, field):
+        hits = []
         for hit in response['hits']['hits']:
-            print(hit["_source"].get(field))
+            # print(hit["_source"].get(field))
+            hits.append(hit["_source"].get(field))
+        return hits
 
     @staticmethod
     def asctable_results(response, separator='\t'):
@@ -186,14 +192,14 @@ if __name__ == '__main__':
     index="goldencases"
     fields = es.get_fields(index)
     print(fields.keys())
-    result = es.search_word(index, "query","小新")
-    es.filter_results(result,'query')
-    
+   
     fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]
     result = es.search_either_should_must(index, fqList)
     if not result:
         es.asctable_results(result)
+    else:
+        print(fqList,": No result found")
 
-    result = es.search_word(index, "qembedding","有哪些新上市的产品")
+    result = es.search_word(index, "qembedding","请从产品表里查一下联想小新电脑的价格")
     es.filter_results(result,'query')
 
