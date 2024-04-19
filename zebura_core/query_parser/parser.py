@@ -6,7 +6,7 @@ sys.path.insert(0, os.getcwd())
 import settings
 from new_extractor import Extractor
 from normalizer import Normalizer
-from schemalinking import Sch_linking
+from schema_linker import Sch_linking
 
 class Parser:
         
@@ -23,13 +23,37 @@ class Parser:
         if not sql_query:
             return "not sql"
         # 2. Extract the slots from the query
-        slots = self.te.extract(sql_query)
-        slots = self.sl.refine(slots)
-        
-        return slots
+        slots1 = self.te.extract(sql_query)
+        slots2 = self.sl.refine(slots1)
+        # 3. revise the sql query by the slots
+        sql2 = self.gen_sql(slots2)
+        # sql1, slots1 为修正前，sql2, slots2 为修正后
+        return {"sql1":sql_query,"sql2":sql2,"slots1":slots1, "slots2":slots2}
+    
+    # 简单合成，只做了select,form,where
+    def gen_sql(self,slots):
+        # "select * from 产品表 where "
+        str_from = 'from '
+        str_from += slots['from']
+        str_select = 'select '
+        str_select+= ",".join(slots["columns"])
+        if slots['distinct']:
+            str_select = str_select.replace("select","select distinct")
+        str_where = 'where '
+        for cond in slots['conditions']:
+            if isinstance(cond,dict):
+                if cond['value'].isdigit():
+                    str_where += f"{cond['column']} {cond['op']} {cond['value']}  "
+                else:
+                    str_where += f"{cond['column']} {cond['op']} '{cond['value']}' "
+            else:
+                str_where += f"{cond} "
+
+        return f"{str_select} {str_from} {str_where}"
+
 
 if __name__ == '__main__':
-    query = '请问联想小新电脑多少钱'
+    query = '请从产品表里查一下联想小新电脑的价格'
     table_name = '产品表'
     parser = Parser()
     result = parser.parse(table_name, query)

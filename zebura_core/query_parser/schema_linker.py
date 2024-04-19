@@ -2,15 +2,15 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import settings
-from knowledges.info_loader import SchemaLoader
-from compare import similarity
+from zebura_core.knowledges.schema_loader import Loader
+from tools.compare import similarity
 
 # schema linking, for table, column
 class Sch_linking:
 
     def __init__(self):
         self.similarity = similarity()
-        self.info_loader = SchemaLoader()
+        self.info_loader = Loader()
 
     def substitute(self, term, tableName='', type='table'):
 
@@ -32,14 +32,13 @@ class Sch_linking:
                 subst['new_term'] = tables[0]['table']
             return subst
 
-        columns_dict = self.info_loader.get_columnList(tableName)
+        columns_dict = self.info_loader.get_all_columns(tableName)
         for col in columns_dict:
             db_colName = col['column_en']
             temStr = f"{db_colName},{col['column_zh']},{col['alias_en']},{col['alias_zh']}"
             termList = temStr.split(',')
             s = self.similar(term,termList)
             if (s['score'] > subst['conf']):
-                print(s)
                 subst['conf'] = s['score']
                 subst['new_term'] = db_colName
 
@@ -47,8 +46,9 @@ class Sch_linking:
             subst['new_term'] = columns_dict[0]['column_en']
         return subst
     
-    def refine(self,slots):
+    def refine(self,slots1):
 
+        slots = slots1.copy()
         tableName = slots['from']
         subst = self.substitute(tableName)
         tableName = slots['from'] = subst['new_term']
@@ -88,5 +88,6 @@ class Sch_linking:
 if __name__ == '__main__':
     sch_linking = Sch_linking()
     slots = {'from': 'products', 'columns': ['brand name', 'item price'], 'conditions': [{'column': 'brand', 'op': '=', 'value': '联想'}]}
+    print(slots)
     result = sch_linking.refine(slots)
     print(result)

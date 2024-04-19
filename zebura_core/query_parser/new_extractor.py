@@ -4,7 +4,7 @@ import re
 sys.path.insert(0, os.getcwd())
 import settings
 from tools.sqlparser import parse_sql
-
+# 对SQL进行解析，提取基本元素
 class Extractor:
     def __init__(self):
         self.where_pats = [r'(\S+)\s+(LIKE)\s+\W(.*)\W', 
