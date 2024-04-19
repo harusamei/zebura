@@ -55,23 +55,27 @@ class CaseStudy:
                     cands[resp['_id']] = resp['_score']
                 else:
                     cands[resp['_id']] += resp['_score']
-
-            sorted_ids = sorted(cands, key=lambda x: cands[x])
-            results = [None for _ in range(len(sorted_ids))]
+            print(cands)
+            sorted_ids = sorted(cands, key=lambda x: cands[x],reverse=True)
+            results = {}
+            for i, id in enumerate(sorted_ids):
+                results[id] = {'rank':i, 'score':cands[id],'doc':None}
             
-            print(sorted_ids)
+            for resp in all_resp:
+                if resp['_id'] in results:
+                    results[resp['_id']]['doc'] = resp['_source']
+
+            return results
         
 
 # Example usage
 if __name__ == '__main__':
     cs = CaseStudy()
-    query = '请从产品表里查一下联想小新电脑的价格'
+    query = 'what the difference between desktop and laptop?'
     sql = 'select * from product where product_name = "联想小新电脑"'
     results = cs.assemble_find(query, sql)
-    print(results)
-    # result = cs.find_similar_query(query)
-    # cs.es.filter_results(result,'query')
-    # result = cs.find_similar_sql(sql)
-    # cs.es.filter_results(result,'query')
-    # result = cs.find_similar_vector(query)
-    # cs.es.filter_results(result,'query')
+    
+    for id, result in results.items():
+        print(f"Rank:{result['rank']}, Score:{result['score']}")
+        print(result['doc'].get('query'))
+   
