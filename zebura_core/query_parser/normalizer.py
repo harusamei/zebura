@@ -10,19 +10,26 @@ from settings import z_config
 from LLM.gptAgent import GPTAgent
 from knowledges.schema_loader import Loader
 
-sa_list = ['a virtual assistant with expertise in SQL','a SQL programmer','a SQL expert','a SQL developer']
+import logging
+if os.getenv('Logging') == 'DEBUG':
+    logging.basicConfig(level=logging.DEBUG)        #输出debug信息
+else:
+    logging.basicConfig(level=logging.INFO)
+
+# some LLM roles
+# sa_list = ['a virtual assistant with expertise in SQL','a SQL programmer','a SQL expert','a SQL developer']
 class Normalizer:
     
     def __init__(self,sa="You are a SQL programmer, you can generate SQL queries based on natural language input."):
         # context for the LLM
-        self.llm = GPTAgent(sa)
+        #self.llm = GPTAgent(sa)
         self.sch_loader = Loader(z_config['Tables','schema'])
         # prompt有3级，sa最底层，default是中间层,task special，prompt是最上层,db special
         self.default ={
-                    "rewrite_zh":"请将下面句子改写为表达查询意图的句子，去除不相关信息,如果无法改写，请输出原句",
+                    "rewrite_zh":"根据下面句子的描述，构建用户可能需要的查询，去除不相关信息.",
                     "rewrite_en":"Please rewrite the following sentence to clearly express the query intent and remove irrelevant information. If you cannot rewrite it, please output the original sentence.",
-                    "sql_zh":"下面句子如果是查询这个database，请转换为SQL语句，否则，直接输出 no sql, ",
-                    "sql_en":"If the following sentence is a data query, please convert it to an SQL statement. Otherwise, output no sql",
+                    "sql_zh":"下面句子如果是查询这个database，请转换为SQL语句，否则，直接输出 no sql,只要SQL语句部分.",
+                    "sql_en":"If the following sentence is a data query, please convert it to an SQL statement. Otherwise, output no sql, only the SQL part.",
                     "summary_zh":"请给下面的文档内容生成总结，不要超过100字",
                     "summary_en":"Please generate a summary of the following document content, no more than 100 words",
                     }
@@ -65,9 +72,9 @@ class Normalizer:
             "sql_en":sql_en
         }
         return True
-
+    # 不确定数据信息prompt summary一下，是否效果更好？
     async def summary(self,content,lang="zh"):
-        sa = self.llm.update_sa("")
+        sa = self.llm.update_sa("")     #LLM 自我认
         if lang=="zh":
             prompt = self.default["summary_zh"]
         else:
@@ -80,6 +87,12 @@ class Normalizer:
         results = self.llm.ask_query_list(querys, prompt)
         return results
     
+    def extract_sql(self,result):
+        # Extract the SQL code from the result
+        code_pa = "```sql\n(.*?)\n```"
+        matches = re.findall(code_pa, result, re.DOTALL)
+        return matches
+        
     async def convert_sql(self,queries,prompt):
         # Ask the GPT agent to convert the query to SQL
         if isinstance(queries, str):
@@ -89,9 +102,16 @@ class Normalizer:
             if len(results) != len(queries):
                 print(f"Error: Number of queries{len(queries)} and results {len(results)} do not match")
 
-        # filter the successful SQL 
-        results = [r if re.search(r'SELECT|FROM|WHERE', r, re.IGNORECASE) else None for r in results]
-        print("converse sql done")
+        # filter the successful SQL
+        for i in range(len(results)):
+            if not isinstance(results[i],str):
+                print("ERR: no str",queries[i], results[i])
+                results[i] = ""
+        results = [
+                    r if re.search(r'SELECT|FROM|WHERE', r, re.IGNORECASE) 
+                    else None for r in results
+                  ]
+        logging.debug("converse sql done")
         return results
     
     # 补全
@@ -101,7 +121,7 @@ class Normalizer:
         else:
             results = await self.ask_agent(queries, prompt)
             if len(results) != len(queries):
-                print("Error: Number of queries and results do not match")
+                print("ERR: queries and results do not match")
         return results
     
     # 中英文提示全跑，失败的再跑rewrite
@@ -133,12 +153,19 @@ class Normalizer:
 # Example usage
 if __name__ == '__main__':
     from tools.csv_processor import pcsv
-
-    cp = pcsv()
-    rows = cp.read_csv('datasets/queries.csv')
     normalizer = Normalizer()
+    
+    cp = pcsv()
+    rows = cp.read_csv('sql_result.csv')
+    for i, row in enumerate(rows):
+        result = row['sql_zh']
+        row['sql_zh'] = normalizer.extract_sql(result)
+        result = row['sql_en']
+        row['sql_en'] = normalizer.extract_sql(result)  
+    cp.write_csv(rows, 'sql_result_new.csv')
+
+    sys.exit()
     normalizer.gen_prompts('product')
-   
     queries = [row['query'] for row in rows]
     results,en_results, rewrite = asyncio.run(normalizer.bulk_sql(queries))
     print(f'query:{len(queries)}, results: {len(results)}, rewrite:{len(rewrite)}')

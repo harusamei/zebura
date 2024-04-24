@@ -7,11 +7,10 @@ sys.path.insert(0, os.getcwd())
 import settings
 class GPTAgent:
    
-    def __init__(self, sa="You are a SQL programmer who can translate natural language queries into SQL."):
+    def __init__(self, sa):
         # set self awareness/ 最底层的prompt
         self.sa = sa
         api_key = os.environ.get("GPT_AGENT_KEY")
-        # print(api_key)
         self.url = "https://openai-lr-ai-platform-cv.openai.azure.com/openai/deployments/IntentTest/chat/completions?api-version=2023-07-01-preview"
         self.header = {
             "Content-Type": "application/json",
@@ -48,7 +47,9 @@ class GPTAgent:
             raise ValueError(err)
         
     def update_sa(self, sa:str):
+        old_sa = self.sa
         self.sa = sa
+        return old_sa
 
     async def ask_query_list(self, queries:list[str], prompt:str) -> list[str]:
         # create a task list
