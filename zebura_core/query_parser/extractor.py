@@ -1,10 +1,13 @@
+##########################################################
+# 对SQL进行解析，提取基本元素
+##########################################################
 import os
 import sys
 import re
 sys.path.insert(0, os.getcwd())
 import settings
 from tools.sqlparser import parse_sql
-# 对SQL进行解析，提取基本元素
+
 class Extractor:
     def __init__(self):
         self.where_pats = [r'(\S+)\s+(LIKE)\s+\W(.*)\W', 
@@ -13,7 +16,8 @@ class Extractor:
 
 
     def extract(self,sql):
-        
+        if isinstance(sql, list):
+            sql = sql[0]
         slots= parse_sql(sql)
         if not slots:
             return None

@@ -22,7 +22,7 @@ class Normalizer:
     
     def __init__(self,sa="You are a SQL programmer, you can generate SQL queries based on natural language input."):
         # context for the LLM
-        #self.llm = GPTAgent(sa)
+        self.llm = GPTAgent(sa)
         self.sch_loader = Loader(z_config['Tables','schema'])
         # prompt有3级，sa最底层，default是中间层,task special，prompt是最上层,db special
         self.default ={
@@ -40,6 +40,11 @@ class Normalizer:
                     "sql_zh":'',
                     "sql_en":''
                     }
+    # main method of class, convert natural language to SQL
+    async def apply(self,query:str,prompt:str):
+        result = await self.convert_sql(query,prompt)
+        sql_list = self.extract_sql(result)
+        return sql_list
 
     # 生成table specific prompts
     def gen_prompts(self, table_name) -> bool:
@@ -83,18 +88,20 @@ class Normalizer:
         self.llm.update_sa(sa)
         return result
 
-    def ask_agent(self, querys, prompt):
+    async def ask_agent(self, querys, prompt):
         results = self.llm.ask_query_list(querys, prompt)
         return results
     
     def extract_sql(self,result):
         # Extract the SQL code from the result
+        print(result)
         code_pa = "```sql\n(.*?)\n```"
         matches = re.findall(code_pa, result, re.DOTALL)
         return matches
         
     async def convert_sql(self,queries,prompt):
         # Ask the GPT agent to convert the query to SQL
+
         if isinstance(queries, str):
             results = [await self.llm.ask_query(queries, prompt)]
         else:
@@ -111,8 +118,12 @@ class Normalizer:
                     r if re.search(r'SELECT|FROM|WHERE', r, re.IGNORECASE) 
                     else None for r in results
                   ]
-        logging.debug("converse sql done")
-        return results
+        print("converse sql done")
+        # input str, output str; input list output list
+        if isinstance(queries, str):
+            return results[0]
+        else:
+            return results
     
     # 补全
     async def rewrite(self, queries, prompt):

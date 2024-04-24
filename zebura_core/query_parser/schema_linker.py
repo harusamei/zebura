@@ -47,7 +47,9 @@ class Sch_linking:
         return subst
     
     def refine(self,slots1):
-
+        if not slots1:
+            return None
+        
         slots = slots1.copy()
         tableName = slots['from']
         subst = self.substitute(tableName)
