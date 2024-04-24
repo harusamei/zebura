@@ -2,15 +2,15 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import settings
-from zebura_core.knowledges.schema_loader import Loader
+from knowledges.schema_loader import Loader
 from tools.compare import similarity
 
 # schema linking, for table, column
 class Sch_linking:
 
-    def __init__(self):
+    def __init__(self,scha_file):
         self.similarity = similarity()
-        self.info_loader = Loader()
+        self.info_loader = Loader(scha_file)
 
     def substitute(self, term, tableName='', type='table'):
 

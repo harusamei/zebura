@@ -16,7 +16,8 @@ class pcsv:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     row = {k.lstrip('\ufeff'): v for k, v in row.items()}
-                    csv_rows.append(row)
+                    if any(field.strip() for field in row.values()):  # Check if the row is not empty
+                        csv_rows.append(row)
                     if len(csv_rows) >= rows:
                         break
         except Exception as e:

@@ -7,6 +7,7 @@ from typing import Dict
 class Loader:
     def __init__(self,file):
         
+        
         self._info = self.load_tablesInfo(file)
         if self._info is None or "tables" not in self._info:
             raise ValueError("Cannot load the schema file")

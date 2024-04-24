@@ -6,7 +6,6 @@ if os.getcwd().lower() not in sys.path:
 import settings
 from tools.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
-import constants
 
 class CaseStudy:
         
@@ -22,8 +21,8 @@ class CaseStudy:
             table = self.loader.get_table_nameList()[0]
             self.columns = self.loader.get_all_columns(table)
             # check necessary columns
-            necessary_columns = ['query', 'qembedding', 'sql', 'action']
-            for col in necessary_columns:
+            must_columns = ['query', 'qembedding', 'sql', 'action']
+            for col in must_columns:
                 if col not in [c['column_en'] for c in self.columns]:
                     raise ValueError(f"Column {col} not found in table {table}")
             

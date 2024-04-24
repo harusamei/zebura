@@ -1,9 +1,12 @@
-# query parser，可利用的信息包含 slots from extractor, good cases, schema of db, ask db, gpt
+#######################################################################################
+# query parser模块的主代码
+# 功能： 将query解析为符合当前 db schema的SQL
+# 需要信息： slots from extractor, good cases, schema of db, ask db, gpt
+#######################################################################################
 import os
 import sys
-import re
 sys.path.insert(0, os.getcwd())
-import settings
+from settings import z_config
 from new_extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
@@ -13,17 +16,21 @@ class Parser:
     def __init__(self):
         self.norm =Normalizer()
         self.te = Extractor()
-        self.sl = Sch_linking()
+
+        cwd = os.getcwd()
+        name = z_config['Tables','schema']  # 'datasets\products_schema.json'
+        self.sl = Sch_linking(os.path.join(cwd, name))
 
     
     def parse(self, table_name, query):
         
         # 1. Normalize the query by sql format  
-        sql_query = self.norm.convert_to_sql(table_name, query)
+        sql_query = self.norm.convert_sql(table_name, query)
         if not sql_query:
             return "not sql"
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_query)
+        # 3. Link the slots to the schema
         slots2 = self.sl.refine(slots1)
         # 3. revise the sql query by the slots
         sql2 = self.gen_sql(slots2)
@@ -52,6 +59,7 @@ class Parser:
         return f"{str_select} {str_from} {str_where}"
 
 
+# Example usage
 if __name__ == '__main__':
     query = '请从产品表里查一下联想小新电脑的价格'
     table_name = '产品表'
