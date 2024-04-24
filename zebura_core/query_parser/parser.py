@@ -11,6 +11,7 @@ from settings import z_config
 from zebura_core.query_parser.extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
+from activity_generator.study_cases import CaseStudy
 
 class Parser:
         
@@ -18,14 +19,17 @@ class Parser:
         sa="You are a SQL programmer, you can generate SQL queries based on natural language input."
         self.norm =Normalizer(sa)
         self.te = Extractor()
+        self.gc = CaseStudy()
 
         cwd = os.getcwd()
         name = z_config['Tables','schema']  # 'datasets\products_schema.json'
         self.sl = Sch_linking(os.path.join(cwd, name))
-
-    
-    async def parse(self, table_name, query) -> dict:
         
+
+    # main function
+    async def apply(self, table_name, query) -> dict:
+        
+        self.find_good_case(query)
         # 1. Normalize the query to sql format by LLM
         if not self.norm.gen_prompts(table_name):
             print("ERR: no such table in schema")
@@ -42,7 +46,6 @@ class Parser:
                 return {"status":False,"msg":"too hard to parse"}
             
         # 2. Extract the slots from the query
-        print(sql_1)
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
         slots2 = self.sl.refine(slots1)
@@ -52,7 +55,10 @@ class Parser:
         return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}
     
     def find_good_case(self,query):
-        pass
+        result = self.gc.find_similar_query(query)
+        print(result)
+        return result
+    
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):
         # "select * from 产品表 where "
@@ -82,5 +88,5 @@ if __name__ == '__main__':
     query = '请从产品表里查一下联想小新电脑的价格'
     table_name = 'product'
     parser = Parser()
-    result = asyncio.run(parser.parse(table_name, query))
+    result = asyncio.run(parser.apply(table_name, query))
     print(result)

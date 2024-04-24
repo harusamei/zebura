@@ -1,7 +1,6 @@
 import configparser
 import sys
 import os
-import logging
 
 class Settings:
 
@@ -29,9 +28,6 @@ class Settings:
         # set os.environ
         for key in self.config['LLM']:
             os.environ[key] = self.config['LLM'][key]
-
-        # set logging
-        os.environ['Logging'] =self.config.get('ENV','Logging')
        
     def __getitem__(self, keys):
         return self.config.get(keys[0], keys[1])

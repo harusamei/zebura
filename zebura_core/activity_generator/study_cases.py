@@ -6,6 +6,7 @@ if os.getcwd().lower() not in sys.path:
 import settings
 from tools.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
+import constants
 
 class CaseStudy:
         

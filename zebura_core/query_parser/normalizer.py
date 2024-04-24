@@ -9,9 +9,10 @@ sys.path.insert(0, os.getcwd())
 from settings import z_config
 from LLM.gptAgent import GPTAgent
 from knowledges.schema_loader import Loader
+import constants
 
 import logging
-if os.getenv('Logging') == 'DEBUG':
+if os.getenv('ENV') == 'DEBUG':
     logging.basicConfig(level=logging.DEBUG)        #输出debug信息
 else:
     logging.basicConfig(level=logging.INFO)
