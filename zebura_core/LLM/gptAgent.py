@@ -5,11 +5,11 @@ import json
 import asyncio
 sys.path.insert(0, os.getcwd())
 import settings
-
 class GPTAgent:
-
-    def __init__(self, sys_context="you are a programming assistant. you can convert natural language to SQL queries."):
-
+   
+    def __init__(self, sa="You are a SQL programmer who can translate natural language queries into SQL."):
+        # set self awareness/ 最底层的prompt
+        self.sa = sa
         api_key = os.environ.get("GPT_AGENT_KEY")
         # print(api_key)
         self.url = "https://openai-lr-ai-platform-cv.openai.azure.com/openai/deployments/IntentTest/chat/completions?api-version=2023-07-01-preview"
@@ -25,7 +25,7 @@ class GPTAgent:
             "messages": [
                             {
                                 "role": "system",
-                                "content": sys_context
+                                "content": sa
                             },
                             {
                                 "role": "user",
@@ -33,7 +33,6 @@ class GPTAgent:
                             }
                         ]
             }
-        self.context = sys_context
         try:
             response = requests.post(self.url, headers=self.header, data=json.dumps(self.post_dict))
             response.raise_for_status()  # Raise an error for bad responses
@@ -48,15 +47,17 @@ class GPTAgent:
         except requests.exceptions.RequestException as err:
             raise ValueError(err)
         
-    
-    async def ask_query_list(self, queries, prompt):
+    def update_sa(self, sa:str):
+        self.sa = sa
+
+    async def ask_query_list(self, queries:list[str], prompt:str) -> list[str]:
         # create a task list
-        if not isinstance(queries, list):
-            print("error: not list in ask_querylist")
-            return None
+        if len(queries) == 0:
+            return []
         
         tasks = []
         # 只处理前1000
+        prompt = self.sa+ prompt
         for query in queries[:1000]:
             query= query 
             task = asyncio.create_task(self.ask_query(query,prompt))
@@ -77,10 +78,10 @@ class GPTAgent:
         
         return results
 
-    async def ask_query(self,query,prompt):
-
-        if not isinstance(query, str):
-            return None
+    async def ask_query(self,query:str,prompt:str)->str:
+        print(f"query: {query}")
+        if query is None or len(query) == 0:
+            return ""
         messages = [{"role": "system", "content": prompt}]
         messages.append({"role": "user", "content": query})  # Convert the list of queries to a string with newlines between the]
         post_dict = self.post_dict
