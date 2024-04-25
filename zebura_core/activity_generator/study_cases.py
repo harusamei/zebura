@@ -72,16 +72,21 @@ class CaseStudy:
             if sql:
                 resps[1] = self.find_similar_sql(sql, topk)
             else:
-                resps[1] = {'hits':{'hits':[]}}
+                resps[1] = None
             resps[2] = self.find_similar_vector(query, topk)
             
             rank_list=[None]*3
             for i in range(3):
-                rank_list[i] = [hit['_id'] for hit in resps[i]['hits']['hits']]
+                if resps[i] is not None:
+                    rank_list[i] = [hit['_id'] for hit in resps[i]['hits']['hits']]
+                else:
+                    rank_list[i] = []
             sorted_ids = self.rrf_weighted(rank_list)
-
+            # print("sorted_ids:",sorted_ids)
             docs = {}
             for i in range(3):
+                if resps[i] is None:
+                    continue
                 for hit in resps[i]['hits']['hits']:
                     docs[hit['_id']] = hit['_source']
             
@@ -97,7 +102,7 @@ if __name__ == '__main__':
     cs = CaseStudy()
     query = 'what the difference between desktop and laptop?'
     sql = 'select * from product where product_name = "联想小新电脑"'
-    results = cs.assemble_find(query, sql)
+    results = cs.assemble_find(query)
     
     for result in results:
         print(f"rank:{result['rank']}, score:{result['score']}")

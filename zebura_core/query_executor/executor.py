@@ -1,9 +1,8 @@
 import os
 import sys
-if os.getcwd().lower() not in sys.path:
-    sys.path.insert(0, os.getcwd().lower())
-import settings
-from esQuery import ESQuery
+sys.path.insert(0, os.getcwd())
+from settings import z_config
+from tools.es_searcher import ESearcher
 from validator import Validator
 # 数据存放方式不同，需要重新设计
 class Executor:

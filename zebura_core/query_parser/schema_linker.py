@@ -47,7 +47,7 @@ class Sch_linking:
         return subst
     
     def refine(self,slots1):
-        if not slots1:
+        if slots1 is None:
             return None
         
         slots = slots1.copy()
@@ -64,8 +64,10 @@ class Sch_linking:
             if subst['conf'] < 0.5:
                 columns[idx] += '?'
 
-        # condictions
+        # conditions
         for cond in slots['conditions']:
+            if isinstance(cond, str):
+                continue
             subst = self.substitute(cond['column'], tableName, 'column')
             cond['column'] = subst['new_term']
             if subst['conf'] < 0.5:
@@ -88,8 +90,15 @@ class Sch_linking:
     
 # Example usage
 if __name__ == '__main__':
-    sch_linking = Sch_linking()
+    cwd = os.getcwd()
+    name= 'datasets\products_schema.json'
+    sch_linking = Sch_linking(os.path.join(cwd, name))
     slots = {'from': 'products', 'columns': ['brand name', 'item price'], 'conditions': [{'column': 'brand', 'op': '=', 'value': '联想'}]}
+    slots = {
+        'columns': ['价格'], 'from': '产品信息表', 
+        'conditions': [{'column': '品牌', 'op': '=', 'value': '联想'}, 'AND', {'column': '系列', 'op': '=', 'value': '小新'}, 'AND', {'column': '产品名', 'op': 'LIKE', 'value': '%小新%'}], 
+         'distinct': None, 'limit': None, 'offset': None, 'order by': None, 'group by': None
+        }
     print(slots)
     result = sch_linking.refine(slots)
     print(result)

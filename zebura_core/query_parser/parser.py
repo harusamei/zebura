@@ -29,22 +29,20 @@ class Parser:
     # main function
     async def apply(self, table_name, query) -> dict:
         
-        self.find_good_case(query)
+        
         # 1. Normalize the query to sql format by LLM
         if not self.norm.gen_prompts(table_name):
             print("ERR: no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
         
         prompt_zh = self.norm.prompt["sql_zh"]
+        # sql_1 存在失败可能，为None, 但继续
         sql_1 = await self.norm.apply(query, prompt_zh)
-        # 大模型不能转换，找相似case
-        if not sql_1:
-            gcase = self.find_good_case(query)
-            if not gcase:
-                return {"status":True,"gcase":gcase,"msg":"find similar case"}
-            else:
-                return {"status":False,"msg":"too hard to parse"}
-            
+        
+        results = self.find_good_cases(query,sql_1)
+        isCred = self.is_credible(results,query)
+        if sql_1 is None and isCred:
+            sql_1 = results[0]['doc']['sql']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
@@ -54,13 +52,19 @@ class Parser:
         # sql1, slots1 为修正前，sql2, slots2 为修正后
         return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}
     
-    def find_good_case(self,query):
-        result = self.gc.find_similar_query(query)
-        print(result)
-        return result
+    # 怎么知道检索的是对的？ todo
+    def is_credible(self,results,query) -> bool:
+        return True
+    
+    def find_good_cases(self,query,sql):
+        results = self.gc.assemble_find(query,sql)
+        return results
     
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):
+        if slots is None:
+            return None
+        
         # "select * from 产品表 where "
         str_from = 'from '
         str_from += slots['from']
@@ -85,8 +89,9 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    query = '请从产品表里查一下联想小新电脑的价格'
+    querys = ['查一下联想小新电脑的价格','哪些产品属于笔记本类别？','查一下价格大于1000的产品']
     table_name = 'product'
     parser = Parser()
-    result = asyncio.run(parser.apply(table_name, query))
-    print(result)
+    for query in querys:
+        result = asyncio.run(parser.apply(table_name, query))
+        print(result)

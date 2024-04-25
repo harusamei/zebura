@@ -10,12 +10,7 @@ from settings import z_config
 from LLM.gptAgent import GPTAgent
 from knowledges.schema_loader import Loader
 import constants
-
 import logging
-if os.getenv('ENV') == 'DEBUG':
-    logging.basicConfig(level=logging.DEBUG)        #输出debug信息
-else:
-    logging.basicConfig(level=logging.INFO)
 
 # some LLM roles
 # sa_list = ['a virtual assistant with expertise in SQL','a SQL programmer','a SQL expert','a SQL developer']
@@ -44,6 +39,9 @@ class Normalizer:
     # main method of class, convert natural language to SQL
     async def apply(self,query:str,prompt:str):
         result = await self.convert_sql(query,prompt)
+        if result is None:
+            return None
+        
         sql_list = self.extract_sql(result)
         return sql_list
 
@@ -93,7 +91,7 @@ class Normalizer:
         results = self.llm.ask_query_list(querys, prompt)
         return results
     
-    def extract_sql(self,result):
+    def extract_sql(self,result:str):
         # Extract the SQL code from the result
         print(result)
         code_pa = "```sql\n(.*?)\n```"

@@ -27,7 +27,7 @@ def parse_sql(sql):
             continue
         kwords.append(token.value)
     # 切分为select...from...where几部分
-    print(kwords)
+    # print(kwords)
     # 只处理查询sql, 包含以下keyword 暂时不能处理的SQL
     if kwords[0]!="SELECT":
         print("Can't handle this SQL")

@@ -18,8 +18,7 @@ class ESearcher(ES_BASE):
     # 使用"fields": ["*"], 表示所有字段
     def search_fields(self,index,word,fieldList):
         if not self.is_exist_field(index, fieldList):
-            return None
-            
+            return None    
         query = {
             "size": 3,
             "query": {
@@ -30,7 +29,27 @@ class ESearcher(ES_BASE):
             }
         }
         return self.es.search(index=index, body=query)
-
+    
+    # rrf 重排名, TODO
+    """ def search_rrf_mixture(self,index, word, fieldList):
+        query = {
+        "size": 3,
+        "query": {
+            "bool": {
+                "should": [
+                    {
+                        "multi_match": {
+                            "query": word,
+                            "fields": field,
+                            "boost": 1 / (i + 1)  # RRF
+                        }
+                    } for i, field in enumerate(fieldList)
+                ]
+                }
+            }
+        }
+        return self.es.search(index=index, body=query) """
+    
     #fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]
     def search_either_should_must(self,index, fqList, opt="should"):
         if opt != "should":

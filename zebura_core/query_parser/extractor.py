@@ -16,6 +16,9 @@ class Extractor:
 
 
     def extract(self,sql):
+        if sql is None:
+            return  None
+        
         if isinstance(sql, list):
             sql = sql[0]
         slots= parse_sql(sql)
@@ -61,9 +64,11 @@ if __name__ == '__main__':
         SELECT column1 FROM table_name LIMIT 10 OFFSET 20;
         SELECT column1 FROM table_name ORDER BY column1 FETCH FIRST 10 ROWS ONLY;"
     """.split(";")
-    for sql in sql_querys:
-        d = te.extract(sql)
-        print(d) 
+    # for sql in sql_querys:
+    #     d = te.extract(sql)
+    #     print(d) 
+    sql ="SELECT 价格 FROM 产品信息表 WHERE 品牌 = '联想' AND 系列 = '小新' AND 产品名 LIKE '%小新%';"
+    print(te.extract(sql))
    
     
 
