@@ -9,7 +9,7 @@ class Executor:
 
     def __init__(self):
         
-        self.es = ESQuery()
+        self.es = ESearcher()
         self.validator = Validator()
 
         funcs = [method for method in dir(self) if callable(getattr(self, method))]
@@ -18,16 +18,16 @@ class Executor:
         self.history = []
         self.tracks = []
 
-    def run(self, action):
-        if not self.check_action(action):
+    def run(self, activity):
+        if not self.check_action(activity):
             return False
-        if not self.assign_tasks(action):
+        if not self.assign_tasks(activity):
             return False
         print('done')
         return True
     
-    def check_action(self, action):
-        flag = self.validator.check_action(action)
+    def check_activity(self, activity):
+        flag = self.validator.check_action(activity)
         if not flag:
             self.tracks.append(f'failed action check')
             return False

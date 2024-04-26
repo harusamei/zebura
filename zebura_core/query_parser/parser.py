@@ -28,8 +28,7 @@ class Parser:
 
     # main function
     async def apply(self, table_name, query) -> dict:
-        
-        
+         
         # 1. Normalize the query to sql format by LLM
         if not self.norm.gen_prompts(table_name):
             print("ERR: no such table in schema")

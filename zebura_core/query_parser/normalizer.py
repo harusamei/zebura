@@ -7,7 +7,7 @@ import asyncio
 import re
 sys.path.insert(0, os.getcwd())
 from settings import z_config
-from LLM.gptAgent import GPTAgent
+from LLM.llm_agent import LLMAgent
 from knowledges.schema_loader import Loader
 import constants
 import logging
@@ -18,7 +18,7 @@ class Normalizer:
     
     def __init__(self,sa="You are a SQL programmer, you can generate SQL queries based on natural language input."):
         # context for the LLM
-        self.llm = GPTAgent(sa)
+        self.llm = LLMAgent(sa)
         self.sch_loader = Loader(z_config['Tables','schema'])
         # prompt有3级，sa最底层，default是中间层,task special，prompt是最上层,db special
         self.default ={
@@ -88,7 +88,7 @@ class Normalizer:
         return result
 
     async def ask_agent(self, querys, prompt):
-        results = self.llm.ask_query_list(querys, prompt)
+        results = await self.llm.ask_query_list(querys, prompt)
         return results
     
     def extract_sql(self,result:str):
@@ -167,14 +167,7 @@ if __name__ == '__main__':
     
     cp = pcsv()
     rows = cp.read_csv('sql_result.csv')
-    for i, row in enumerate(rows):
-        result = row['sql_zh']
-        row['sql_zh'] = normalizer.extract_sql(result)
-        result = row['sql_en']
-        row['sql_en'] = normalizer.extract_sql(result)  
-    cp.write_csv(rows, 'sql_result_new.csv')
-
-    sys.exit()
+    
     normalizer.gen_prompts('product')
     queries = [row['query'] for row in rows]
     results,en_results, rewrite = asyncio.run(normalizer.bulk_sql(queries))
