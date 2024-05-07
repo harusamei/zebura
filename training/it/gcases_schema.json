@@ -1,0 +1,51 @@
+﻿{
+    "_comment":"典型查询例子及执行操作",
+    "tables": [
+        {
+            "table": "gcases",
+            "es_index": "goldencases",
+            "columns": [
+                {
+                    "column_en": "no",
+                    "type": "short",
+                    "column_zh": "序号"
+                },
+                {
+                    "column_en": "query",
+                    "type": "text",
+                    "column_zh": "问题"
+                },
+                {
+                    "column_en": "qembedding",
+                    "type": "dense_vector",
+                    "column_zh": "句向量"
+                },
+                {
+                    "column_en": "category",
+                    "type": "keyword",
+                    "column_zh": "类别"
+                },
+                {
+                    "column_en": "action",
+                    "type": "text",
+                    "column_zh": "流程"
+                },
+                {
+                    "column_en": "explain",
+                    "type": "text",
+                    "column_zh": "解释"
+                },
+                {
+                    "column_en": "sql",
+                    "type": "text",
+                    "column_zh": "sql"
+                },
+                {
+                    "column_en": "mapping",
+                    "type": "text",
+                    "column_zh": "替换项"
+                }
+            ]
+        }
+    ]
+}
