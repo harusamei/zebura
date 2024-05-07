@@ -5,20 +5,13 @@ import os
 import asyncio
 sys.path.insert(0, os.getcwd())
 import settings
-from agent_base import AgentBase
+from zebura_core.LLM.llm_base import LLMBase
 
-class LLMAgent(AgentBase):
+class LLMAgent(LLMBase):
    
-    def __init__(self, sa, agentName="CHATANYWHERE", model="gpt-3.5-turbo"):
-        # set self awareness/ 最底层的prompt
-        self.sa = sa
+    def __init__(self, agentName="CHATANYWHERE", model="gpt-3.5-turbo"):
         super().__init__(agentName,model)
         
-        
-    def update_sa(self, sa:str):
-        old_sa = self.sa
-        self.sa = sa
-        return old_sa
 
     async def ask_query_list(self, queries:list[str], prompt:str) -> list[str]:
         # create a task list
@@ -27,7 +20,7 @@ class LLMAgent(AgentBase):
         
         tasks = []
         # 只处理前1000
-        prompt = self.sa+ prompt
+        prompt = prompt
         for query in queries[:1000]:
             query= query 
             task = asyncio.create_task(self.ask_query(query,prompt))
@@ -64,16 +57,16 @@ class LLMAgent(AgentBase):
 
 # Example usage  
 if __name__ == '__main__':
-
+    import zebura_core.LLM.agent_prompt as ap
+    print(ap.roles)
     querys = ["我有一个电脑产品表，表名是products, column names有price, product name, cpu, release date, 下面句子如果与电脑相关，请转换为SQL查询， 如果不相关，请输出 not sql",
                 "请问联想小新电脑多少钱",
                 "联想小新电脑多少钱",
                 "请问小新电脑是什么品牌的",
                 "今天天气挺好的，你觉得呢？"]
 
-    agent = LLMAgent("你是一个编程助手，可以将自然语言转化为SQL查询")
-
-    answers = asyncio.run(agent.ask_query(querys[1],querys[0]))
+    agent = LLMAgent()
+    answers = asyncio.run(agent.ask_query(querys[1],ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
     print(answers)
-    results = asyncio.run(agent.ask_query_list(querys[1:],querys[0]))
+    results = asyncio.run(agent.ask_query_list(querys[1:],ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
     print(results)

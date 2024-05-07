@@ -8,7 +8,7 @@ import openai
 
 # openai 转发, https://peiqishop.cn/
 # agentName： OPENAI, CHATANYWHERE
-class AgentBase:
+class LLMBase:
 
     def __init__(self,agentName:str,model="gpt-3.5-turbo"):
 
@@ -58,7 +58,7 @@ class AgentBase:
 
 # Example usage
 if __name__ == '__main__':
-    # agent = AgentBase('OPENAI')
-    # print(agent.postMessage([{'role': 'user', 'content': 'Who won the world series in 2020?'}]))
-    agent = AgentBase('CHATANYWHERE')
+    agent = LLMBase('OPENAI')
+    print(agent.postMessage([{'role': 'user', 'content': 'Who won the world series in 2020?'}]))
+    agent = LLMBase('CHATANYWHERE')
     print(agent.postMessage([{'role': 'user', 'content': 'Who won the world series in 2020?'}]))
