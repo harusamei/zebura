@@ -4,7 +4,7 @@ import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 from settings import z_config
-from tools.embedding import Embedding
+from utils.embedding import Embedding
 from elasticsearch import Elasticsearch
 
 class ES_BASE:

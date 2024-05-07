@@ -24,10 +24,6 @@ class Settings:
                     sys.path.insert(0, os.path.join(root, dir))
         # remove duplicates
         sys.path= list(dict.fromkeys(path.lower() for path in sys.path))
-
-        # set os.environ
-        for key in self.config['LLM']:
-            os.environ[key] = self.config['LLM'][key]
        
     def __getitem__(self, keys):
         return self.config.get(keys[0], keys[1])
@@ -41,6 +37,5 @@ if __name__ == '__main__':
 
     Settings()
     print("\n".join(sys.path))
-    print("\n".join(os.environ.keys()))
-    z_config['LLM','OPENAI_KEY']
+    print(z_config['LLM','OPENAI_KEY'])
 

@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 from settings import z_config
-from tools.es_searcher import ESearcher
+from utils.es_searcher import ESearcher
 from validator import Validator
 # 数据存放方式不同，需要重新设计
 class Executor:

@@ -3,7 +3,7 @@ import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
-from tools.es_base import ES_BASE
+from utils.es_base import ES_BASE
 
 class ESearcher(ES_BASE):
 

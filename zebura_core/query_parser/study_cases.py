@@ -3,10 +3,9 @@ import os
 import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-import settings
-from tools.es_searcher import ESearcher
+from settings import z_config
+from utils.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
-import constants
 
 class CaseStudy:
         
@@ -15,7 +14,7 @@ class CaseStudy:
             self.es = ESearcher()
             # load schema of goodcases db
             cwd = os.getcwd()
-            name = os.environ.get('CASE_STUDY_SCHEMA')  # 'datasets\gcases_schema.json'
+            name = z_config['Training','case_schema']  # 'datasets\gcases_schema.json'
             self.loader = Loader(os.path.join(cwd, name))
 
             self.gcase_index = self.loader.get_index_nameList()[0]  # 'gcases'

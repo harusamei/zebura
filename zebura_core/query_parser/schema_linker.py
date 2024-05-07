@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, os.getcwd())
 import settings
 from knowledges.schema_loader import Loader
-from tools.compare import similarity
+from utils.compare import similarity
 
 # schema linking, for table, column
 class Sch_linking:
@@ -91,7 +91,7 @@ class Sch_linking:
 # Example usage
 if __name__ == '__main__':
     cwd = os.getcwd()
-    name= 'datasets\products_schema.json'
+    name= 'training\it\products_schema.json'
     sch_linking = Sch_linking(os.path.join(cwd, name))
     slots = {'from': 'products', 'columns': ['brand name', 'item price'], 'conditions': [{'column': 'brand', 'op': '=', 'value': '联想'}]}
     slots = {

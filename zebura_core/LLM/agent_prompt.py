@@ -5,11 +5,12 @@ roles={}
 tasks={}            # task description
 lang_mappings={}    # prompt 对应的多语言翻译
 
+# "You are a SQL programmer, you can generate SQL queries based on natural language input."
+
 roles["sql_assistant"]="You are SQL programmer, you can understand the natural language input and converse it into SQL statement."
 roles["doc_assistant"]="You are a document assistant responsible for helping users create, edit, and format various types of documents."
 
 tasks["rewrite"]= "Please rewrite the following sentence to clearly express the query intent and remove irrelevant information. If you cannot rewrite it, please output the original sentence."
-#tasks["nl2sql"]="If the following sentence is a data query, please convert it to an SQL statement. Otherwise, output no sql, only the SQL part."
 tasks["nl2sql"]="complete SQL query only and with no explaination"
 tasks["summary"] ="Please generate a summary of the following document content, no more than 100 words"
 

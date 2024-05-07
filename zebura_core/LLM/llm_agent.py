@@ -59,8 +59,7 @@ class LLMAgent(LLMBase):
 if __name__ == '__main__':
     import zebura_core.LLM.agent_prompt as ap
     print(ap.roles)
-    querys = ["我有一个电脑产品表，表名是products, column names有price, product name, cpu, release date, 下面句子如果与电脑相关，请转换为SQL查询， 如果不相关，请输出 not sql",
-                "请问联想小新电脑多少钱",
+    querys = [  "请问联想小新电脑多少钱",
                 "联想小新电脑多少钱",
                 "请问小新电脑是什么品牌的",
                 "今天天气挺好的，你觉得呢？"]
@@ -68,5 +67,5 @@ if __name__ == '__main__':
     agent = LLMAgent()
     answers = asyncio.run(agent.ask_query(querys[1],ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
     print(answers)
-    results = asyncio.run(agent.ask_query_list(querys[1:],ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
+    results = asyncio.run(agent.ask_query_list(querys,ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
     print(results)

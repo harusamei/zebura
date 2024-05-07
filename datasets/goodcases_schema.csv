@@ -1,9 +1,0 @@
-﻿column_en,type,column_zh
-no,short,序号
-query,text,问题
-qembedding,dense_vector,句向量
-category,keyword,类别
-action,text,流程
-explain,text,解释
-sql,text,sql
-mapping,text,替换项

@@ -4,8 +4,8 @@ import os
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
-from tools.es_base import ES_BASE
-from tools.embedding import Embedding
+from utils.es_base import ES_BASE
+from utils.embedding import Embedding
 
 # base methods ['all_indices', 'get_fields', 'is_exist_field', 'search_vector', 'search_word']
 class ESTester(ES_BASE):

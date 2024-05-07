@@ -5,7 +5,7 @@ if os.getcwd().lower() not in sys.path:
 import settings
 from embedding import Embedding
 from zebura_core.knowledges.schema_loader import Loader
-from tools.es_base import ES_BASE
+from utils.es_base import ES_BASE
 from csv_processor import pcsv
 from datetime import datetime
 import re

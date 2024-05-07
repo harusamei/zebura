@@ -11,18 +11,18 @@ from settings import z_config
 from zebura_core.query_parser.extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
-from activity_generator.study_cases import CaseStudy
+from zebura_core.query_parser.study_cases import CaseStudy
+import zebura_core.LLM.agent_prompt as ap
 
 class Parser:
         
     def __init__(self):
-        sa="You are a SQL programmer, you can generate SQL queries based on natural language input."
-        self.norm =Normalizer(sa)
+        self.norm =Normalizer()
         self.te = Extractor()
         self.gc = CaseStudy()
 
         cwd = os.getcwd()
-        name = z_config['Tables','schema']  # 'datasets\products_schema.json'
+        name = z_config['Training','db_schema']  # 'training\it\products_schema.json'
         self.sl = Sch_linking(os.path.join(cwd, name))
         
 
@@ -30,18 +30,24 @@ class Parser:
     async def apply(self, table_name, query) -> dict:
          
         # 1. Normalize the query to sql format by LLM
-        if not self.norm.gen_prompts(table_name):
+        prompts = self.norm.gen_prompts(table_name)
+        if prompts is None:
             print("ERR: no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
+        # prompt组成：self awareness + task description + table schema
+        prompt_zh = ap.roles["sql_assistant"]+ap.tasks["nl2sql"]+prompts['sql_zh']
         
-        prompt_zh = self.norm.prompt["sql_zh"]
-        # sql_1 存在失败可能，为None, 但继续
+        # few shots from existed good cases
+        results = self.find_good_cases(query,topK=3)
+        shot_prompt = self.gen_shots(results)
+        prompt_zh += shot_prompt
+        print("prompt_zh:",prompt_zh)
+        # sql_1 失败为None
         sql_1 = await self.norm.apply(query, prompt_zh)
+        if sql_1 is None:
+            print("ERR: failed to normalize query")
+            return {"status":False,"msg":"no sql query generated"}
         
-        results = self.find_good_cases(query,sql_1)
-        isCred = self.is_credible(results,query)
-        if sql_1 is None and isCred:
-            sql_1 = results[0]['doc']['sql']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
@@ -51,13 +57,16 @@ class Parser:
         # sql1, slots1 为修正前，sql2, slots2 为修正后
         return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}
     
-    # 怎么知道检索的是对的？ todo
-    def is_credible(self,results,query) -> bool:
-        return True
+    def gen_shots(self,results):
+        shot_prompt = ""
+        for res in results:
+            shot_prompt += f"case: {res['doc']['query']}\n"
+            shot_prompt += f"sql: {res['doc']['sql']}\n"
+        return shot_prompt
     
-    def find_good_cases(self,query,sql):
-        results = self.gc.assemble_find(query,sql)
-        return results
+    
+    def find_good_cases(self,query,sql=None,topK=5):
+        return self.gc.assemble_find(query,sql,topK)
     
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):
