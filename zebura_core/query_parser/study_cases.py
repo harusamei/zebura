@@ -7,14 +7,15 @@ from settings import z_config
 from utils.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
 
+dtk = 5     # default top k for search
 class CaseStudy:
         
         def __init__(self):
             # good cases 存放在ES中，通过ES查询
             self.es = ESearcher()
-            # load schema of goodcases db
+            # load schema of goodcases
             cwd = os.getcwd()
-            name = z_config['Training','case_schema']  # 'datasets\gcases_schema.json'
+            name = z_config['Training','case_schema']  # 'Training\it\gcases_schema.json'
             self.loader = Loader(os.path.join(cwd, name))
 
             self.gcase_index = self.loader.get_index_nameList()[0]  # 'gcases'
@@ -27,17 +28,17 @@ class CaseStudy:
                     raise ValueError(f"Column {col} not found in table {table}")
             
         # 欧氏距离或manhattan distance, _score 越小越相似，区间是[0, +∞)
-        def find_similar_query(self, query, topk=5):
+        def find_similar_query(self, query, topk=dtk):
             index = self.gcase_index
             results = self.es.search_word(index, "query", query, topk)
             return results
         
-        def find_similar_sql(self, sql, topk=5):
+        def find_similar_sql(self, sql, topk=dtk):
             index = self.gcase_index
             results = self.es.search_word(index, "sql", sql, topk)
             return results
         # ES为了保证所有的得分为正，实际使用（1 + 余弦相似度）/ 2，_score [0，1]。得分越接近1，表示两个向量越相似  
-        def find_similar_vector(self, query, topk=5):
+        def find_similar_vector(self, query, topk=dtk):
             index = self.gcase_index
             results = self.es.search_word(index, "qembedding", query, topk)
             return results
@@ -64,7 +65,7 @@ class CaseStudy:
             sorted_docs = sorted(docs.items(), key=lambda item: item[1], reverse=True)
             return sorted_docs
 
-        def assemble_find(self, query, sql=None, topk=5) -> list:
+        def assemble_find(self, query, sql=None, topk=dtk) -> list:
 
             resps = [None]*3
             resps[0] = self.find_similar_query(query, topk)
@@ -98,6 +99,7 @@ class CaseStudy:
 
 # Example usage
 if __name__ == '__main__':
+
     cs = CaseStudy()
     query = 'what the difference between desktop and laptop?'
     sql = 'select * from product where product_name = "联想小新电脑"'
@@ -107,12 +109,4 @@ if __name__ == '__main__':
         print(f"rank:{result['rank']}, score:{result['score']}")
         print(result['doc'].get('query'))
 
-    # Example usage:
-    rank_list1 = [1,2,3,4,5,6]
-    rank_list2 = [5,4,3,2,1,6]
-    rank_list3 = [1, 2, 6]
-    ranks_lists = [rank_list1, rank_list2, rank_list3]
-
-    weighted_rank_list = cs.rrf_weighted(ranks_lists)
-    print("Weighted Rank List:", weighted_rank_list)
    

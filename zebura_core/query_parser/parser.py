@@ -30,17 +30,17 @@ class Parser:
     async def apply(self, table_name, query) -> dict:
          
         # 1. Normalize the query to sql format by LLM
-        prompts = self.norm.gen_prompts(table_name)
+        prompts = self.norm.gen_dbInfo(table_name)
         if prompts is None:
             print("ERR: no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
         # prompt组成：self awareness + task description + table schema
-        prompt_zh = ap.roles["sql_assistant"]+ap.tasks["nl2sql"]+prompts['sql_zh']
+        prompt_zh = f'{ap.roles["sql_assistant"]}\n{ap.tasks["nl2sql"]}\n{prompts["sql_zh"]}'
         
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=3)
         shot_prompt = self.gen_shots(results)
-        prompt_zh += shot_prompt
+        prompt_zh += "\n\n"+shot_prompt
         print("prompt_zh:",prompt_zh)
         # sql_1 失败为None
         sql_1 = await self.norm.apply(query, prompt_zh)
@@ -60,8 +60,8 @@ class Parser:
     def gen_shots(self,results):
         shot_prompt = ""
         for res in results:
-            shot_prompt += f"case: {res['doc']['query']}\n"
-            shot_prompt += f"sql: {res['doc']['sql']}\n"
+            shot_prompt += f"Q: {res['doc']['query']}\n"
+            shot_prompt += f"A: {res['doc']['sql']}\n\n"
         return shot_prompt
     
     

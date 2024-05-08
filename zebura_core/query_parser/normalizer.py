@@ -25,10 +25,12 @@ class Normalizer:
             return None
         
         sql_list = self.extract_sql(result)
+        if len(sql_list) == 0:
+            return None
         return sql_list
 
     # 生成table details of prompts for nl2sql
-    def gen_prompts(self, table_name) -> dict:
+    def gen_dbInfo(self, table_name) -> dict:
         
         table_info = self.sch_loader.get_table_info(table_name)
         if table_info is None:
@@ -38,14 +40,17 @@ class Normalizer:
         columns = self.sch_loader.get_all_columns(table_name)
         columnInfo = [f"{c.get('column_zh')}，其含义是{c.get('description')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
-        sql_zh = f"database schema信息：表名为 {table_info['table_zh']}，用途是{desc}，包含的列分别有：\n{columnInfo}\n"
+        sql_zh = (
+                    f"SQL tables {table_info['table_zh']}，用途是{desc}，"
+                    f"the columns：\n{columnInfo}\n"
+                )
         
         columnInfo = [f"{c.get('column_en')}，meaning is {c.get('description')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         # nothing, 语句太长，分开写
         sql_en = (
-                    f"My database schema information: The table name is {table_name},the purpose is {desc}, "
-                    f"and the columns it contains are as follows:\n{columnInfo}\n"
+                    f"The SQL table is {table_name},the purpose is {desc}, "
+                    f"the columns are as follows:\n{columnInfo}\n"
                 )
         
         return {   
@@ -69,7 +74,7 @@ class Normalizer:
         return results
     
     def extract_sql(self,result:str):
-        # Extract the SQL code from the result
+        # Extract the SQL code from the LLM result
         print(result)
         code_pa = "```sql\n(.*?)\n```"
         matches = re.findall(code_pa, result, re.DOTALL)
@@ -144,9 +149,9 @@ if __name__ == '__main__':
     cp = pcsv()
     rows = cp.read_csv('sql_result.csv')
     
-    prompts = normalizer.gen_prompts('product')
-    sql_zh = ap.roles["sql_assistant"]+ap.tasks["nl2sql"]+prompts['sql_zh']
-    sql_en = ap.roles["sql_assistant"]+ap.tasks["nl2sql"]+prompts['sql_en']
+    prompts = normalizer.gen_dbInfo('product')
+    sql_zh = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['sql_zh']}\n"
+    sql_en = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['sql_en']}\n"
     queries = [row['query'] for row in rows]
     results,en_results, rewrite = asyncio.run(normalizer.bulk_sql(queries,sql_zh,sql_en))
     print(f'query:{len(queries)}, results: {len(results)}, rewrite:{len(rewrite)}')

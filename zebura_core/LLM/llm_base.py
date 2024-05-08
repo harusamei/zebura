@@ -51,7 +51,8 @@ class LLMBase:
         elif self.agentName == 'OPENAI':
             res = self.client.ChatCompletion.create(
                                                         messages=messages,
-                                                        model=self.model
+                                                        model=self.model,
+                                                        stop=["#;\n\n"]
                                                         )
             data = res.choices[0].message.content
         return data
