@@ -31,16 +31,31 @@ class ESOps(ES_BASE):
         self.es.indices.refresh(index=index_name)
 
     # 从es中检索大量结果，并写入文件
-    def write_scan(self, index_name, output_filename):
+    def write_scan(self, index_name, out_csv):
+        import itertools
+
         scroller = scan(self.es, index=index_name, query={"query": {"match_all": {}}})
-        with open(output_filename, "w") as f:
-            count = 0
-            for res in scroller:
-                f.write(str(res))
-                f.write("\n")
-                count += 1
-            f.write(f"index: {index_name}, total: {count}\n")
-        print(f"Scanned {count} documents from index '{index_name}'")
+        scroller, scroller_copy = itertools.tee(scroller)
+
+        keyset = set()
+        for res in scroller:
+            hit = res['_source']
+            keyset.update(hit.keys())
+        keyset = {key for key in keyset if not key.startswith('_') and not key == 'qembedding'}
+        keyset = list(keyset)
+        keyset.sort()
+        print(f"keys: {keyset}")
+
+        csv_rows = []
+        count = 0
+        for res in scroller_copy:
+            hit = res['_source']
+            dict ={key: hit.get(key) for key in keyset}
+            csv_rows.append(dict)
+            count += 1
+        pcsv().write_csv(csv_rows, out_csv)
+
+        print(f"index: {index_name}, total: {count}\n")
     
 
     def delete_doc(self, index_name, doc_id):
@@ -104,21 +119,21 @@ class ESOps(ES_BASE):
 if __name__ == '__main__':
 
     esoper = ESOps()
-    index_name = "leproducts"
-    query = {
-                "product_name": {
-                    "value": ".*小",
-                    "flags" : "ALL"
-                }   
-            }
-    result = esoper.search_with_regexp(index_name, query)
-    query = {
-                "product_name": "小新"
-            }
-    result2 = esoper.search(index_name, query)
-    print(result)
-    print(result2)
+    index_name = "goldencases"
+    # query = {
+    #             "product_name": {
+    #                 "value": ".*小",
+    #                 "flags" : "ALL"
+    #             }   
+    #         }
+    # result = esoper.search_with_regexp(index_name, query)
+    # query = {
+    #             "product_name": "小新"
+    #         }
+    # result2 = esoper.search(index_name, query)
+    # print(result)
+    # print(result2)
 
-    esoper.write_scan(index_name, "leproducts.txt")
+    esoper.write_scan(index_name, "gcases.csv")
    
    
