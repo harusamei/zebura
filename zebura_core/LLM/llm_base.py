@@ -29,7 +29,7 @@ class LLMBase:
                     'Content-Type': 'application/json'
                 }
         try:
-            print(self.postMessage(messages))
+            print("test connection by Q: who are you to LLM\n A:"+self.postMessage(messages))
         except Exception as e:
             raise ValueError("LLM agent is not available",e)
 
