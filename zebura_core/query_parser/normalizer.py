@@ -41,16 +41,16 @@ class Normalizer:
         columnInfo = [f"{c.get('column_zh')}，其含义是{c.get('description')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         sql_zh = (
-                    f"SQL tables {table_info['table_zh']}，用途是{desc}，"
-                    f"the columns：\n{columnInfo}\n"
+                    f"表名是{table_info['table_zh']}，用途是{desc}，包含的"
+                    f"列及其含义如下\n{columnInfo}\n"
                 )
         
         columnInfo = [f"{c.get('column_en')}，meaning is {c.get('description')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         # nothing, 语句太长，分开写
         sql_en = (
-                    f"The SQL table is {table_name},the purpose is {desc}, "
-                    f"the columns are as follows:\n{columnInfo}\n"
+                    f"The table name is {table_name},the purpose is {desc}, "
+                    f"the columns name are as follows:\n{columnInfo}\n"
                 )
         
         return {   

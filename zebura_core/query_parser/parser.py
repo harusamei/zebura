@@ -35,12 +35,15 @@ class Parser:
             print("ERR: no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
         # prompt组成：self awareness + task description + table schema
-        prompt_zh = f'{ap.roles["sql_assistant"]}\n{ap.tasks["nl2sql"]}\n{prompts["sql_zh"]}'
+        prompt_zh = (
+            f'{ap.roles["sql_assistant"]}\n{ap.tasks["nl2sql"]}\n'
+            f'specific details about the database schema:\n{prompts["sql_zh"]}'
+        )
         
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=3)
         shot_prompt = self.gen_shots(results)
-        prompt_zh += "\n\n"+shot_prompt
+        prompt_zh += "\n"+shot_prompt
         print("prompt_zh:",prompt_zh)
         # sql_1 失败为None
         sql_1 = await self.norm.apply(query, prompt_zh)
