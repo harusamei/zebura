@@ -1,4 +1,5 @@
 ﻿no,table_name,column_name,name,name_zh,alias,alias_zh,desc,desc_zh,type,length,,,
+,products,,,,,,"The product database stores product information, inventory, and sales data. The products mainly include Computer, Communication, and Consumer electronics",产品数据库，存放产品信息和产品的库存、销售信息。 产品主要电脑、通讯设备和消费电子产品,,,,,
 ,,brand,,,,,,,,,,,
 ,,color,,,,,,,,,,,
 ,,cpu_brand,,,,,,,,,,,
