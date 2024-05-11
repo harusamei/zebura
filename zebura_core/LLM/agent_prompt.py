@@ -22,6 +22,8 @@ tasks["sql2nl"] ="Create a question based on the given SQL statement."
 tasks["create_query"] ="Create a query based on the given table and column names."
 tasks["complex_nl2sql"] ="Use the intermediate representation and the database schema to generate the SQL queries for each of the questions"
 tasks["correct_sql"] ="For the given question, use the provided tables, columns to fix the given SQL query for any issues. If there are any problems, fix them. If there are no issues, return SQL query as is."
+tasks["term_definition"] ="Please provide definition for given term related to database table column names. "
+tasks["term_alias"] ="Please provide the alias of the given term."
 
 lang_mappings["zh_doc_assistant"]="你是一名文档助手，负责帮助用户创建、编辑和格式化各种类型的文档。"
 lang_mappings["zh_sql_assistant"]="你是一名SQL程序员，能够将自然语言查询转换为 SQL语句 。"

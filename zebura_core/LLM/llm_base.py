@@ -16,7 +16,7 @@ class LLMBase:
         sk = z_config['LLM',f'{agentName}_KEY']
         
         self.model = model
-        messages=[{'role': 'user', 'content': 'this is test, are you llama developed by metadata?'}]
+        messages=[{'role': 'user', 'content': 'who are you and where are you from?'}]
         if agentName == 'OPENAI':
             openai.api_key=sk
             self.client = openai
@@ -29,14 +29,14 @@ class LLMBase:
                     'Content-Type': 'application/json'
                 }
         try:
-            print("test connection by Q: who are you to LLM\n A:"+self.postMessage(messages))
+            print(f"connect GPT through {agentName}\n Message:"+self.postMessage(messages))
         except Exception as e:
             raise ValueError("LLM agent is not available",e)
 
     # 不同的agent有不同的处理方式
     # 在OpenAI的GPT-3聊天模型中，`messages` 是一个列表，用于表示一系列的对话消息。
     # `role`：这个字段表示消息的发送者。它可以是 `"system"`、`"user"` 或 `"assistant"`。
-    # "system"` 通常用于设置对话的初始上下文，`"user"` 和 `"assistant"` 分别表示用户和助手的消息。
+    # "system"` 通常用于设置对话的初始背景，`"user"` 和 `"assistant"` 分别表示用户和助手的消息。
     # `content`：这个字段表示消息的内容，也就是实际的文本。
 
     def postMessage(self,messages:list):
