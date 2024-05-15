@@ -1,4 +1,5 @@
 import configparser
+import logging
 import sys
 import os
 
@@ -24,6 +25,11 @@ class Settings:
                     sys.path.insert(0, os.path.join(root, dir))
         # remove duplicates
         sys.path= list(dict.fromkeys(path.lower() for path in sys.path))
+
+        # logging level
+        log_level = self.config.get('Logging', 'level')
+        logging.basicConfig(level=log_level, format='%(levelname)s - %(message)s')
+
        
     def __getitem__(self, keys):
         return self.config.get(keys[0], keys[1])
@@ -38,4 +44,10 @@ if __name__ == '__main__':
     Settings()
     print("\n".join(sys.path))
     print(z_config['LLM','OPENAI_KEY'])
+    current_level = logging.getLogger().getEffectiveLevel()
+    print(f'{current_level} - {logging.getLevelName(current_level)}')
+    message = "This is a test message"
+    logging.debug(message)
+    logging.info(message)
+    logging.warning(message)
 
