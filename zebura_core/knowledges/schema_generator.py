@@ -12,8 +12,9 @@ from settings import z_config
 from LLM.llm_agent import LLMAgent
 import LLM.agent_prompt as ap
 from utils.csv_processor import pcsv
+import logging
+from constants import C_PROJECT_SHEET as project
 
-project = "project"     # project sheet name
 class Scanner:
     def __init__(self):
         self.pcsv = pcsv()
@@ -21,13 +22,15 @@ class Scanner:
         self.table_keys = ["table_name", "desc", "desc_zh", "name_zh", "name", "alias_zh", "alias", "columns"]
         self.column_keys = ["column_name", "name_zh", "name", "alias_zh", "alias","type", "length", "desc", "desc_zh"]
         self.tableInfo = {}
+        logging.debug("Scanner init success")
+        
     
     # 从csv文件中读取table信息，并对desc和alias进行补全
     # 一次只处理一个table
     async def scan_table(self, csv_filename):
         csv_rows = self.pcsv.read_csv(csv_filename)
         if csv_rows[0].get("table_name") is None:
-            print("Error: table_name not found in csv")
+            logging.error("table_name not found in csv")
             return None
 
         self.tableInfo= csv_rows[0]
@@ -165,12 +168,10 @@ class Scanner:
             ]
         }
         # sql: 模型结果； gt: ground truth 正确SQL; activity: 执行操作； explain: 解释； category: 类别
-        fields = ["query", "qemb", "sql", "gt", "activity","explain","category", "created_date"]  
-        for field in fields:
-            if field == "qemb":
-                schema["tables"][0]["columns"].append({"column_name": field, "type": "vector"})
-            else:
-                schema["tables"][0]["columns"].append({"column_name": field, "type": "text"})
+        fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"]  
+        types = ["text", "text", "dense_vector", "text", "text", "text", "text", "keyword", "date"]
+        for i, field in enumerate(fields):
+            schema["tables"][0]["columns"].append({"column_name": field, "type": types[i]})
         
         return schema
 
@@ -190,4 +191,4 @@ class Scanner:
 if __name__ == '__main__':
     scanner = Scanner()
     #asyncio.run(scanner.scan_table("C:\something\zebura\\training\it\dbInfo\product_info.csv"))
-    scanner.gen_schema("C:\something\zebura\\training\it\dbInfo\metadata.xlsx")
+    scanner.gen_schema("C:\something\zebura\\training\ikura\dbInfo\metadata.xlsx")

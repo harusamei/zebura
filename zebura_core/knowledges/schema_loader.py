@@ -2,16 +2,17 @@
 import os
 import json
 from typing import Dict
+import logging
 
-# load schema of tables
 class Loader:
     def __init__(self,file):
         
         # schema 必须存在，否则raise error
         self._info = self.load_schema(file)
-        if self._info is None or "tables" not in self._info:
-            raise ValueError("Cannot load the schema file")
+        if "tables" not in self._info:
+            logging.critical("tables not in schema file")
         self.tables = self._info["tables"] # [{}],每个表一个dict
+        logging.debug("Loader init success")
         
     def load_schema(self,file) -> Dict[str,str]:
         
@@ -19,9 +20,8 @@ class Loader:
         try:
             with open(file, 'r',encoding='utf-8-sig') as file:
                 info_dict = json.load(file)
-        except:
-            return None
-        
+        except Exception as e:
+            raise ValueError(f"Cannot load the schema file{e}")            
         return info_dict
     
     def get_table_nameList(self):
@@ -42,8 +42,6 @@ class Loader:
         result = next((column for column in columns if column["column_name"] == columnName), None)
         return result
     
-    # def __getitem__(self, key):
-    #     return self._info.get(key)
 
 # Example usage
 if __name__ == '__main__':
