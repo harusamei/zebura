@@ -52,7 +52,8 @@ class LLMBase:
             res = self.client.ChatCompletion.create(
                                                         messages=messages,
                                                         model=self.model,
-                                                        stop=["#;\n\n"]
+                                                        stop=["#;\n\n"],
+                                                        temperature=0
                                                         )
             data = res.choices[0].message.content
         return data
