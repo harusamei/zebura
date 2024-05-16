@@ -23,9 +23,9 @@ class ES_BASE:
         self.es_version = f"es version: {self.es.info()['version']['number']}"
 
     @property
-    def all_indices(self):
+    def get_all_indices(self):
         return self.es.cat.indices(format='json')
-    
+       
     def get_fields(self,index):
         mapping= self.es.indices.get_mapping(index=index)
         fields = mapping[index]['mappings']['properties']
@@ -94,7 +94,14 @@ class ES_BASE:
                     "size": size
                 }
         return query
-    
+    #是否存在index
+    def is_index_exist(self,index_name):
+
+        if self.es.indices.exists(index=index_name):
+            return True
+        else: 
+            return False
+     
     #查询是否存在一组fields
     def is_exist_field(self,index, fieldList):
         fields = self.get_fields(index=index)

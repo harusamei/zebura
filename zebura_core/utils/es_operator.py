@@ -1,13 +1,12 @@
-from elasticsearch import Elasticsearch
+#from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 from csv_processor import pcsv
 import os
 import sys
-if os.getcwd().lower() not in sys.path:
-    sys.path.insert(0, os.getcwd().lower())
+sys.path.insert(0, os.getcwd())
 import settings
 from utils.es_base import ES_BASE
-
+from constants import D_TOP_K as d_size
 class ESOps(ES_BASE):
 
     def __init__(self):
@@ -17,7 +16,10 @@ class ESOps(ES_BASE):
 
     # docs是一个list，每个元素是一个dict
     def insert_docs(self, index_name, docs):
-              
+        if not docs or len(docs) == 0:
+            print("No documents to insert.")
+            return 
+             
         print(f"Inserting {len(docs)} documents into index '{index_name}'")
         new_docs = list(map(lambda doc:[
                                         {"index": {"_index": index_name}},
@@ -58,13 +60,18 @@ class ESOps(ES_BASE):
         print(f"index: {index_name}, total: {count}\n")
     
 
-    def delete_doc(self, index_name, doc_id):
-        
+    def delete_doc(self, index_name, doc_id):    
         exists = self.es.exists(index=index_name, id=doc_id)
         if exists:
             self.es.delete(index=index_name, id=doc_id)
         self.es.indices.refresh(index=index_name)
-
+        
+    # remove multiple docs
+    def delete_docs(self, index_name, doc_ids):
+        for doc_id in doc_ids:
+            self.delete_doc(index_name, doc_id)
+        self.es.indices.refresh(index=index_name)
+    
     def update_doc_field(self, index_name, doc_id, field, new_value):
         body = {
             "doc": {
@@ -76,10 +83,15 @@ class ESOps(ES_BASE):
         return res
 
 
-    def search(self, index_name, qbody):
-        result = self.es.search(index=index_name, body={"query": {"match": qbody}})
+    def search(self, index_name, qbody, size=d_size):
+        result = self.es.search(index=index_name, body={"query": {"match": qbody}},size=size)
         return result
-
+    
+    # 完全匹配查询，不对输入进行分析
+    def term_search(self, index_name, qbody,max_size=d_size):
+        result = self.es.search(index=index_name, body={"query": {"term": qbody}},size=max_size)
+        return result
+    
     # regexp_query = "小新.*本"  # 匹配小新开头的各种本
     # {
     #     "field_name": {

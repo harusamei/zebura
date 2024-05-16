@@ -20,39 +20,12 @@ class ESIndex(ES_BASE):
 
         base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
         base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
-        print("base attributes",base_attrs)
+        # print("base attributes",base_attrs)
         print("base methods",base_methods)
 
         self.info_loader = None
-        # 创建index的schema
-        self.index_schema = {}
         self.analyzer = "cn_analyzer"
 
-    def is_index_exist(self,index_name):
-
-        if self.es.indices.exists(index=index_name):
-            return True
-        else: 
-            return False                              
-
-#     schema = {
-#             "category": {
-#                 "type": "text",
-#                 "fields": {
-#                     "keyword": {
-#                         "type": "keyword",
-#                         "ignore_above": 256
-#                         }
-#                     }
-#             },
-#             "content": {
-#                 "type": "text",
-#                 "analyzer":"cn_analyzer"
-#             },
-#             "embedding": {
-#                 "type": "dense_vector"
-#             }
-#     }
     def set_schema(self, schema_file):
         self.info_loader = Loader(schema_file)
 
@@ -75,31 +48,31 @@ class ESIndex(ES_BASE):
             print(f"Table '{table_name}' not found in schema.")
             return False
         
-        index_name = table_info["es_index"]
+        index_name = table_name
         
         # 从table的columns中抽取index的schema
-        self.index_schema = {}
+        es_schema = {}
         columns = table_info.get('columns')
         if not columns:
             print(f"Table '{table_name}' not found in schema.")
             return False
         
         for column in columns:
-            field_name = column["column_en"]
+            field_name = column["column_name"]
             field_type = column.get("type")
             if not field_type:
                 field_type = "text"
-            self.index_schema[field_name] = {"type": field_type}
+            es_schema[field_name] = {"type": field_type}
             if field_type == "text":
-                self.index_schema[field_name]["analyzer"] = self.analyzer
+                es_schema[field_name]["analyzer"] = self.analyzer
         
         # 创建索引
         if self.is_index_exist(index_name):
             print(f"Index '{index_name}' already exists.")
         else:
-            self.create_index(index_name, self.index_schema)
+            self.create_index(index_name, es_schema)
         # 加载数据
-        return self.load_csv_data(index_name, data_file,size)
+        return self.load_csv_data(index_name, data_file,es_schema=es_schema,size=size)
 
 
     # 创建索引
@@ -139,7 +112,7 @@ class ESIndex(ES_BASE):
         return True
     
     # size=负数,None，表示全部加载
-    def load_csv_data(self,index_name, data_filename, size=-1):
+    def load_csv_data(self,index_name, data_filename, es_schema, size=-1):
 
         mypcsv = pcsv()
         csv_rows = mypcsv.read_csv(data_filename,size)
@@ -151,19 +124,32 @@ class ESIndex(ES_BASE):
             # 已经在Index里面的数据不需要再次插入
             if doc.get('uid'):
                 continue
-            self.format_doc(doc)
+            self.format_doc(doc,es_schema)
             docs.append(doc)
 
         # 计算文本的embedding
+        docs = self.complete_embs(docs, es_schema)
+                
+        if self.insert_docs(index_name, docs):
+            print(f"Data loaded into index '{index_name}' successfully.")
+            return True
+        else:
+            print(f"Failed to load data into index '{index_name}'.")
+            return False
+    # 补全embedding
+    def complete_embs(self, docs, es_schema):
+        # 计算文本的embedding
         denseSet = []
-        for field in self.index_schema.keys():
-            if self.index_schema[field]['type'] == 'dense_vector':
+        for field in es_schema.keys():
+            if es_schema[field]['type'] == 'dense_vector':
                 denseSet.append(field)
 
         # 如果有dense_vector字段，需要计算embedding
         if len(denseSet) >0:
             self.set_embedding()
-
+        else:       # 没有dense_vector字段，不需要计算embedding
+            return docs
+        
         for doc in docs:
             texts = []
             # embedding之前该field存放原始文本
@@ -172,32 +158,24 @@ class ESIndex(ES_BASE):
             embs = self.embedding.get_embedding(texts)
             for i, field in enumerate(denseSet):
                 doc[field] = embs[i].tolist()
-                
-        if self.insert_docs(index_name, docs):
-            print(f"Data loaded into index '{index_name}' successfully.")
-            return True
-        else:
-            print(f"Failed to load data into index '{index_name}'.")
-            return False
-        
+
+        return docs
+       
     def insert_docs(self,index_name, docs):
-        # 一个doc是dict，多个doc是list
-        if isinstance(docs, dict):
-            self.es.index(index=index_name, body=docs)
-        else:
-            print(f"Inserting {len(docs)} documents into index '{index_name}'")
-            new_docs = list(map(lambda doc:[
-                                            {"index": {"_index": index_name}},
-                                            doc],
-                                docs))
-            new_docs = sum(new_docs,[])
-            response = self.es.bulk(index=index_name, body=new_docs)
+        if docs is None or len(docs) == 0:
+            return None
         
+        print(f"Inserting {len(docs)} documents into index '{index_name}'")
+        new_docs = list(map(lambda doc:[
+                                        {"index": {"_index": index_name}},
+                                        doc],
+                            docs))
+        new_docs = sum(new_docs,[])
+        response = self.es.bulk(index=index_name, body=new_docs)     
         return response
     
     # 格式规范化
-    def format_doc(self, doc):
-
+    def format_doc(self, doc,es_schema):
         delkeys = []
         # clear empty fileds
         for key in doc.keys():
@@ -209,17 +187,28 @@ class ESIndex(ES_BASE):
         dateSet=[]
         shortSet=[]
         NumSet=[]
-        for key in self.index_schema.keys():
-            if self.index_schema[key]['type'] == 'date':
+        for key in es_schema.keys():
+            if es_schema[key]['type'] == 'date':
                 dateSet.append(key)
-            elif self.index_schema[key]['type'] == 'short':
+            elif es_schema[key]['type'] == 'short':
                 shortSet.append(key)
-            elif self.index_schema[key]['type'] in ['float','integer','long','double','half_float','scaled_float','byte']:
+            elif es_schema[key]['type'] in ['float','integer','long','double','half_float','scaled_float','byte']:
                 NumSet.append(key)
         # date format
+        now = datetime.now()
         for key in dateSet:
-            date_str = doc[key]
-            date_obj = datetime.strptime(date_str, '%Y/%m/%d')
+            date_str = doc.get(key)
+            if date_str is None or date_str == '':
+                date_str = now.strftime('%Y/%m/%d')
+            # 日期格式统一为yyyy-mm-dd
+            if re.match(r'\d{4}/\d{2}/\d{2}', date_str):
+                date_obj = datetime.strptime(date_str, '%Y/%m/%d')
+            elif re.match(r'\d{4}-\d{2}-\d{2}', date_str):
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            else:
+                date_str = now.strftime('%Y/%m/%d')
+                date_obj = datetime.strptime(date_str, '%Y/%m/%d')
+            
             doc[key] = date_obj.strftime('%Y-%m-%d')
         
         # digit format  
@@ -241,13 +230,11 @@ class ESIndex(ES_BASE):
 if __name__ == '__main__':
 
     cwd = os.getcwd()
-    name = 'datasets\\gcases_schema.json'
+    name = 'dbaccess\\ikura\\ikura_meta.json'
     sch_file = os.path.join(cwd, name)
     
     escreator = ESIndex()
     escreator.set_schema(sch_file)
-    #'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
-    escreator.store_table('gcases', 'datasets\\goodcases.csv')
-    results = escreator.search('goldencases', {'query': '鼠标'})
+    escreator.store_table('sales_info', os.path.join(cwd,'dbaccess\\ikura\\leproducts.csv'))
+    results = escreator.search('sales_info', {'product_name': '鼠标'})
     print(results)
-

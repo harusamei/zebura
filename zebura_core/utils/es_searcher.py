@@ -9,11 +9,9 @@ class ESearcher(ES_BASE):
 
     def __init__(self):
        super().__init__()
-       print(self.es_version)
        base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
        base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
-       print("base attributes",base_attrs)
-       print("base methods",base_methods)
+       
        
     # 使用"fields": ["*"], 表示所有字段
     def search_fields(self,index,word,fieldList):
@@ -184,7 +182,7 @@ class ESearcher(ES_BASE):
         return hits
 
     @staticmethod
-    def asctable_results(response, separator='\t'):
+    def asctable_results(response, separator='\t'): # simple data visualization
         dict_array = [hit['_source'] for hit in response['hits']['hits']]   
         # 获取所有的键（列名）
         headers = dict_array[0].keys()
@@ -196,12 +194,6 @@ class ESearcher(ES_BASE):
         table = '\n'.join([header_row] + data_rows)
         print(table)
     
-    #用户的问题是“请问是否有叫小新的产品”， 请根据下面的查询结果回复用户的问题
-    @staticmethod
-    def generate_answer(query,response):
-        print("about %s, Got %d Hits:" % (query,response['hits']['total']['value']))
-        print(response)
-
     
 
 # Example usage
