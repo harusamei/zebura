@@ -29,6 +29,8 @@ class Settings:
         # logging level
         log_level = self.config.get('Logging', 'level')
         logging.basicConfig(level=log_level, format='%(levelname)s - %(message)s')
+        #current_level = logging.getLogger().getEffectiveLevel()
+        print(f'{log_level} - {logging.getLevelName(log_level)}')
 
        
     def __getitem__(self, keys):
@@ -44,10 +46,12 @@ if __name__ == '__main__':
     Settings()
     print("\n".join(sys.path))
     print(z_config['LLM','OPENAI_KEY'])
-    current_level = logging.getLogger().getEffectiveLevel()
-    print(f'{current_level} - {logging.getLevelName(current_level)}')
-    message = "This is a test message"
+    
+    message = "logging message"
     logging.debug(message)
     logging.info(message)
     logging.warning(message)
+    logging.error(message)
+    logging.critical(message)
+
 
