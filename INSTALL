@@ -1,0 +1,7 @@
+pip --proxy=http://localhost:7890 install -r ./requirements
+
+es安装的插件
+sudo bin/elasticsearch-plugin install analysis-smartcn
+
+
+chainlit run server/talker.py -w

@@ -239,15 +239,18 @@ class ESIndex(ES_BASE):
     
 # examples usage
 if __name__ == '__main__':
-
     cwd = os.getcwd()
-    name = 'datasets\\gcases_schema.json'
+    # name = 'datasets\\gcases_schema.json'
+    name = 'training\\it\\gcases_schema.json'
     sch_file = os.path.join(cwd, name)
     
     escreator = ESIndex()
-    escreator.set_schema(sch_file)
+    # escreator.set_schema(sch_file)
+
+
     #'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
-    escreator.store_table('gcases', 'datasets\\goodcases.csv')
+    # escreator.store_table('gcases', 'datasets\\goodcases.csv')
+    escreator.store_table('gcases', 'datasets\\gcases.csv')
     results = escreator.search('goldencases', {'query': '鼠标'})
     print(results)
 
