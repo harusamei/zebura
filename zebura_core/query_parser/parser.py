@@ -11,7 +11,7 @@ from settings import z_config
 from zebura_core.query_parser.extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
-from zebura_core.query_parser.study_cases import CaseStudy
+from zebura_core.case_retriever.study_cases import CaseStudy
 import zebura_core.LLM.agent_prompt as ap
 
 class Parser:

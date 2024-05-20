@@ -30,17 +30,17 @@ class CaseStudy:
         # 欧氏距离或manhattan distance, _score 越小越相似，区间是[0, +∞)
         def find_similar_query(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "query", query, topk)
+            results = self.es.search(index, "query", query, topk)
             return results
         
         def find_similar_sql(self, sql, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "sql", sql, topk)
+            results = self.es.search(index, "sql", sql, topk)
             return results
         # ES为了保证所有的得分为正，实际使用（1 + 余弦相似度）/ 2，_score [0，1]。得分越接近1，表示两个向量越相似  
         def find_similar_vector(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "qembedding", query, topk)
+            results = self.es.search(index, "qembedding", query, topk)
             return results
         
         """

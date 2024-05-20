@@ -33,11 +33,11 @@ class Validator:
     def __init__(self) -> None:
         
         self.es = ESQuery()
-        indices = self.es.all_indices
+        indices = self.es.get_all_indices
         self.indices = [index.get('index') for index in indices]
         self.index_columns ={}
         for index in self.indices:
-            columns = self.es.get_fields(index)
+            columns = self.es.get_all_fields(index)
             self.index_columns[index] = columns
 
         self.critical_keys = ['table','doFunc','func','field','value','kwargs']
@@ -70,7 +70,7 @@ class Validator:
     def get_funcs(self,action):
         return find_key(action, 'func')
         
-    def get_fields(self,index):
+    def get_all_fields(self,index):
         return self.index_columns.get(index)
 
   # Example usage  

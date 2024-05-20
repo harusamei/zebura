@@ -7,4 +7,5 @@
 # 最严重的错误是 raise ValueError， 直接退出
 
 D_TOP_K = 5   # default top k for search
-C_PROJECT_SHEET = 'project'  # sheet name of project info in metadata.xlsx
+C_PROJECT_SHEET = 'project'     # sheet name of project info in metadata.xlsx
+C_ES_SHORT_MAX = 32767          # default max value of short type in ES
