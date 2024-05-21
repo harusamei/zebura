@@ -212,7 +212,7 @@ class ESIndex(ES_BASE):
             print(f"Index '{index_name}' already exists.")
         else:
             self.create_index(index_name, es_mapping)
-            
+
         docs=[]
         for doc in csv_rows:
             self.format_doc(doc,es_mapping)
@@ -245,5 +245,5 @@ if __name__ == '__main__':
     sch_file = os.path.join(cwd, name)
     creator = ESIndex()
     creator.load_csv('sales_info', os.path.join(cwd,'dbaccess\\es\\leproducts.csv'),sch_file)
-    creator.test('sales_info','product_name','iphone')
+    print(creator.test('sales_info','product_name','iphone'))
    
