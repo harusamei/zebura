@@ -1,3 +1,5 @@
+# 搜索以及结果的基本输出格式
+################################
 import sys
 import os
 sys.path.insert(0, os.getcwd())
@@ -13,7 +15,6 @@ class ESearcher(ES_BASE):
     def __init__(self):
        super().__init__()
        self.embedding = None
-
        logging.debug("ESearcher init success")
     
     def try_search(self,index, query):
@@ -25,12 +26,9 @@ class ESearcher(ES_BASE):
     
     def search(self,index, field, word, size=D_TOP_K):
 
-        fields = self.get_all_fields(index=index)
-        if fields.get(field) is None:
-            logging.error(f"Field {field} not found in index {index}")
-            return None
+        ty = self.get_field_type(index, field)
         # vector search
-        if fields.get(field).get('type') == 'dense_vector':
+        if ty is not None and ty == 'dense_vector':
             if self.embedding is None:
                 self.embedding = Embedding()
             embs = self.embedding.get_embedding(word)
@@ -46,7 +44,15 @@ class ESearcher(ES_BASE):
         # Execute the query
         return self.try_search(index, query)
         
-
+    def search_term(self,index, field, word, size=D_TOP_K):
+        query = {
+            "size": size,
+            "query": {
+                "term": {field: word}
+            }
+        }
+        return self.try_search(index, query)
+        
     def search_vector(self,index, field, embs, size=D_TOP_K):
 
         if not self.is_fields_exist(index, field):
@@ -88,28 +94,25 @@ class ESearcher(ES_BASE):
                 "size": size
             }
 
-    # 使用"fields": ["*"], 表示所有字段
-    def search_fields(self,index,word,fieldList,size=D_TOP_K):
-        if not self.is_fields_exist(index, fieldList):
-            if fieldList != ["*"]:
-                return None    
-        query = {
+    #  doc不包含某些字段,即该字段为空
+    def search_without_fields(self, index_name, not_fields,size=D_TOP_K):
+        must_not = [{"exists": {"field": field}} for field in not_fields]
+        body = {
             "size": size,
             "query": {
-                "multi_match": {
-                    "query": word,
-                    "fields": fieldList
+                "bool": {
+                    "must_not": must_not
                 }
             }
         }
-        return self.try_search(index, query)
-    
+        response = self.es.search(index=index_name, body=body)
+        return response['hits']['hits']
+  
     #kvList = [{"product_name": "小新"}, {"goods_status": "下架"}]
     # opt = "should"==OR, "must"==AND
     def search_kvs(self,index, kvList, opt="should",size=D_TOP_K):
         if opt != "should":
             opt = "must"
-        
         query = {
             "size": size,
             "query": {
@@ -121,7 +124,8 @@ class ESearcher(ES_BASE):
         return self.try_search(index, query)
 
     # 返回满足所有must和至少一个should的文档
-    def search_both_should_must(self,index, must_list, should_list):
+    # must表示 and, should表示 or
+    def search_and_or(self,index, must_list, should_list):
         query = {
             "query": {
                 "bool": {
@@ -220,12 +224,12 @@ class ESearcher(ES_BASE):
         return response['aggregations'][m_value]['value']
     
     @staticmethod
-    # filter 不需要的字段s
+    # filter 不需要的字段s， 默认全部保留
     def filter_results(response, filters=[]) -> list:
         #满足查询条件的文档数
         logging.info("Got %d Hits:" % response['hits']['total']['value'])
         if isinstance(filters, str):
-            fset=set(filters)
+            fset=set([filters])
         else:
             fset = set(filters)
         hits = []
@@ -264,9 +268,30 @@ class ESearcher(ES_BASE):
         # 创建数据行
         data_rows = [separator.join(str(d.get(k)) for k in headers) for d in dict_array]
         # 将所有行合并成一个字符串
-        table = '\n'.join([header_row] + data_rows)
-        print(table)
+        table = '\n'.join([header_row] + data_rows) 
+        return table
     
+    @staticmethod 
+    def csv_results(response, out_csv):
+        import utils.csv_processor as pcsv
+        if response['hits']['total']['value'] == 0:
+            logging.info("No matching documents found.")
+            return
+        csv_rows=[]
+        dict1 = {}
+        for hit in response['hits']['hits']:
+            csv_rows.append(hit['_source'])
+            dict1.update(hit['_source'].keys())
+        dict1 = {key: None for key in dict1}
+        csv_rows.insert(0,dict1)     
+        pcsv().write_csv(csv_rows, out_csv)
+
+    @staticmethod
+    def docid_results(response):
+        docids = []
+        for hit in response['hits']['hits']:
+            docids.append(hit['_id'])
+        return docids
     
 
 # Example usage

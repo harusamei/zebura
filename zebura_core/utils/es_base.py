@@ -33,6 +33,17 @@ class ES_BASE:
         fields = mapping[index]['mappings']['properties']
         return fields
     
+    def get_field_type(self, index_name, field_name):
+        
+        properties = self.get_all_fields(index_name)
+        if field_name in properties:
+            return properties[field_name]['type']
+        else:
+            return None
+
+    def get_doc_count(self, index_name):
+        return self.es.count(index=index_name)['count']
+ 
     #是否存在index
     def is_index_exist(self,index_name):
 
@@ -41,7 +52,7 @@ class ES_BASE:
         else: 
             return False
      
-    #是否缺失必要字段
+    #是否缺失需要的字段
     def is_fields_exist(self,index, must_fields):
         if isinstance(must_fields, str):
             must_fields = [must_fields]
