@@ -10,7 +10,7 @@ from utils.csv_processor import pcsv
 
 from utils.es_base import ES_BASE
 from utils.es_searcher import ESearcher
-from constants import D_TOP_K as d_size
+from constants import D_MAX_BATCH_SIZE
 
 class ESOps(ES_BASE):
 
@@ -20,6 +20,18 @@ class ESOps(ES_BASE):
         self.se = ESearcher()
         logging.info('ESops is initial success')
 
+    def deduplicate_docs(self, index_name, docs, comp_fields):
+        new_docs = []
+        if not self.is_index_exist(index_name):
+            return docs
+        
+        for doc in docs:
+            if not self.exist_doc(index_name, doc, comp_fields):
+                new_docs.append(doc)
+        return new_docs
+    
+
+        
     # docs是一个list，每个元素是一个dict
     def insert_docs(self, index_name, docs):
         try:
@@ -55,7 +67,8 @@ class ESOps(ES_BASE):
         count = 0
         for res in scroller:
             hit = res['_source']
-            csv_rows.append(hit)
+            dict ={field:hit.get(field) for field in fields}           
+            csv_rows.append(dict)
             count += 1
             if count > max_size:
                 break

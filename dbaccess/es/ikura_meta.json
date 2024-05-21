@@ -23,6 +23,7 @@
                 {
                     "desc": "A unique identifier assigned to each product in the database to distinguish it from other products.",
                     "column_name": "uid",
+                    "type":"keyword",
                     "alias": "unique_identifier; product_id; serial_number"
                 }
             ]
@@ -147,6 +148,7 @@
                 {
                     "desc": "the name or title of a specific product within the product database.",
                     "column_name": "product_name",
+                    "type":"keyword",
                     "alias": "name; item; title"
                 },
                 {
