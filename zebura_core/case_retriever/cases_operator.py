@@ -84,7 +84,7 @@ class CaseOps(ESOps):
     # 创建初始索引
     def create_index(self):
 
-        es_schema = self.gen_esSchema(analyzer=self.creator.analyzer)
+        es_schema = self.gen_esSchema(text_analyzer=self.creator.text_analyzer)
         if self.is_index_exist(self.gcase_index):
             print(f"Index '{self.gcase_index}' already exists.")
         else:
@@ -92,7 +92,7 @@ class CaseOps(ESOps):
 
         return es_schema
 
-    def gen_esSchema(self, analyzer=None):
+    def gen_esSchema(self, text_analyzer=None):
 
         index_name = self.gcase_index
         table_info = self.loader.get_table_info(index_name)
@@ -109,7 +109,7 @@ class CaseOps(ESOps):
                 field_type = "text"
             es_schema[field_name] = {"type": field_type}
             if field_type == "text" and analyzer != None:
-                es_schema[field_name]["analyzer"] = analyzer
+                es_schema[field_name]["text_analyzer"] = text_analyzer
 
             fields.add(field_name)
 

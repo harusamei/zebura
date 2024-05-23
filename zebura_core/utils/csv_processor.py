@@ -2,10 +2,11 @@ import csv
 import json
 import os
 import sys
+from constants import D_MAX_ROWS as max_rows
 class pcsv:
     
     def __init__(self):
-        self.max_rows = 1000000
+        self.max_rows = max_rows
 
     def read_csv(self,csv_filename, rows=None):
         csv_rows = []

@@ -40,7 +40,7 @@ class ESOps(ES_BASE):
                 comp_fields.append(field)
         
         for i in range(0, len(docs), batch_size):
-            count = self.insert_new_docs(index_name, docs[i:i+batch_size],comp_fields)
+            count = self.insert_new_docs(index_name, docs[i:i+batch_size],es_mapping, comp_fields)
             logging.info(f"inserted {count} docs,from {i} to {i+batch_size}")  
 
     def drop_duplicate_docs(self, docs, comp_fields):
@@ -56,15 +56,19 @@ class ESOps(ES_BASE):
 
         return new_docs
     
-    def insert_new_docs(self, index_name, docs, comp_fields)->int:
-
+    def insert_new_docs(self, index_name, docs, es_mapping, comp_fields)->int:
+        creator = ESIndex()
         docs = self.drop_duplicate_docs(docs, comp_fields)
         new_docs = []
         for doc in docs:
             if not self.is_doc_exist(index_name, doc, comp_fields):
+                print(doc['query'])
+                doc = creator.format_doc(doc,es_mapping)
                 new_docs.append(doc)
-        
-        return self.insert_docs(index_name, new_docs)
+
+        # 计算文本的embedding
+        new_docs = creator.complete_embs(new_docs, es_mapping)  
+        return creator.insert_docs(index_name, new_docs)
         
     # 输出index中样本的field 列表项
     def write_scan(self, index_name, out_csv, fields=[], max_size=-1):
@@ -92,19 +96,31 @@ class ESOps(ES_BASE):
         logging.info(f"index: {index_name}, total: {count}\n")
 
     def is_doc_exist(self, index_name, doc, comp_fields):
+
         docs = self.exist_docs(index_name, doc, comp_fields)
-        if docs is None:
-            return False
+        if docs is None:    # 你是有瑕疵的DOC，不能放进去
+            return True
         if len(docs) > 0:
             return True
         else:
             return False
     # 查找相同doc, comp_fields字段的值相等则认为是同一文档: 
-    # 输出 doc
+    # 输出所以找到的docs
     def exist_docs(self, index, doc, comp_fields) -> dict:
         # exists = self.es.exists(index=index_name, id=doc_id, filter_path=['_source'])
+        if self.is_index_exist(index) == False:
+            logging.error(f"index {index} not exist")
+            return None
+        
         all_fields = self.get_all_fields(index)
         comp_fields = set(comp_fields) & set(all_fields.keys()) & set(doc.keys())
+        del_fields = set()
+        for field in comp_fields:
+            if self.get_field_type(index, field) == 'dense vector':
+                del_fields.add(field)
+            if doc[field] == '':
+                del_fields.add(field)
+        comp_fields = comp_fields - del_fields   
         if len(comp_fields) == 0:
             logging.error(f"no valid fields in {comp_fields}")
             return None
@@ -118,19 +134,14 @@ class ESOps(ES_BASE):
             else:
                 matchs.append(field)
         
-        term_body = {}
+        conds=[]
         for field in terms:
-            term_body[field] = doc[field]
-        match_body = {}
+            body ={field:doc[field]}
+            conds.append({"term": body})
         for field in matchs:
-            match_body[field] = doc[field]
-        
-        conds =[]
-        if len(matchs) >0 :
-            conds = [{"match": match_body}]
-        if len(terms) >0:
-            conds.append({"term": term_body})
-        
+            body ={field:doc[field]}
+            conds.append({"match": body})
+
         body = {
             "query": {
                 "bool": {
@@ -138,7 +149,7 @@ class ESOps(ES_BASE):
                 }
             }
         }
-        response = self.es.search(index=index_name, body=body)
+        response = self.es.search(index=index, body=body)
         return response['hits']['hits']
 
     def delete_doc(self, index_name, doc_id):    
@@ -159,24 +170,37 @@ class ESOps(ES_BASE):
     
     
 # example usage
+def usecase1():    
+        esoper = ESOps()
+        index_name = "ikura_gcases"
+        tool = pcsv()
+        cwd = os.getcwd()
+        csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases1.csv')
+        rows = tool.read_csv(csv_file)
+        new_rows=[]
+        cat = rows[0]['category']
+        for row in rows:
+            if row['query'] == '找出所有内存容量大于16 GB的服务器。':
+                print(row)
+                print(row.get('category'))
+            if esoper.is_doc_exist(index_name, row, ['tquery','category']):
+                print()#f"doc {row} already exist")
+            else:
+                new_rows.append(row)
+        print(f"new rows: {len(new_rows)}")
+
+def usecase2():
+    maint = ESOps()
+    cwd = os.getcwd()
+    csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases1.csv')
+    sch_file = os.path.join(cwd, 'training\\ikura\\ikura_gcases.json')
+    maint.store_table(csv_file, "ikura_gcases", sch_file)
+
 if __name__ == '__main__':
+    usecase1()
+        
+    
+        
 
-    esoper = ESOps()
-    index_name = "goldencases"
-    # query = {
-    #             "product_name": {
-    #                 "value": ".*小",
-    #                 "flags" : "ALL"
-    #             }   
-    #         }
-    # result = esoper.search_with_regexp(index_name, query)
-    # query = {
-    #             "product_name": "小新"
-    #         }
-    # result2 = esoper.search(index_name, query)
-    # print(result)
-    # print(result2)
-
-    esoper.write_scan(index_name, "gcases.csv",['query','sql','action'])
    
    

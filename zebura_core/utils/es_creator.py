@@ -24,7 +24,8 @@ class ESIndex(ES_BASE):
         super().__init__()
 
         self.embedding = None
-        self.analyzer = "cn_analyzer"
+        self.text_analyzer = "cn_analyzer"       # 分词器名称
+        self.keyword_analyzer = "keyword_analyzer"       # 关键词分词器名称
 
         logging.debug("ESIndex init success")
 
@@ -59,8 +60,10 @@ class ESIndex(ES_BASE):
                 field_type = "text"
             es_mapping[field_name] = {"type": field_type}
             if field_type == "text":
-                es_mapping[field_name]["analyzer"] = self.analyzer
-                
+                es_mapping[field_name]["analyzer"] = self.text_analyzer
+            # elif field_type == "keyword":
+            #     es_mapping[field_name]["analyzer"] = self.keyword_analyzer
+
         return index_name,es_mapping
 
     # 创建索引
@@ -78,9 +81,14 @@ class ESIndex(ES_BASE):
                             }
                         },
                         "analyzer": {
-                            self.analyzer: {
+                            "cn_analyzer": {
                             "type": "custom",
                             "tokenizer": "smartcn_tokenizer",
+                            },
+                            "keyword_analyzer": {
+                                "type": "keyword",
+                                "tokenizer": "keyword",
+                                "filter": ["lowercase"]
                             }
                         }
                     }
@@ -134,12 +142,12 @@ class ESIndex(ES_BASE):
             logging.error(f"no docs to insert")
             return 0
         try:
+            count = len(docs)
             new_docs = list(map(lambda doc:[
                                             {"index": {"_index": index_name}},
                                             doc],
                                 docs))
             new_docs = sum(new_docs,[])
-            count = 0
             # 在索引中添加文档, refresh=True 使得文档立即可见
             response = self.es.bulk(index=index_name, body=new_docs,refresh='true') 
         except Exception as e:
@@ -147,13 +155,14 @@ class ESIndex(ES_BASE):
         else:
             if response['errors']:
                 logging.error(f"can not insert docs in {index_name}")
+                count = 0
             else:
-                logging.info(f'insert {len(new_docs)} in {index_name}')
-                count = len(new_docs)
+                logging.info(f'insert {count} in {index_name}')
+                
         return count
     
     # 格式规范化
-    def format_doc(self, doc, es_mapping):
+    def format_doc(self, doc, es_mapping) -> dict:
         delkeys = []
         # clear empty fileds
         for key in doc.keys():
@@ -197,7 +206,8 @@ class ESIndex(ES_BASE):
             elif key in NumSet:
                 doc[key] = re.sub(r'[^\d.]', '', doc[key])
                 doc[key] = float(doc[key])
-        return
+
+        return doc
     
     ########用于测试的methods
     # 简单加载CSV数据，没有去重
@@ -215,7 +225,7 @@ class ESIndex(ES_BASE):
 
         docs=[]
         for doc in csv_rows:
-            self.format_doc(doc,es_mapping)
+            doc = self.format_doc(doc,es_mapping)
             docs.append(doc)
 
         # 计算文本的embedding

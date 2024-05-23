@@ -94,9 +94,9 @@ class ESearcher(ES_BASE):
                 "size": size
             }
 
-    #  doc不包含某些字段,即该字段为空
-    def search_without_fields(self, index_name, not_fields,size=D_TOP_K):
-        must_not = [{"exists": {"field": field}} for field in not_fields]
+    #  not including some fields,即该字段为空
+    def search_ni_fields(self, index_name, ni_fields,size=D_TOP_K):
+        must_not = [{"exists": {"field": field}} for field in ni_fields]
         body = {
             "size": size,
             "query": {
@@ -108,7 +108,8 @@ class ESearcher(ES_BASE):
         response = self.es.search(index=index_name, body=body)
         return response['hits']['hits']
   
-    #kvList = [{"product_name": "小新"}, {"goods_status": "下架"}]
+    # 多字段，多值条件下，必须满足或至少满足一个
+    # kvList = [{"product_name": "小新"}, {"goods_status": "下架"}]
     # opt = "should"==OR, "must"==AND
     def search_kvs(self,index, kvList, opt="should",size=D_TOP_K):
         if opt != "should":
@@ -122,7 +123,19 @@ class ESearcher(ES_BASE):
             }
         }
         return self.try_search(index, query)
-
+    
+    # 同一个word, 在多个字段中搜索，至少一个字段匹配
+    def search_multimatch(self,index, fields, word, size=D_TOP_K):
+        query = {
+            "size": size,
+            "query": {
+                "multi_match": {
+                    "query": word,
+                    "fields": fields
+                }
+            }
+        }
+        return self.try_search(index, query)
     # 返回满足所有must和至少一个should的文档
     # must表示 and, should表示 or
     def search_and_or(self,index, must_list, should_list):

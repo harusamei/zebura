@@ -29,7 +29,11 @@ class ES_BASE:
         return self.es.cat.indices(format='json')
        
     def get_all_fields(self,index):
-        mapping= self.es.indices.get_mapping(index=index)
+        try:
+            mapping= self.es.indices.get_mapping(index=index)
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            return None
         fields = mapping[index]['mappings']['properties']
         return fields
     
@@ -66,7 +70,9 @@ class ES_BASE:
             return False
         else:
             return True
-        
+
+    def is_id_exist(self,index_name, doc_id):
+        return self.es.exists(index=index_name, id=doc_id)    
 
 # Example usage
 if __name__ == '__main__':
