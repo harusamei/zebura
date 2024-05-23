@@ -1,5 +1,5 @@
 ﻿{
-    "_comment": "The schema is for golden cases of ikura project.",
+    "_comment": "The schema is for golden cases of ikura project. deduplicate by tquery",
     "tables": [
         {
             "table_name": "ikura_gcases",
@@ -11,6 +11,10 @@
                 {
                     "column_name": "query",
                     "type": "text"
+                },
+                {
+                    "column_name": "tquery",
+                    "type": "keyword"
                 },
                 {
                     "column_name": "qemb",
