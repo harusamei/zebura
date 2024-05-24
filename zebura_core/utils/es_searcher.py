@@ -1,9 +1,9 @@
 import os
 import sys
-if os.getcwd().lower() not in sys.path:
-    sys.path.insert(0, os.getcwd().lower())
+# if os.getcwd().lower() not in sys.path:
+#     sys.path.insert(0, os.getcwd().lower())
 import settings
-from utils.es_base import ES_BASE
+from zebura_core.utils.es_base import ES_BASE
 
 class ESearcher(ES_BASE):
 
@@ -206,19 +206,19 @@ class ESearcher(ES_BASE):
 
 # Example usage
 if __name__ == '__main__':
-
     es = ESearcher()
     index="goldencases"
     fields = es.get_fields(index)
     print(fields.keys())
-   
-    fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]
-    result = es.search_either_should_must(index, fqList)
-    if not result:
-        es.asctable_results(result)
-    else:
-        print(fqList,": No result found")
 
-    result = es.search_word(index, "qembedding","请从产品表里查一下联想小新电脑的价格")
-    es.filter_results(result,'query')
+   #应该从mysql去寻找数据
+    # fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]
+    # result = es.search_either_should_must(index, fqList)
+    # if not result:
+    #     es.asctable_results(result)
+    # else:
+    #     print(fqList,": No result found")
+    #
+    # result = es.search_word(index, "qembedding","请从产品表里查一下联想小新电脑的价格")
+    # es.filter_results(result,'query')
 

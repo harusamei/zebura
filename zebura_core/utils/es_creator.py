@@ -2,10 +2,9 @@ import sys
 import os
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
-import settings
 from embedding import Embedding
 from zebura_core.knowledges.schema_loader import Loader
-from utils.es_base import ES_BASE
+from zebura_core.utils.es_base import ES_BASE
 from csv_processor import pcsv
 from datetime import datetime
 import re
@@ -13,11 +12,9 @@ from elasticsearch.exceptions import RequestError
 
 # 创建索引
 class ESIndex(ES_BASE):
-     
     def __init__(self):
         super().__init__()
         print(self.es_version)
-
         base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
         base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
         print("base attributes",base_attrs)
@@ -240,17 +237,16 @@ class ESIndex(ES_BASE):
 # examples usage
 if __name__ == '__main__':
     cwd = os.getcwd()
-    # name = 'datasets\\gcases_schema.json'
-    name = 'training\\it\\gcases_schema.json'
-    sch_file = os.path.join(cwd, name)
-    
+    name = '../../training/it/gcases_schema.json'
     escreator = ESIndex()
-    # escreator.set_schema(sch_file)
+    escreator.set_schema(name)
 
 
     #'gcases'是table名，'datasets\\goodcases.csv'是数据文件， index name是'goldencases'
     # escreator.store_table('gcases', 'datasets\\goodcases.csv')
-    escreator.store_table('gcases', 'datasets\\gcases.csv')
-    results = escreator.search('goldencases', {'query': '鼠标'})
-    print(results)
-
+    escreator.store_table('gcases', '../../datasets/gcases.csv')
+    results = escreator.search('goldencases', {'query': '白色'})
+    sql_sentences=[]
+    for i in results["hits"]["hits"]:
+        sql_sentences.append(i["_source"]["sql"])
+    print(list(set(sql_sentences)))

@@ -4,10 +4,10 @@ import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 from settings import z_config
-from utils.es_searcher import ESearcher
-from knowledges.schema_loader import Loader
+from zebura_core.utils.es_searcher import ESearcher
+from zebura_core.knowledges.schema_loader import Loader
 
-dtk = 5     # default top k for search
+dtk = 20     # default top k for search
 class CaseStudy:
         
         def __init__(self):

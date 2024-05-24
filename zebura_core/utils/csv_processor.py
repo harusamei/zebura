@@ -12,7 +12,7 @@ class pcsv:
         if not rows or rows > self.max_rows or rows < 0:
             rows = self.max_rows
         try:
-            with open(csv_filename, 'r', encoding='utf-8-sig') as csv_file:
+            with open(csv_filename, 'r', encoding='utf-8-sig',newline='') as csv_file:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     row = {k.lstrip('\ufeff'): v for k, v in row.items()}
@@ -61,12 +61,12 @@ if __name__ == '__main__':
     print(csv_filename)
     csv_rows = my_pcsv.read_csv(csv_filename)
     # aJson=my_pcsv.oneRow2json(csv_rows[0])
-    allJson=my_pcsv.csv2json(csv_rows)
-
-    temDict= {'table':'none','es_index':'none'}
-    temDict['columns'] =my_pcsv.json2dict(allJson)
-    
-    with open(curPath+'\\datasets\\goodcases_info_tables.json', 'w',encoding='utf-8-sig') as json_file:
-        json_file.write(my_pcsv.dict2json({'tables':[temDict]}))
-           
+    # allJson=my_pcsv.csv2json(csv_rows)
+    #
+    # temDict= {'table':'none','es_index':'none'}
+    # temDict['columns'] =my_pcsv.json2dict(allJson)
+    #
+    # with open(curPath+'\\datasets\\goodcases_info_tables.json', 'w',encoding='utf-8-sig') as json_file:
+    #     json_file.write(my_pcsv.dict2json({'tables':[temDict]}))
+    #
     

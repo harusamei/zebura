@@ -1,7 +1,47 @@
-pip --proxy=http://localhost:7890 install -r ./requirements
+#pip --proxy=http://localhost:7890 install -r ./requirements
 
-es安装的插件
-sudo bin/elasticsearch-plugin install analysis-smartcn
+#es安装的插件
+#sudo bin/elasticsearch-plugin install analysis-smartcn
 
+#运行命令（暂时报错，talker.py只能放在外部运行，需要查看问题）
+#chainlit run server/talker.py -w
 
-chainlit run server/talker.py -w
+#流程
+#1.根据文本返回mysql的查询语句
+#2.安装es环境
+#3.查询语句去sql-server返回相关结果
+#4.检查chainlit里面的格式是否可以定制化
+#5.服务器上部署相关环境（端口开放不需要考虑）
+#6.考虑mysql的格式问题
+#7.需要假数据进行测试（问邹哥要）
+#8.跑通es_creator与parser
+
+#安装es8.13.2的坑
+#1.需要jdk17的版本
+#2.不要密码的话需要设置config/elasticsearch.yml
+#    将security.enable设置为false
+#    xpack.security.http.ssl设置为false
+#3.config/elasticsearch.yml需要设置一下参数
+#4.config/jvm.options中末尾添加一行-Dfile.encoding=GBK
+#5.certs里面的证书需要换成自己的
+#6.datasets/gcases.csv需要换成training/it/dbInfo/dbInfo/gcases.csv
+
+#导入数据库
+#1.先确定数据库的模式,是否为utf-8
+#2.新建products表,然后进行查询
+
+#ubutu上修改es的密码
+#1.进入usr/share/elasticsearch/bin
+#2.输入./elasticsearch-reset-password -u elastic
+#3.密码会被输出在控制台
+#4.yml运行文件放在
+
+#ubuntu上进入es
+#1.sudo mysql -uroot -p
+#2.密码是12345678
+#3.py文件中地址为127.0.0.1
+#4.已用端口35002,需要避开
+
+#anaconda避雷，需要删除.condart文件就行
+#nltk的坑，需要下载wordnet.zip到环境中
+#es的证书选择绝对路径比较好

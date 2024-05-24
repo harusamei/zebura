@@ -1,24 +1,22 @@
-# ES 各种操作的基类
+# # ES 各种操作的基类
 import os
 import sys
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 from settings import z_config
-from utils.embedding import Embedding
+from zebura_core.utils.embedding import Embedding
 from elasticsearch import Elasticsearch
 
 class ES_BASE:
 
     def __init__(self):
-        
         host = z_config['Eleasticsearch','host']
         port = int(z_config['Eleasticsearch','port'])
         user = z_config['Eleasticsearch', 'user']
         pwd = z_config['Eleasticsearch', 'pwd']
-
         self.es = Elasticsearch(
             "https://"+host+":"+str(port),
-            ca_certs="./certs/http_ca.crt",
+            ca_certs="E:/zebura/certs/http_ca.crt",
             basic_auth=(user, pwd)
         )
         self.embedding = None
@@ -31,17 +29,17 @@ class ES_BASE:
     @property
     def all_indices(self):
         return self.es.cat.indices(format='json')
-    
+
     def get_fields(self,index):
         mapping= self.es.indices.get_mapping(index=index)
         fields = mapping[index]['mappings']['properties']
         return fields
-    
+
     def search_word(self,index, field, word,size=5):
 
         if not self.is_exist_field(index, [field]):
             return None
-        
+
         fields = self.get_fields(index=index)
         # vector search
         if fields.get(field).get('type') == 'dense_vector':
@@ -73,15 +71,15 @@ class ES_BASE:
         except Exception as e:
             print(e)
             return None
-    
+
     def generate_knn_query(self,field_name, vec, size):
-        
+
         query = {
             "knn": {"field": field_name, "query_vector": vec, "k": 100, "num_candidates": 100, "boost": 1},
             "size": size
         }
         return query
-    
+
     def generate_cosine_query(self,field_name, vec, size):
         query = {
                     "query": {
@@ -100,7 +98,7 @@ class ES_BASE:
                     "size": size
                 }
         return query
-    
+
     #查询是否存在一组fields
     def is_exist_field(self,index, fieldList):
         fields = self.get_fields(index=index)
@@ -109,3 +107,6 @@ class ES_BASE:
                 print(f"Field {field} not found in index {index}")
                 return False
         return True
+
+if __name__ == '__main__':
+    es=ES_BASE()

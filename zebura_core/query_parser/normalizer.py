@@ -7,9 +7,9 @@ import asyncio
 import re
 sys.path.insert(0, os.getcwd())
 from settings import z_config
-from LLM.llm_agent import LLMAgent
-import LLM.agent_prompt as ap
-from knowledges.schema_loader import Loader
+from zebura_core.LLM.llm_agent import LLMAgent
+import zebura_core.LLM.agent_prompt as ap
+from zebura_core.knowledges.schema_loader import Loader
 
 class Normalizer:
     
@@ -143,7 +143,7 @@ class Normalizer:
 
 # Example usage
 if __name__ == '__main__':
-    from utils.csv_processor import pcsv
+    from zebura_core.utils.csv_processor import pcsv
     normalizer = Normalizer()
     
     cp = pcsv()

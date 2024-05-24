@@ -6,8 +6,7 @@ from typing import Dict
 # load schema of tables
 class Loader:
     def __init__(self,file):
-        
-        # schema 必须存在，否则raise error
+        # schema文件 必须存在，否则raise error
         self._info = self.load_tablesInfo(file)
         if self._info is None or "tables" not in self._info:
             raise ValueError("Cannot load the schema file")

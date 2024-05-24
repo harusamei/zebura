@@ -6,11 +6,11 @@
 #######################################################################################
 import os
 import sys
-sys.path.insert(0, os.getcwd())
+# sys.path.insert(0, os.getcwd())
 from settings import z_config
 from zebura_core.query_parser.extractor import Extractor
-from normalizer import Normalizer
-from schema_linker import Sch_linking
+from zebura_core.query_parser.normalizer import Normalizer
+from zebura_core.query_parser.schema_linker import Sch_linking
 from zebura_core.query_parser.study_cases import CaseStudy
 import zebura_core.LLM.agent_prompt as ap
 
@@ -21,9 +21,9 @@ class Parser:
         self.te = Extractor()
         self.gc = CaseStudy()
 
-        cwd = os.getcwd()
+        # cwd = os.getcwd()
         name = z_config['Training','db_schema']  # 'training\it\products_schema.json'
-        self.sl = Sch_linking(os.path.join(cwd, name))
+        self.sl = Sch_linking(name)
         
 
     # main function
@@ -99,10 +99,10 @@ class Parser:
 # Example usage
 if __name__ == '__main__':
     import asyncio
-
     querys = ['查一下联想小新电脑的价格','哪些产品属于笔记本类别？','查一下价格大于1000的产品']
     table_name = 'product'
     parser = Parser()
     for query in querys:
         result = asyncio.run(parser.apply(table_name, query))
-        print(result)
+        if result["status"] is True:
+            print(result["sql1"][0])
