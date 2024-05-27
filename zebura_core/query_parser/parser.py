@@ -58,7 +58,7 @@ class Parser:
         # 3. revise the sql query by the slots
         sql2 = self.gen_sql(slots2)
         # sql1, slots1 为修正前，sql2, slots2 为修正后
-        return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}
+        return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2,"msg":sql_1}
     
     def gen_shots(self,results):
         shot_prompt = ""

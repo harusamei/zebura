@@ -76,6 +76,8 @@ class Normalizer:
     def extract_sql(self,result:str):
         # Extract the SQL code from the LLM result
         print(result)
+        if result.lower().startswith("select"):
+            return result
         code_pa = "```sql\n(.*?)\n```"
         matches = re.findall(code_pa, result, re.DOTALL)
         return matches

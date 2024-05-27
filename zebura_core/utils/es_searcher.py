@@ -1,7 +1,7 @@
 import os
 import sys
-# if os.getcwd().lower() not in sys.path:
-#     sys.path.insert(0, os.getcwd().lower())
+if os.getcwd().lower() not in sys.path:
+    sys.path.insert(0, os.getcwd().lower())
 import settings
 from zebura_core.utils.es_base import ES_BASE
 
@@ -207,9 +207,16 @@ class ESearcher(ES_BASE):
 # Example usage
 if __name__ == '__main__':
     es = ESearcher()
-    index="goldencases"
+    index="leproducts"
     fields = es.get_fields(index)
     print(fields.keys())
+   
+    fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]
+    result = es.search_either_should_must(index, fqList)
+    if result:
+        es.asctable_results(result)
+    else:
+        print(fqList,": No result found")
 
    #应该从mysql去寻找数据
     # fqList = [{"product_name": "小新"}, {"goods_status": "下架"}]

@@ -14,11 +14,17 @@ class ES_BASE:
         port = int(z_config['Eleasticsearch','port'])
         user = z_config['Eleasticsearch', 'user']
         pwd = z_config['Eleasticsearch', 'pwd']
-        self.es = Elasticsearch(
-            "https://"+host+":"+str(port),
-            ca_certs="E:/zebura/certs/http_ca.crt",
-            basic_auth=(user, pwd)
-        )
+        auth =z_config['Eleasticsearch', 'auth']
+        if auth == 'True':
+            self.es = Elasticsearch(
+                "https://"+host+":"+str(port),
+                ca_certs="E:/zebura/certs/http_ca.crt",
+                basic_auth=(user, pwd)
+            )
+        else:
+            self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
+
+        
         self.embedding = None
         if not self.es.ping():
             raise ValueError("Connection failed")
