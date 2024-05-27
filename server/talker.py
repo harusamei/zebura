@@ -19,7 +19,7 @@ conn = pymysql.connect(
 )
 print(conn.get_server_info())
 cursor = conn.cursor()
-conn.select_db("products")
+conn.select_db("it")
 
 secret = subprocess.check_output(["chainlit", "create-secret"], text=True)
 os.environ["CHAINLIT_AUTH_SECRET"] = secret
