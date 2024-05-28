@@ -47,7 +47,7 @@ class Loader:
 if __name__ == '__main__':
     # Load the SQL patterns
     cwd = os.getcwd()
-    name = 'training\it\dbInfo\metadata.json'
+    name = 'training/ikura/ikura_meta.json'
     file = os.path.join(cwd, name)
     print(file)
     loader =Loader(file)

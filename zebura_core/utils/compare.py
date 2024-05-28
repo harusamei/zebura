@@ -47,6 +47,9 @@ class similarity:
         return avg_score/len(methods)
 
     def getUpperSimil(self, gen_sent, ref_sent,n_gram=3, beta=2): 
+        gen_sent = gen_sent.lower()
+        ref_sent = ref_sent.lower() 
+
         score = 0
         rouge = self.getRouge(gen_sent, ref_sent)[0]
         score = max(score, rouge['rouge-1']['f'])

@@ -14,13 +14,13 @@ import LLM.agent_prompt as ap
 from utils.csv_processor import pcsv
 import logging
 from constants import C_PROJECT_SHEET as project
-
+# table_name, column_name为数据库正式使用名， _zh为中文名称，没有后缀的为英文
 class Scanner:
     def __init__(self):
         self.pcsv = pcsv()
         self.llm = LLMAgent()
-        self.table_keys = ["table_name", "desc", "desc_zh", "name_zh", "name", "alias_zh", "alias", "columns"]
-        self.column_keys = ["column_name", "name_zh", "name", "alias_zh", "alias","type", "length", "desc", "desc_zh"]
+        self.table_keys = ["table_name", "desc", "desc_zh", "name_zh", "alias_zh", "alias", "columns"]
+        self.column_keys = ["column_name", "name_zh", "alias_zh", "alias","type", "length", "desc", "desc_zh"]
         self.tableInfo = {}
         logging.debug("Scanner init success")
         
@@ -70,11 +70,11 @@ class Scanner:
     
     # 所有的table信息存放在一个excel文件中，必须有一个名为project的表，存放整体信息
     # 每个sheet对应一个table
-    # 格式：['no', 'table_name', 'column_name', 'name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
+    # 格式：['no', 'table_name', 'column_name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
     def gen_schema(self, file_path):
-        musted ={'no', 'table_name', 'column_name', 'name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length'}
-        table_keys = {"table_name", "name", "name_zh", "alias", "alias_zh", "desc", "desc_zh"}
-        column_keys = {"column_name", "name","name_zh","alias", "alias_zh", "type", "length", "desc", "desc_zh"}
+        musted ={'no', 'table_name', 'column_name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length'}
+        table_keys = {"table_name", "name_zh", "alias", "alias_zh", "desc", "desc_zh"}
+        column_keys = {"column_name", "name_zh","alias", "alias_zh", "type", "length", "desc", "desc_zh"}
 
         xls = pd.ExcelFile(file_path)
 

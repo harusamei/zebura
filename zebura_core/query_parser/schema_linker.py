@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, os.getcwd())
 import settings
 import logging
+import re
 from knowledges.schema_loader import Loader
 from utils.compare import similarity
 
@@ -15,92 +16,95 @@ class Sch_linking:
         self.info_loader = Loader(scha_file)
         logging.info("Schema linking init done")
 
-    def substitute(self, term, tableName='', type='table'):
-
-        if type not in ['table', 'column']:
-            raise ValueError(f"Unknown type {type}")
+    def link_table(self, term):
+        name_list = self.info_loader.get_table_nameList()
+        # 名称完美匹配
+        if term in name_list:
+            return term
+        # 输出最可能的表名
+        table_dict ={}
+        tables = self.info_loader.tables
+        for table in tables:
+            temStr = f"{table['table_name']},{table.get('name_zh','')},{table.get('alias','')},{table.get('alias_zh','')}"
+            temList = re.split(',+\s*|;+\s*',temStr) 
+            table_dict[table['table_name']] = ','.join(temList)
         
-        subst = {'conf': 0, 'new_term': ""}
-        if type == 'table':
+        like_item = self.get_like_item(term,table_dict)    
+        return like_item['name']
+            
+    def link_field(self, term, table_name=None):
+
+        column_dict = {}
+        if table_name is not None:
+            table = self.info_loader.get_table_info(table_name)
+            tables = [table]
+        else:
             tables = self.info_loader.tables
-            for table in tables:
-                db_name = table['table']
-                temStr = f"{db_name},{table['table_zh']},{table['alias_en']},{table['alias_zh']}"
-                termList = temStr.split(',')    
-                s = self.similar(term,termList)
-                if (s['score'] > subst['conf']):
-                    subst['conf'] = s['score']
-                    subst['new_term'] = db_name
-            if subst['new_term']=='':
-                subst['new_term'] = tables[0]['table']
-            return subst
 
-        columns_dict = self.info_loader.get_all_columns(tableName)
-        for col in columns_dict:
-            db_colName = col['column_en']
-            temStr = f"{db_colName},{col['column_zh']},{col['alias_en']},{col['alias_zh']}"
-            termList = temStr.split(',')
-            s = self.similar(term,termList)
-            if (s['score'] > subst['conf']):
-                subst['conf'] = s['score']
-                subst['new_term'] = db_colName
-
-        if subst['new_term']=='':
-            subst['new_term'] = columns_dict[0]['column_en']
-        return subst
+        for table in tables:
+            columns = table['columns']
+            table_name = table['table_name']
+            for column in columns:
+                temStr = f"{column['column_name']},{column.get('name_zh','')},{column.get('alias','')},{column.get('alias_zh','')}"
+                temList = re.split(',+\s*|;+\s*',temStr) 
+                column_dict[f"{table_name}==={column['column_name']}"] = ','.join(temList)
+        like_item = self.get_like_item(term,column_dict)
+        
+        table_name, _, field_name = like_item['name'].partition('===')        
+        return table_name, field_name
     
     def refine(self,slots1):
-        if slots1 is None:
+        if slots1 is None or slots1.get('from') is None:
             return None
         
         slots = slots1.copy()
         tableName = slots['from']
-        subst = self.substitute(tableName)
-        tableName = slots['from'] = subst['new_term']
-        if subst['conf'] < 0.5:
-            slots['from'] += '?'
-
+        st_table = self.link_table(tableName)
+        tableName = slots['from'] = st_table
+        
         columns = slots['columns']
         for idx, column in enumerate(columns):
-            subst = self.substitute(column, tableName, 'column')
-            columns[idx] = subst['new_term']
-            if subst['conf'] < 0.5:
-                columns[idx] += '?'
-
+            st_table, st_col = self.link_field(column, tableName)
+            columns[idx] = st_col
+            
         # conditions
-        for cond in slots['conditions']:
+        for cond in slots.get('conditions', []):
             if isinstance(cond, str):
                 continue
-            subst = self.substitute(cond['column'], tableName, 'column')
-            cond['column'] = subst['new_term']
-            if subst['conf'] < 0.5:
-                cond['column'] += '?'
-
+            st_table, st_col = self.link_field(cond['column'], tableName)
+            cond['column'] = st_col
+            
         return slots
-
+    
+    def get_like_item(self, term, items_dict):
+        like_item = {'score':-1,'name':''}
+        for key in items_dict.keys():
+            s = self.similar(term,items_dict[key].split(','))
+            if s['score'] > like_item['score']:
+                like_item['score'] = s['score']
+                like_item['name'] = key
+        return like_item
 
     def similar(self,term,candidates):
         lang = self.similarity.getLang(term)
-        candidates = [c for c in candidates if self.similarity.getLang(c) == lang]
-        matched = {'term':candidates[0], 'score':0}
-       
+        candidates = [c for c in candidates if self.similarity.getLang(c) == lang and c != '']
+        matched={'score':-1}
+        
         for ref in candidates:
             s = self.similarity.getUpperSimil(term,ref)
             if s > matched['score']:
                 matched['score'] = s
-                matched['term'] = ref
+                matched['name'] = ref
         return matched
     
 # Example usage
 if __name__ == '__main__':
     cwd = os.getcwd()
-    name= 'training\it\products_schema.json'
+    name= 'training/ikura/ikura_meta.json'
     sch_linking = Sch_linking(os.path.join(cwd, name))
     slots = {'from': 'products', 'columns': ['brand name', 'item price'], 'conditions': [{'column': 'brand', 'op': '=', 'value': '联想'}]}
     slots = {
-        'columns': ['价格'], 'from': '产品信息表', 
-        'conditions': [{'column': '品牌', 'op': '=', 'value': '联想'}, 'AND', {'column': '系列', 'op': '=', 'value': '小新'}, 'AND', {'column': '产品名', 'op': 'LIKE', 'value': '%小新%'}], 
-         'distinct': None, 'limit': None, 'offset': None, 'order by': None, 'group by': None
+        'columns': ['COST','market time'],'from': 'sale_info'
         }
     print(slots)
     result = sch_linking.refine(slots)

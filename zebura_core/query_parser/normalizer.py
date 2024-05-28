@@ -41,14 +41,14 @@ class Normalizer:
         
         desc = table_info.get("desc",'')
         columns = self.sch_loader.get_all_columns(table_name)
-        columnInfo = [f"{c.get('name_zh')}，其含义是{c.get('desc')}" for c in columns]
+        columnInfo = [f"{c.get('name_zh','')}: {c.get('desc','')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         db_zh = (
                     f"表名是{table_info.get('name_zh','')}，用途是{desc}，包含的"
                     f"列及其含义如下\n{columnInfo}\n"
                 )
         
-        columnInfo = [f"{c.get('column_name','')}，meaning is {c.get('desc','')}" for c in columns]
+        columnInfo = [f"{c.get('column_name','')}， {c.get('desc','')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         # nothing, 语句太长，分开写
         db_en = (
