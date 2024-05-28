@@ -2,15 +2,18 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import settings
+import logging
 from knowledges.schema_loader import Loader
 from utils.compare import similarity
 
 # schema linking, for table, column
+# todo must match schema
 class Sch_linking:
 
     def __init__(self,scha_file):
         self.similarity = similarity()
         self.info_loader = Loader(scha_file)
+        logging.info("Schema linking init done")
 
     def substitute(self, term, tableName='', type='table'):
 

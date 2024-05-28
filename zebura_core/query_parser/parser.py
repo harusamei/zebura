@@ -8,12 +8,13 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 from settings import z_config
+import logging
 from zebura_core.query_parser.extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 import zebura_core.LLM.agent_prompt as ap
-
+from constants import D_TOP_GOODCASES as topK
 class Parser:
         
     def __init__(self):
@@ -27,26 +28,29 @@ class Parser:
         
 
     # main function
+    # 默认使用 en prompt, 即使是中文的query
+    # todo, refine()
     async def apply(self, table_name, query) -> dict:
-         
+
         # 1. Normalize the query to sql format by LLM
-        prompts = self.norm.gen_dbInfo(table_name)
-        if prompts is None:
+       
+        biling_info = self.norm.gen_dbInfo(table_name)   # 得到双语的DB schema info
+        if biling_info is None:
             print("ERR: no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
         # prompt组成：self awareness + task description + table schema
-        prompt_zh = (
+        prompt = (
             f'{ap.roles["sql_assistant"]}\n{ap.tasks["nl2sql"]}\n'
-            f'specific details about the database schema:\n{prompts["sql_zh"]}'
+            f'specific details about the database schema:\n{biling_info["en"]}'
         )
         
         # few shots from existed good cases
-        results = self.find_good_cases(query,topK=3)
+        results = self.find_good_cases(query,topK=topK)
         shot_prompt = self.gen_shots(results)
-        prompt_zh += "\n"+shot_prompt
-        print("prompt_zh:",prompt_zh)
+        prompt += "\n"+shot_prompt
+        logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
-        sql_1 = await self.norm.apply(query, prompt_zh)
+        sql_1 = await self.norm.apply(query, prompt)
         if sql_1 is None:
             print("ERR: failed to normalize query")
             return {"status":False,"msg":"no sql query generated"}
@@ -54,11 +58,11 @@ class Parser:
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
-        slots2 = self.sl.refine(slots1)
+        slots2 = None #self.sl.refine(slots1)
         # 3. revise the sql query by the slots
-        sql2 = self.gen_sql(slots2)
+        sql2 = None #self.gen_sql(slots2)
         # sql1, slots1 为修正前，sql2, slots2 为修正后
-        return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}
+        return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2,"msg":sql_1}
     
     def gen_shots(self,results):
         shot_prompt = ""
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     import asyncio
 
     querys = ['查一下联想小新电脑的价格','哪些产品属于笔记本类别？','查一下价格大于1000的产品']
-    table_name = 'product'
+    table_name = 'sales_info'
     parser = Parser()
     for query in querys:
         result = asyncio.run(parser.apply(table_name, query))

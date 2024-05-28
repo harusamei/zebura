@@ -7,6 +7,7 @@ import asyncio
 import re
 sys.path.insert(0, os.getcwd())
 from settings import z_config
+import logging
 from LLM.llm_agent import LLMAgent
 import LLM.agent_prompt as ap
 from knowledges.schema_loader import Loader
@@ -17,6 +18,7 @@ class Normalizer:
         # context for the LLM
         self.llm = LLMAgent()
         self.sch_loader = Loader(z_config['Training','db_schema'])
+        logging.info("Normalizer init done")
 
     # main method of class, convert natural language to SQL
     async def apply(self,query:str,prompt:str):
@@ -30,32 +32,33 @@ class Normalizer:
         return sql_list
 
     # 生成table details of prompts for nl2sql
+    # table_name, cloumn_name， 是DB的正式名，且作为英文名
     def gen_dbInfo(self, table_name) -> dict:
         
         table_info = self.sch_loader.get_table_info(table_name)
         if table_info is None:
             return None
         
-        desc = table_info.get("description")
+        desc = table_info.get("desc",'')
         columns = self.sch_loader.get_all_columns(table_name)
-        columnInfo = [f"{c.get('column_zh')}，其含义是{c.get('description')}" for c in columns]
+        columnInfo = [f"{c.get('name_zh')}，其含义是{c.get('desc')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
-        sql_zh = (
-                    f"表名是{table_info['table_zh']}，用途是{desc}，包含的"
+        db_zh = (
+                    f"表名是{table_info.get('name_zh','')}，用途是{desc}，包含的"
                     f"列及其含义如下\n{columnInfo}\n"
                 )
         
-        columnInfo = [f"{c.get('column_en')}，meaning is {c.get('description')}" for c in columns]
+        columnInfo = [f"{c.get('column_name','')}，meaning is {c.get('desc','')}" for c in columns]
         columnInfo = "\n".join(columnInfo)
         # nothing, 语句太长，分开写
-        sql_en = (
+        db_en = (
                     f"The table name is {table_name},the purpose is {desc}, "
                     f"the columns name are as follows:\n{columnInfo}\n"
                 )
         
         return {   
-                "sql_zh":sql_zh,
-                "sql_en":sql_en
+                "zh":db_zh,
+                "en":db_en
             }
       
     # 不确定数据信息prompt summary一下，是否效果更好？
@@ -73,10 +76,16 @@ class Normalizer:
         results = await self.llm.ask_query_list(querys, prompt)
         return results
     
+    # 提取SQL代码, 提取sql 全部小写
     def extract_sql(self,result:str):
         # Extract the SQL code from the LLM result
-        print(result)
-        code_pa = "```sql\n(.*?)\n```"
+        logging.info(f"extract sql from LLM result: {result}")
+        result = result.lower()
+        if result.startswith("```sql"):
+            code_pa = "```sql\n(.*?)\n```"
+        elif 'select' in result:
+            code_pa = "(select.*?from.*?where.*)"
+
         matches = re.findall(code_pa, result, re.DOTALL)
         return matches
         
@@ -150,8 +159,8 @@ if __name__ == '__main__':
     rows = cp.read_csv('sql_result.csv')
     
     prompts = normalizer.gen_dbInfo('product')
-    sql_zh = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['sql_zh']}\n"
-    sql_en = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['sql_en']}\n"
+    sql_zh = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['zh']}\n"
+    sql_en = f"{ap.roles['sql_assistant']}\n{ap.tasks['nl2sql']}\n{prompts['en']}\n"
     queries = [row['query'] for row in rows]
     results,en_results, rewrite = asyncio.run(normalizer.bulk_sql(queries,sql_zh,sql_en))
     print(f'query:{len(queries)}, results: {len(results)}, rewrite:{len(rewrite)}')
