@@ -58,9 +58,9 @@ class Parser:
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
-        slots2 = None #self.sl.refine(slots1)
+        slots2 = self.sl.refine(slots1)
         # 3. revise the sql query by the slots
-        sql2 = None #self.gen_sql(slots2)
+        sql2 = self.gen_sql(slots2)
         # sql1, slots1 为修正前，sql2, slots2 为修正后
         return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2,"msg":sql_1}
     

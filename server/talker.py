@@ -8,6 +8,8 @@ sys.path.insert(0, os.getcwd().lower())
 import settings
 from zebura_core.query_parser.parser import Parser
 import pymysql
+
+    
 table_name = 'products'
 parser = Parser()
 conn = pymysql.connect(
@@ -75,5 +77,6 @@ async def main(message: cl.Message):
     await cl.Message(content=answer).send()
 
 if __name__ == "__main__":
+    
     from chainlit.cli import run_chainlit
     run_chainlit(__file__)
