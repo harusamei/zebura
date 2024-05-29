@@ -25,6 +25,7 @@ class Parser:
         cwd = os.getcwd()
         name = z_config['Training','db_schema']  # 'training\it\products_schema.json'
         self.sl = Sch_linking(os.path.join(cwd, name))
+        logging.debug("Parser init success")
         
 
     # main function
@@ -33,10 +34,10 @@ class Parser:
     async def apply(self, table_name, query) -> dict:
 
         # 1. Normalize the query to sql format by LLM
-       
+        print(f"parse.apply()->table:{table_name} query:{query}")
         biling_info = self.norm.gen_dbInfo(table_name)   # 得到双语的DB schema info
         if biling_info is None:
-            print("ERR: no such table in schema")
+            logging.error("no such table in schema")
             return {"status":False,"msg":"no such table in schema"}
         # prompt组成：self awareness + task description + table schema
         prompt = (
@@ -50,11 +51,11 @@ class Parser:
         prompt += "\n"+shot_prompt
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
-        sql_1 = await self.norm.apply(query, prompt)
-        if sql_1 is None:
-            print("ERR: failed to normalize query")
-            return {"status":False,"msg":"no sql query generated"}
-        
+        answ = await self.norm.apply(query, prompt)
+        if answ['status'] is False:
+            return {"status":False,"msg":answ['msg']}
+        else:
+            sql_1 = answ['msg']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
@@ -104,8 +105,8 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['查一下联想小新电脑的价格','哪些产品属于笔记本类别？','查一下价格大于1000的产品']
-    table_name = 'sales_info'
+    querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别','帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
+    table_name = 'products'
     parser = Parser()
     for query in querys:
         result = asyncio.run(parser.apply(table_name, query))
