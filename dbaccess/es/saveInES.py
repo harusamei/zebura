@@ -5,7 +5,7 @@ import os
 sys.path.insert(0, os.getcwd())
 import settings
 import logging
-from utils.es_creator import ESIndex
+from zebura_core.utils.es_creator import ESIndex
 class ESAccess:
         
         def __init__(self):
