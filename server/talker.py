@@ -21,7 +21,7 @@ conn = pymysql.connect(
 )
 print(conn.get_server_info())
 cursor = conn.cursor()
-conn.select_db("it")
+conn.select_db("ikura")
 
 secret = subprocess.check_output(["chainlit", "create-secret"], text=True)
 os.environ["CHAINLIT_AUTH_SECRET"] = secret
@@ -62,7 +62,7 @@ def tool(message):
                 categoryList.append(result_dict)
             return categoryList
         else:
-            return "暂未生成sql语句，请尝试其他方式"
+            return f"{result['msg']}"
     except Exception as e:
         return "遇到如下错误："+str(e)+"\n请您稍后重试"
 
@@ -73,10 +73,10 @@ async def main(message: cl.Message):
     if type(result) is list:
         answer="您所查找的数据如下:"+"\n"+str(result)
     else:
-        answer="发生报错,具体请看以下报错原因:"+"\n"+result
+        answer="对不起，系统不能解析您的意图:"+"\n"+result
     await cl.Message(content=answer).send()
 
 if __name__ == "__main__":
-    
+
     from chainlit.cli import run_chainlit
     run_chainlit(__file__)
