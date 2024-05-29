@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.getcwd())
-
+import logging
 from settings import z_config
 from utils.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
@@ -25,6 +25,8 @@ class CaseStudy:
             self.gcase_index = f"{project_code}_gcases"  # 'gcases'
             table = self.loader.get_table_nameList()[0]
             self.columns = self.loader.get_all_columns(table)
+
+            logging.debug("CaseStudy init success")
             
             
         # 欧氏距离或manhattan distance, _score 越小越相似，区间是[0, +∞)

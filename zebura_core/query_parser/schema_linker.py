@@ -33,7 +33,10 @@ class Sch_linking:
         return like_item['name']
             
     def link_field(self, term, table_name=None):
-
+        # 如果是数字或者符号，直接返回
+        if re.match(r'^[^a-zA-Z\u4e00-\u9fa5]+$', term):
+            return table_name, term
+        
         column_dict = {}
         if table_name is not None:
             table = self.info_loader.get_table_info(table_name)

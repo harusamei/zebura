@@ -13,7 +13,7 @@ from zebura_core.knowledges.schema_loader import Loader
 from csv_processor import pcsv
 from datetime import datetime
 import re
-from elasticsearch.exceptions import RequestError
+from elasticsearch.exceptions import RequestError # type: ignore
 
 from constants import C_ES_SHORT_MAX
 
