@@ -1,0 +1,138 @@
+# 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
+# ignore #开头的行
+
+<TASK: rewrite>
+# 基于上文重写用户输入
+Given a conversation (between Human and Assistant) and a follow up message from Human, using the prior knowledge relationships, rewrite the message to be a standalone and detailed question that captures all relevant context from the conversation. Ensure the rewritten question:
+1. Preserves the original intent of the follow-up message.
+2. If the true intent of the follow-up message cannot be determined, make no modifications to avoid generating an incorrect question.
+3. The length of the rewritten question should not increase significantly compared to the follow-up message, to avoid altering the original intent.
+4. Do not directly use the content of the Assistant's responses to form the rewritten question. Prioritize referring to the information of the Human's historical question.
+5. Maintains the same language as the follow-up message (e.g., reply in Chinese if the question was asked in Chinese and in English if it was asked in English).
+
+Chat History (Sorted by request time from most recent to oldest):
+{history_context}
+
+Follow Up Input: {query}
+
+**NOTE:** The detected language of the Input is '{lang}'. Please respond in '{lang}'.
+
+Refined Standalone Question:
+</TASK>
+
+<TASK: nl2SQL>
+Follow these guidelines:
+Conversion Requirement:
+If the input intention can be converted into SQL, do so.
+If it cannot be converted, output "NOSQL".
+Value Consistency:
+Ensure that any values included in the SQL query exactly match those mentioned in the input.
+Database Information:
+
+If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
+
+Database Schema:
+{dbSchema}
+# Table names and purposes:
+# Table name: users, Purpose: Stores user information
+
+# Table fields and their aliases:
+# users:
+# 
+# id: Unique identifier for the user (Alias: user_id)
+# name: Name of the user (Alias: user_name)
+# email: Email address of the user (Alias: user_email)
+# registration_date: Date when the user registered (Alias: user_registration_date)
+# registration_year: Year when the user registered (Alias: user_registration_year)
+
+Example Input and Output:
+{fewShots}
+# Input: "Find all users who registered in 2021."
+# Output:
+# sql
+# SELECT * FROM users WHERE registration_year = 2021;
+# 
+# Input: "Show me the sales data for March."
+# Output: NOSQL (if table and column names are not provided)
+
+Note: Always ensure the integrity and accuracy of the data values from the input. If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
+
+Format:
+Input: [User's natural language statement]
+Output: [Converted SQL query in code format or "NOSQL"]
+</TASK>
+
+<TASK:nl2SQL_zh>
+# data schema 没有字段说明， zero-shot
+你将会收到一个自然语言查询，任务是将其转换为相应的SQL查询。根据提供的数据模式（schema），在输出时遵循以下规则：
+
+SQL查询使用代码格式。
+如果输入的意图不是数据查询，则直接输出"nosql"。
+如果转换时需要其他数据库信息，请直接向用户询问。
+如果SQL中包含值，这些值需要与输入中提到的值一致。
+数据模式：
+{dbSchema}
+
+示例输入与输出：
+{fewShots}
+
+注意：确保SQL查询中的数据值与输入中提到的值一致。如果由于缺少信息而无法进行直接转换，请勿做出假设，而是向用户寻求澄清。
+</TASK>
+
+<TASK: nl2SQL_lite>
+# dbSchema 没有字段说明， zero-shot
+
+You will receive a natural language query, and your task is to convert it into an appropriate SQL query. Based on the provided data schema, follow these rules for output:
+Use code formatting for SQL queries.
+If the input intent is not a data query, output "nosql".
+If additional database information is needed for conversion, directly ask the user.
+If the SQL query includes values, ensure these values match those mentioned in the input.
+
+Data Schema:
+{dbSchema}
+
+# Table names and purposes:
+# Table name: users, Purpose: Stores user information
+# Table name: orders, Purpose: Stores order information
+# Table name: products, Purpose: Stores product information
+
+# Table fields and their aliases:
+# Table: employees (id,name,department,salary,hire_date)
+# Table: departments (id,name)
+# Table: salaries(employee_id,amount,effective_date)
+                   
+Example Inputs and Outputs:
+{fewShots}
+# Input: "List all employees' names and departments."
+# Output:
+# 
+# sql
+# 
+# SELECT employees.name, departments.name
+# FROM employees
+# JOIN departments ON employees.department = departments.id;
+# 
+# Input: "Tell me the average salary for each department."
+# Output:
+# 
+# sql
+# 
+# SELECT departments.name, AVG(salaries.amount) AS average_salary
+# FROM employees
+# JOIN salaries ON employees.id = salaries.employee_id
+# JOIN departments ON employees.department = departments.id
+# GROUP BY departments.name;
+# 
+# Input: "I want to insert a new employee record."
+# Output:
+# nosql
+# 
+# Input: "List the names and hire dates of all employees hired after 2020."
+# Output:
+# 
+# sql
+# SELECT name, hire_date
+# FROM employees
+# WHERE hire_date > '2020-01-01';
+
+</TASK>
