@@ -9,7 +9,6 @@ sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
 from LLM.llm_agent import LLMAgent
-import LLM.agent_prompt as ap
 from knowledges.schema_loader import Loader
 
 class Normalizer:
@@ -18,6 +17,7 @@ class Normalizer:
         # context for the LLM
         self.llm = LLMAgent()
         self.sch_loader = Loader(z_config['Training','db_schema'])
+
         logging.debug("Normalizer init done")
 
     # main method of class, convert natural language to SQL
@@ -69,13 +69,11 @@ class Normalizer:
             }
       
     # 不确定数据信息prompt summary一下，是否效果更好？
-    async def summary(self,content,lang="zh"):
+    async def summary(self,content):
         
-        if lang=="zh":
-            prompt = ap.lang_mappings["zh_doc_assistant"]
-            prompt += ap.lang_mappings["zh_summary"]
-        else:
-            prompt = ap.roles["doc_assistant"] + ap.tasks["summary"]
+        from zebura_core.LLM.prompt_loader import prompt_generator
+        prompter = prompt_generator()
+        prompt = prompter.gen_default_prompt["summary"]
         result = await self.ask_agent(content, prompt)
         return result
 

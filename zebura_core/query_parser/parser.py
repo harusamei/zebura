@@ -13,7 +13,7 @@ from zebura_core.query_parser.extractor import Extractor
 from normalizer import Normalizer
 from schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
-import zebura_core.LLM.agent_prompt as ap
+from zebura_core.LLM.prompt_loader import prompt_generator
 from constants import D_TOP_GOODCASES as topK
 class Parser:
         
@@ -21,6 +21,7 @@ class Parser:
         self.norm =Normalizer()
         self.te = Extractor()
         self.gc = CaseStudy()
+        self.prompter = prompt_generator()
 
         cwd = os.getcwd()
         name = z_config['Training','db_schema']  # 'training\it\products_schema.json'
@@ -29,26 +30,21 @@ class Parser:
         
 
     # main function
-    # 默认使用 en prompt, 即使是中文的query
+    # table_name None, 为多表查询
     # todo, refine()
-    async def apply(self, table_name, query) -> dict:
+    async def apply(self, query, table_name=None) -> dict:
 
         # 1. Normalize the query to sql format by LLM
-        print(f"parse.apply()->table:{table_name} query:{query}")
-        biling_info = self.norm.gen_dbInfo(table_name)   # 得到双语的DB schema info
-        if biling_info is None:
-            logging.error("no such table in schema")
-            return {"status":False,"msg":"no such table in schema"}
-        # prompt组成：self awareness + task description + table schema
-        prompt = (
-            f'{ap.roles["sql_assistant"]}\n{ap.tasks["nl2sql"]}\n'
-            f'specific details about the database schema:\n{biling_info["en"]}'
-        )
-        
+        if table_name is None:
+            print(f"parse.apply()-> all tables, query:{query}")
+        else:
+            print(f"parse.apply()-> table:{table_name}, query:{query}")     
+
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=topK)
-        shot_prompt = self.gen_shots(results)
-        prompt += "\n"+shot_prompt
+        prompt = self.prompter.gen_sql_prompt(results,table_name)
+        # shot_prompt = self.gen_shots(results)
+        # prompt += "\n"+shot_prompt
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
         answ = await self.norm.apply(query, prompt)
@@ -105,9 +101,10 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别','帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
+    querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别']
+    querys =['帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
     table_name = 'products'
     parser = Parser()
     for query in querys:
-        result = asyncio.run(parser.apply(table_name, query))
+        result = asyncio.run(parser.apply(query))
         print(result)

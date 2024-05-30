@@ -57,7 +57,7 @@ class LLMAgent(LLMBase):
 
 # Example usage  
 if __name__ == '__main__':
-    import zebura_core.LLM.agent_prompt as ap
+    import zebura_core.LLM.prompt_loader as ap
     print(ap.roles)
     querys = [  "请问联想小新电脑多少钱",
                 "联想小新电脑多少钱",

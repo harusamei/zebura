@@ -10,7 +10,7 @@ import json
 sys.path.insert(0, os.getcwd())
 from settings import z_config
 from LLM.llm_agent import LLMAgent
-import LLM.agent_prompt as ap
+import zebura_core.LLM.prompt_loader as ap
 from utils.csv_processor import pcsv
 import logging
 from constants import C_PROJECT_SHEET as project
@@ -70,11 +70,11 @@ class Scanner:
     
     # 所有的table信息存放在一个excel文件中，必须有一个名为project的表，存放整体信息
     # 每个sheet对应一个table
-    # 格式：['no', 'table_name', 'column_name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
+    # 格式：['no', 'table_name', 'column_name','name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
     def gen_schema(self, file_path):
-        musted ={'no', 'table_name', 'column_name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length'}
-        table_keys = {"table_name", "name_zh", "alias", "alias_zh", "desc", "desc_zh"}
-        column_keys = {"column_name", "name_zh","alias", "alias_zh", "type", "length", "desc", "desc_zh"}
+        musted ={'no', 'table_name', 'column_name', 'name','name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length'}
+        table_keys = {"table_name","name", "name_zh", "alias", "alias_zh", "desc", "desc_zh"}
+        column_keys = {"column_name", "name", "name_zh","alias", "alias_zh", "type", "length", "desc", "desc_zh"}
 
         xls = pd.ExcelFile(file_path)
 
@@ -136,7 +136,7 @@ class Scanner:
     @staticmethod
     # project sheet每一行的格式：'key', 'value'， key存入schema时前面加'_'
     # project_name， project_code，domain，desc，possessor
-    # project_code 为该项目的所有相关db的前缀
+    # project_code 为该项目的gcases.json, meta.json的前缀
     def gen_project(file_path) ->dict:
         
         from datetime import datetime

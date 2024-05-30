@@ -44,6 +44,7 @@ class LLMBase:
         if self.agentName == 'CHATANYWHERE':
             payload = {"model": self.model}
             payload["messages"] = messages
+            payload['temperature'] = 0          # 温度设为0，表示模型会给出最可能的回复
             res = self.client.request("POST", "/v1/chat/completions", json.dumps(payload), self.headers)
             res = self.client.getresponse().read()
             res = json.loads(res.decode("utf-8"))
