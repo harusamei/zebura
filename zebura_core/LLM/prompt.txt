@@ -170,9 +170,13 @@ Update or modification questions
 Questions involving joins across multiple tables
 Conditional retrieval questions
 Ensure the questions are clear and unambiguous, reflecting typical queries a user might ask to interact with this database.
-Example Schema:
 
-Tables:
+For each of the above natural language questions in Chinese, convert them into corresponding SQL queries
+
+Example Database Schema:
+
+Input: 
+database schema:
 
 1. Customers
 CustomerID
@@ -198,16 +202,44 @@ ProductID
 Quantity
 Subtotal
 
-Sample Questions:
-"What are the names and email addresses of all customers?"
-"How many orders were placed in the last month?"
-"Which products have a price higher than $50?"
-"What is the total amount spent by each customer?"
-"List the order details for order ID 102."
-"Update the phone number of the customer with customer ID 5 to '123-456-7890'."
-"What is the average order total for orders placed this year?"
-"Which customers placed orders containing the product 'Laptop'?"
+Output:  
+Natural Language Question: 找到所有客户的名称和电子邮件地址。
+SQL Query:
+SELECT Name, Email
+FROM Customers;
 
-Now, generate a comprehensive list of natural language questions based on the provided schema.
+Natural Language Question: 找出在2024年5月下订单的客户ID和订单ID。
+SQL Query:
+SELECT CustomerID, OrderID
+FROM Orders
+WHERE OrderDate BETWEEN '2024-05-01' AND '2024-05-31';
 
+Natural Language Question: 获取所有订单的总金额大于1000的订单ID和总金额。
+SQL Query:
+SELECT OrderID, TotalAmount
+FROM Orders
+WHERE TotalAmount > 1000;
+
+Now, generate a comprehensive list of natural language questions and SQL queries based on the provided db schema.
+Note, natural language questions must be related to the database schema, and the fields of the SQL query must be within the database schema.
+</TASK>
+
+<TASK: db2sql>
+You will be provided with a database schema. Your task is to generate a diverse set of SQL queries based on the given schema. 
+Ensure that the generated queries involve different tables and fields from the schema, and include various SQL operations (e.g., SELECT, INSERT, UPDATE, DELETE, etc.). 
+Provide detailed queries and make each query unique and meaningful. 
+
+Please generate the following types of SQL queries:
+
+A simple SELECT query including multiple fields from one table.
+A query with a JOIN operation involving at least two tables.
+A SELECT query with a subquery.
+An INSERT query to insert data into a table.
+An UPDATE query to update specific records in a table.
+A DELETE query to delete specific records from a table.
+A query including aggregate functions (e.g., COUNT, SUM, AVG, etc.).
+A query with GROUP BY and HAVING clauses.
+Please ensure that each query aligns with the provided database schema.
+
+Below is the detailed information of the schema:
 </TASK>

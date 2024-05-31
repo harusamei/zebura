@@ -8,7 +8,7 @@ sys.path.insert(0, os.getcwd().lower())
 import settings
 from zebura_core.query_parser.parser import Parser
 import pymysql
-
+import random   
     
 table_name = 'products'
 parser = Parser()
@@ -46,11 +46,13 @@ def redefine_secret():
 def tool(message):
     categoryList=[]
     # TODO:在这里返回消息之后将数据塞入content就可以返回
+
     try:
         print(table_name,message.content)
-        result = asyncio.run(parser.apply(table_name, message.content))
+        result = asyncio.run(parser.apply(message.content,table_name))
         print(result)
         if result["status"] is True:
+            
             cursor.execute(result["sql1"][0].lower())
             answer = cursor.fetchall()
             keys = [column[0] for column in cursor.description]

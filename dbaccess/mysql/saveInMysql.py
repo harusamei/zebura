@@ -69,7 +69,6 @@ def gen_schema(table_name):
     print(len(fields))
     return ', '.join(fields)
 
-
 def load_data(cnx, db_name, table_name, csv_path):
     cursor = cnx.cursor()
     cursor.execute(f"USE {db_name}")
@@ -106,10 +105,15 @@ def show_table_schema(cnx, table_name):
     print(f"Table Schema for {table_name}:")
     print(result[1])  # The second element of the result is the table schema
 
+def test_query(cnx, db_name, query):
+    cursor = cnx.cursor()
+    cursor.execute(f"USE {db_name}")
+    cursor.execute(query)
+    result = cursor.fetchall()
+    print(result)
+    cursor.close()
 
-# Example usage
-if __name__ == '__main__':
-
+def usecase():
     cnx = connect()
     load_schema('mysql/ikura_meta.json')
     db_name = sch_loader.project
@@ -120,4 +124,19 @@ if __name__ == '__main__':
         create_table(cnx, db_name, table_name, tb_schema)
     
     load_data(cnx, db_name, 'products', 'mysql/leproducts.csv')
+
+# Example usage
+if __name__ == '__main__':
+
+    sql_queries =[  "SELECT product_name, disk_capacity FROM products WHERE disk_capacity > '500GB'",
+                    "SELECT brand FROM products;",
+                  "SELECT target_audience, service_description FROM products;",
+                  "SELECT size, width, foldability FROM products;",
+                "SELECT product_name, screen_size, screen_type FROM products;"  
+    ]
+    db_name ='ikura'
+    cnx = connect()
+    for query in sql_queries:
+        print(f"Executing query: {query}")
+        test_query(cnx, db_name,query)
    
