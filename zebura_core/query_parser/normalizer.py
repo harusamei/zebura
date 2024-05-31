@@ -21,9 +21,9 @@ class Normalizer:
         logging.debug("Normalizer init done")
 
     # main method of class, convert natural language to SQL
-    async def apply(self,query:str,prompt:str) ->list:
+    async def apply(self,query:str,prompt:str,fewshots=None) ->list:
 
-        result = await self.convert_sql(query,prompt)
+        result = await self.convert_sql(query,prompt,fewshots)
         # 结果有三种情况， LLM无回应，无法提取SQL，提取SQL
         if result is None:
             return {"status":False,"msg":"[No response]: no answer from LLM"}
@@ -77,12 +77,12 @@ class Normalizer:
         result = await self.ask_agent(content, prompt)
         return result
 
-    async def ask_agent(self, querys, prompt):
+    async def ask_agent(self, querys, sys_prompt,fewshots=None):
 
         if isinstance(querys,str):
-            results = await self.llm.ask_query(querys, prompt)
+            results = await self.llm.ask_query(querys, sys_prompt,fewshots)
         else:
-            results = await self.llm.ask_query_list(querys, prompt)
+            results = await self.llm.ask_query_list(querys, sys_prompt)
             if len(results) != len(querys):
                 print("ERR: queries and results do not match")
         
@@ -108,9 +108,9 @@ class Normalizer:
         return matches
     
     # LLM 只负责转换，不对结果进行处理   
-    async def convert_sql(self,queries,prompt):
+    async def convert_sql(self,queries,sys_prompt,fewshots=None):
         # Ask the GPT agent to convert the query to SQL
-        results = await self.ask_agent(queries, prompt)
+        results = await self.ask_agent(queries, sys_prompt,fewshots)
         print("converse sql done")
       
         return results

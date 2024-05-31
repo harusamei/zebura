@@ -42,12 +42,14 @@ class Parser:
 
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=topK)
-        prompt = self.prompter.gen_sql_prompt(results,table_name)
-        # shot_prompt = self.gen_shots(results)
-        # prompt += "\n"+shot_prompt
+        # system prompt, fewshots 不分离情况
+        #prompt = self.prompter.gen_sql_prompt(results,table_name)
+        #得到 system prompt, fewshots prompt
+        prompt1 = self.prompter.gen_sql_prompt_dial(results, table_name, query)
+     
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
-        answ = await self.norm.apply(query, prompt)
+        answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
         if answ['status'] is False:
             return {"status":False,"msg":answ['msg']}
         else:
@@ -60,17 +62,18 @@ class Parser:
         sql2 = self.gen_sql(slots2)
         # sql1, slots1 为修正前，sql2, slots2 为修正后
         return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2,"msg":sql_1}
-    
-    def gen_shots(self,results):
-        shot_prompt = ""
-        for res in results:
-            shot_prompt += f"Q: {res['doc']['query']}\n"
-            shot_prompt += f"A: {res['doc']['sql']}\n\n"
-        return shot_prompt
-    
-    
-    def find_good_cases(self,query,sql=None,topK=5):
-        return self.gc.assemble_find(query,sql,topK)
+
+     
+    def find_good_cases(self,query,sql=None,topK=topK):
+        # 从ES中获得候选 topK*1.5
+        # {'doc':docs[id[0]], 'rank':i+1, 'score':id[1]}
+        results = self.gc.assemble_find(query,sql,int(topK*1.5))
+        # TODO 用score 过滤？rerank
+        new_results = []
+        for res in results[:topK]:
+            new_results.append(res['doc'])
+        
+        return new_results
     
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):

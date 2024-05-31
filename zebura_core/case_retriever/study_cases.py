@@ -66,7 +66,8 @@ class CaseStudy:
             
             sorted_docs = sorted(docs.items(), key=lambda item: item[1], reverse=True)
             return sorted_docs
-
+        
+        # hybrid search
         def assemble_find(self, query, sql=None, topk=dtk) -> list:
 
             resps = [None]*3

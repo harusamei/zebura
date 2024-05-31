@@ -56,22 +56,41 @@ class prompt_generator:
     def gen_default_prompt(self,task_name:str) -> str:
         if task_name.lower() not in self.tasks.keys():
             return ""
-        
-        return self.roles['doc_assistant']+'\n'+self.tasks[task_name]
+        if task_name.lower() == "nl2sql":
+            return self.roles['sql_assistant']+'\n'+self.tasks[task_name]
+        else:
+            return self.roles['doc_assistant']+'\n'+self.tasks[task_name]
     
-    def gen_sql_prompt(self,gcases,table_name=None,style='full') -> str:
+    # style = full, zh, lite
+    def gen_sql_prompt(self,gcases=None,table_name=None,style='full') -> str:
 
-        task_name = "nl2sql"
-        template = self.tasks[task_name]
-        pos_fewShots = self.gen_fewShots(task_name,gcases)
-        neg_fewShots = self.gen_negShots()
-        fewShots = pos_fewShots + neg_fewShots
-        dbSchema = self.gen_dbSchema(table_name,style=style)
-        
-        prompt= template.format(fewShots=fewShots,dbSchema=dbSchema)
         role = self.roles["sql_assistant"]
 
+        if gcases is None:
+            task_name = "nl2sql_zero"
+        else:
+            task_name = "nl2sql"
+
+        template = self.tasks[task_name]
+        dbSchema = self.gen_dbSchema(table_name,style=style)
+
+        if gcases is None:
+            prompt= template.format(dbSchema=dbSchema)
+        else:
+            pos_fewShots = self.gen_fewShots(task_name,gcases)
+            neg_fewShots = self.gen_negShots()
+            fewShots = pos_fewShots + neg_fewShots
+            prompt= template.format(fewShots=fewShots,dbSchema=dbSchema)
+        print("prompt: ",role +"\n"+ prompt)
         return role +"\n"+ prompt
+    
+    def gen_sql_prompt_dial(self,gcases:list,table_name=None,style='full') -> dict:
+        role = self.roles["sql_assistant"]
+        prompt = self.tasks["nl2sql_zero"]
+        fewshots_dial= self.gen_fewShots_dial(gcases)
+        dbSchema = self.gen_dbSchema(table_name,style=style)
+
+        return {"system":role+prompt+dbSchema,"fewshots":fewshots_dial}
     
     # gcases: ES的返回结果 golden cases
     # fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"] 
@@ -79,18 +98,29 @@ class prompt_generator:
     # Output:
     # sql
     # SELECT * FROM users WHERE registration_year = 2021;
-    def gen_fewShots(self,task_name:str, gcases:list) -> str:
-
-        if task_name.lower() !="nl2sql":
-            return ""
+    def gen_fewShots(self, gcases:list) -> str:
+        answ = 'sql'
         tlist=[]
         for case in gcases:
-            s = f"Input:{case['doc']['query']}\nOutput:\nsql\n{case['doc']['sql']}\n"
+            s = f"Input:{case['query']}\nOutput:\nsql\n{case[answ]}\n"
             tlist.append(s)
         return "\n".join(tlist)
     
-    # Input: "Show me the sales data for March."
-    # Output: NOSQL (if table and column names are not provided)
+    # 生成user/assistant对
+    # user: "Show me the sales data for March."
+    # assistant: NOSQL (if table and column names are not provided)
+    def gen_fewShots_dial(self, gcases:list) -> list:
+
+        answ = 'sql'
+        tlist =[]
+        tDict ={}
+        for case in gcases:
+            tDict['user'] = case['query']
+            tDict['assistant'] = case[answ]
+            tlist.append(tDict)
+        return tlist
+    
+
     def gen_negShots(self) -> str:
         ncase = (   "Input: show me the big data for March.\n"
                     "Output: NOSQL (if table and column names are not provided)\n"

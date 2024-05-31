@@ -167,7 +167,7 @@ class Scanner:
                         }
             ]
         }
-        # sql: 模型结果； gt: ground truth 正确SQL; activity: 执行操作； explain: 解释； category: 类别
+        # sql: 模型结果； gt: ground truth 正确SQL; activity: 执行操作(这部分可写下一步的推荐)； explain: 解释； category: 类别
         fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"]  
         types = ["text", "text", "dense_vector", "text", "text", "text", "text", "keyword", "date"]
         for i, field in enumerate(fields):

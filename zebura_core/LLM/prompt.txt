@@ -20,6 +20,25 @@ Follow Up Input: {query}
 Refined Standalone Question:
 </TASK>
 
+<TASK: nl2SQL_zero>
+# Follow these guidelines:
+# Conversion Requirement:
+# If the input intention can be converted into SQL, do so.
+# If it cannot be converted, output "NOSQL".
+
+# Database Information:
+# If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
+
+Database Schema:
+{dbSchema}
+Note: Ensure that any values included in the SQL query exactly match those mentioned in the input.
+# If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
+
+Format:
+Input: [User's natural language statement]
+Output: [Converted SQL query in code format or "NOSQL"]
+
+</TASK>
 <TASK: nl2SQL>
 Follow these guidelines:
 Conversion Requirement:
@@ -134,5 +153,61 @@ Example Inputs and Outputs:
 # SELECT name, hire_date
 # FROM employees
 # WHERE hire_date > '2020-01-01';
+
+</TASK>
+
+# 根据db schema生成查询DB的自然语言问题
+<TASK: db2nl>
+You are provided with a detailed schema of a relational database. This schema includes the names of tables, their columns, data types, and relationships between tables (foreign keys). Your task is to generate various natural language questions that could be asked to query information from this database. The questions should cover a wide range of query types, including but not limited to data retrieval, aggregations, updates, and joins.
+
+Instructions:
+
+Carefully read the provided database schema to understand the structure and relationships between tables.
+Generate a set of natural language questions based on the schema. Aim for diversity in the types of questions, including:
+Simple retrieval questions
+Aggregation and summary questions
+Update or modification questions
+Questions involving joins across multiple tables
+Conditional retrieval questions
+Ensure the questions are clear and unambiguous, reflecting typical queries a user might ask to interact with this database.
+Example Schema:
+
+Tables:
+
+1. Customers
+CustomerID
+Name 
+Email 
+PhoneNumber 
+
+2. Orders
+OrderID
+OrderDate 
+CustomerID 
+TotalAmount 
+
+3. Products
+ProductID 
+ProductName 
+Price 
+
+4. OrderDetails
+OrderDetailID
+OrderID
+ProductID
+Quantity
+Subtotal
+
+Sample Questions:
+"What are the names and email addresses of all customers?"
+"How many orders were placed in the last month?"
+"Which products have a price higher than $50?"
+"What is the total amount spent by each customer?"
+"List the order details for order ID 102."
+"Update the phone number of the customer with customer ID 5 to '123-456-7890'."
+"What is the average order total for orders placed this year?"
+"Which customers placed orders containing the product 'Laptop'?"
+
+Now, generate a comprehensive list of natural language questions based on the provided schema.
 
 </TASK>
