@@ -8,7 +8,7 @@ import logging
 
 class LLMAgent(LLMBase):
    
-    def __init__(self, agentName="CHATANYWHERE", model="gpt-3.5-turbo"):
+    def __init__(self, agentName="AZURE", model="gpt-3.5-turbo"):
         super().__init__(agentName,model)
         
 
@@ -40,21 +40,6 @@ class LLMAgent(LLMBase):
         
         return results
 
-# 调用例子
-# response = openai.ChatCompletion.create(
-#       model=MODEL,
-#       messages=[
-#         {"role": "system", "content": "You are a helpful, pattern-following assistant."},
-#         {"role": "user", "content": "Help me translate the following corporate jargon into plain English."},
-#         {"role": "assistant", "content": "Sure, I'd be happy to!"},
-#         {"role": "user", "content": "New synergies will help drive top-line growth."},
-#         {"role": "assistant", "content": "Things working well together will increase revenue."},
-#         {"role": "user", "content": "Let's circle back when we have more bandwidth to touch base on opportunities for increased leverage."},
-#         {"role": "assistant", "content": "Let's talk later when we're less busy about how to do better."},
-#         {"role": "user", "content": "This late pivot means we don't have time to boil the ocean for the client deliverable."},
-#     ],
-#     temperature=0,
-# )
     # fewshots 单独时， shots是一个list，包含{user,assistant}
     async def ask_query(self,query:str, prompt:str,shots=None)->str:
         logging.info(f"ask_query() -> query: {query}, shots: {shots}")
@@ -74,7 +59,6 @@ class LLMAgent(LLMBase):
         except Exception as e:
             return e
 
-
 # Example usage  
 if __name__ == '__main__':
     from zebura_core.LLM.prompt_loader import prompt_generator
@@ -90,6 +74,7 @@ if __name__ == '__main__':
     pg = prompt_generator()
     prompt = pg.gen_sql_prompt(style='lite')
     agent = LLMAgent()
+
     answers = asyncio.run(agent.ask_query(querys[1],prompt))
     print(answers)
     results = asyncio.run(agent.ask_query_list(querys,prompt))
