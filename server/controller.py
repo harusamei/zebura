@@ -57,6 +57,16 @@ class Controller:
 
         logging.info(f"Controller init success")
 
+    @staticmethod
+    def get_new_log(funName):
+        return {
+            'msg': '',
+            'status': 'succ',
+            'from': funName,
+            'type': 'transaction',
+            'format': 'text'
+        }
+    
     def get_next(self,pipeline):
 
         lastLog = pipeline[-1]
@@ -77,14 +87,11 @@ class Controller:
         log = pipeline[-1]
         content = log['msg']
         result = await self.parser.apply(content)
-        print(result['msg'])
-        new_Log = {
-            'msg':result['msg'],
-            'status': result["status"],
-            'from':"nl2sql",
-            'type':'transaction',
-            'others': result
-        }
+        new_Log = self.get_new_log("nl2sql")
+        new_Log['msg'] = result['msg']
+        new_Log['status'] = result["status"]
+        new_Log['others'] = result
+        
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
@@ -101,21 +108,17 @@ class Controller:
         query = log['msg']
         template = self.prompter.gen_default_prompt("rewrite")
         prompt = template.format(history_context=history_context,query=query)
-        result = await self.llm.ask_query(query, prompt)
+        result = await self.askLLM(query, prompt)
         
         print(result)
-        new_Log = dict(log)
-        new_Log['from'] ='rewrite'
+        new_Log = self.get_new_log("rewrite")
         new_Log['msg'] = result
-        new_Log['status'] = 'succ'
-        new_Log['type'] ='transaction'
         
         pipeline.append(new_Log)
 
     def transit(self,pipeline):
         log = pipeline[-1]
-        new_Log = dict(log)
-        new_Log['from'] ='end'
+        new_Log = self.get_new_log("end")
         
         pipeline.append(new_Log)
             
@@ -142,19 +145,16 @@ class Controller:
         pipeline.append(resp)
 
     #上一步执行不成功，给出解释
-    def interpret(self,queue):
-        last_step = queue.get()
-        queue.put("interpret finsihed")
+    def interpret(self,pipeline):
+        pass
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
         log = pipeline[-1]
         markdown = tabulate(log['msg'], headers="keys", tablefmt="pipe")
-        new_Log = dict(log)
+        new_Log = self.get_new_log("polish")
         new_Log['msg'] = markdown
-        new_Log['from'] = 'polish'
         new_Log['format'] = 'md'
-        new_Log['status'] = 'succ'
         if markdown == "":
            new_Log['note'] = log.get('note','')+ '\nsql is correct, but no result found'
         pipeline.append(new_Log)
@@ -162,10 +162,10 @@ class Controller:
     async def askLLM(self,query,prompt):
         result = await self.llm.ask_query(query,prompt) 
         print(result)
+        return result
+    
 
-    # 主要的处理逻辑, assign tasks to different workers
-
-
+# 主要的处理逻辑, assign tasks to different workers
 async def apply(request):
 
     print(request)
