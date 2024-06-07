@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
 import settings
-import multiprocessing    
+from tabulate import tabulate
 
 import logging
 import asyncio
@@ -11,7 +11,7 @@ import inspect
 from zebura_core.query_parser.parser import Parser
 from zebura_core.answer_refiner.synthesizer import Synthesizer
 # from zebura_core.answer_refiner.explainer import Explainer  
-from zebura_core.activity_executor.executor import Executor
+from zebura_core.activity.exe_activity import ExeActivity
 from zebura_core.LLM.llm_agent import LLMAgent
 
 # 一个传递request的pipeline
@@ -20,7 +20,7 @@ from zebura_core.LLM.llm_agent import LLMAgent
 #         "msg": content,
 #         "context": context,
 #         "type": "user/assistant/transaction", # 用户， controller, 增加 action间切换
-#         "format": "text/md/sql...", # content格式，与显示相关
+#         "format": "text/md/sql/dict...", # content格式，与显示相关
 #         "status": "new/hold/failed/succ", # 新对话,多轮继续；执行失败；执行成
 #         
 # 增加      "from": "nl2sql/sql4db/interpret/polish" # 当前任务
@@ -31,25 +31,29 @@ class Controller:
     llm = LLMAgent("AZURE","gpt-3.5-turbo")
     parser = Parser()
     st_matrix = {
-            "(new,user)": "nl2sql",
-            "(hold,user)": "rewrite",
+            "(new,user)"    : "nl2sql",
+            "(hold,user)"   : "rewrite",
             "(succ,rewrite)": "nl2sql",
-            "(succ,nl2sql)": "sql4db",
-            "(succ,sql4db)": "polish",
+            "(succ,nl2sql)" : "sql4db",
+            "(succ,sql4db)" : "polish",
             "(succ,polish)" : "genAnswer",
-            "(failed,end)" : "genAnswer",
-            "(succ,end)" : "genAnswer",
-            "(failed,*)"  : "transit",   # 失败则重新设置状态
-            "(*,*)" : "genAnswer"        # no way
+            "(failed,end)"  : "genAnswer",
+            "(succ,end)"    : "genAnswer",
+            "(failed,*)"    : "transit",        # 失败则重新设置状态
+            "(*,*)"         : "genAnswer"       # send to user
     }
     
     def __init__(self):
         
         self.matrix = Controller.st_matrix
+        self.llm = Controller.llm
+
         self.parser = Controller.parser
+        self.sch_loader = Controller.parser.norm.sch_loader
         self.prompter = Controller.parser.prompter      # prompt generator
+
         self.asw_refiner = Synthesizer()
-        self.executor = Executor()
+        self.executor = ExeActivity('mysql',self.sch_loader)
 
         logging.info(f"Controller init success")
 
@@ -73,7 +77,7 @@ class Controller:
         log = pipeline[-1]
         content = log['msg']
         result = await self.parser.apply(content)
-        
+        print(result['msg'])
         new_Log = {
             'msg':result['msg'],
             'status': result["status"],
@@ -119,26 +123,41 @@ class Controller:
         log = pipeline[-1]
         response = dict(log)
         response['type'] = 'assistant'
-        response["format"]= "text"
+        response["format"]= log.get('format','text')
 
         if log['status'] == "failed":
-            response['msg'] += "\n please tell me more details for your database."    
+            response['msg'] += "\n please tell me more details for your database."   
+        else:
+            response['msg'] += response.get('note','')
+             
         pipeline.append(response) 
 
     # 查库
-    def sql4db(self,queue):
-        sql = queue.get()
-        queue.put("sql4db finsihed")
+    def sql4db(self,pipeline):
+        log = pipeline[-1]
+        query = log['msg']
+        resp = self.executor.exeQuery(query)
+        resp['from'] ="sql4db"
+        resp['type'] ='transaction'
+        pipeline.append(resp)
 
     #上一步执行不成功，给出解释
     def interpret(self,queue):
         last_step = queue.get()
         queue.put("interpret finsihed")
 
-    # 生成答案
-    def polish(self,queue):
-        result = queue.get()
-        queue.put("polish finsihed")
+    # 美化sql结果，生成答案
+    def polish(self, pipeline):
+        log = pipeline[-1]
+        markdown = tabulate(log['msg'], headers="keys", tablefmt="pipe")
+        new_Log = dict(log)
+        new_Log['msg'] = markdown
+        new_Log['from'] = 'polish'
+        new_Log['format'] = 'md'
+        new_Log['status'] = 'succ'
+        if markdown == "":
+           new_Log['note'] = log.get('note','')+ '\nsql is correct, but no result found'
+        pipeline.append(new_Log)
 
     async def askLLM(self,query,prompt):
         result = await self.llm.ask_query(query,prompt) 
@@ -167,12 +186,13 @@ async def apply(request):
     return pipeline[-1]
 
 async def main():
-    request = {'msg': 'hello', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '找出所有内存容量大于16 GB的服务器的SQL查询语句应该怎么写？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
-    context.append(resp)
-    request1 = {'msg': 'hello again', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
-    resp = await apply(request1)
+    # context.append(resp)
+    # # msg ='Remote end closed connection without response'
+    # request1 = {'msg': '查一下产品名 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    # resp = await apply(request1)
 
 if __name__ == "__main__":
       

@@ -40,20 +40,25 @@ class Parser:
         else:
             print(f"parse.apply()-> table:{table_name}, query:{query}")     
 
+        resp ={
+            "status":"succ",
+            "msg":""
+        }
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=topK)
-        # system prompt, fewshots 不分离情况
-        #prompt = self.prompter.gen_sql_prompt(results,table_name)
+        
         #得到 system prompt, fewshots prompt
         prompt1 = self.prompter.gen_sql_prompt_dial(results, table_name, query)
      
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
         answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
+        resp['msg'] = answ['msg']
         if answ['status'] is False:
-            return {"status":False,"msg":answ['msg']}
-        else:
-            sql_1 = answ['msg']
+            resp['status'] = "failed"
+            return resp
+        
+        sql_1 = answ['msg']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema
@@ -61,8 +66,12 @@ class Parser:
         # 3. revise the sql query by the slots
         sql2 = self.gen_sql(slots2)
         # sql1, slots1 为修正前，sql2, slots2 为修正后
-        return {"status":True, "sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2,"msg":sql_1}
+        if slots1 is None:
+            resp['status'] = "failed"
+        
+        merged_dict = {**resp, **{"sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}}
 
+        return merged_dict
      
     def find_good_cases(self,query,sql=None,topK=topK):
         # 从ES中获得候选 topK*1.5
