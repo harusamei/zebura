@@ -1,13 +1,13 @@
-﻿no,query,qemb,sql,gt,activity,category,explain,updated_date
-,列出电子产品分类下的所有产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
+﻿query,qemb,sql,gt,activity,category,explain,updated_date,tquery
+列出电子产品分类下的所有产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
 field:product_cate1
 kword:电子产品
-response: product_cate2",select all,列出该分类下的所有品牌,2024/5/14
-3,列出所有电子产品分类下的产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
+response: product_cate2",select all,列出该分类下的所有品牌,2024/5/14,列出电子产品分类下的所有产品
+列出所有电子产品分类下的产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
 field:product_cate1
 kword:电子产品
-response: product_cate2",select all,列出该分类下的所有品牌,2024/5/14
-1,鼠标属于哪个分类,鼠标属于哪个分类,SELECT Category FROM Products WHERE ProductName = '鼠标';,"{Category:category,
+response: product_cate2",select all,列出该分类下的所有品牌,2024/5/14,列出所有电子产品分类下的产品
+鼠标属于哪个分类,鼠标属于哪个分类,SELECT Category FROM Products WHERE ProductName = '鼠标';,"{Category:category,
 Products:product,
 ProductName:product_name
 }","table:product
@@ -15,108 +15,108 @@ doFunc: searchValueInField
 kwargs:{field: product_name, value: '鼠标'}
 showFunc::outputField
 kwargs:{field:category}
-",select columns,*属于哪个分类,
-4,有哪些产品是计算机,有哪些产品是计算机,SELECT * FROM Products WHERE Category = '计算机';,,"function: query_word
+",select columns,*属于哪个分类,,鼠标属于哪个分类
+有哪些产品是计算机,有哪些产品是计算机,SELECT * FROM Products WHERE Category = '计算机';,,"function: query_word
 field:product_name
 kword:远程数据恢复
 response: product_cate3",select all,"哪些产品是*
-哪些产品属于*",
-2,远程数据恢复属于哪个分类,远程数据恢复属于哪个分类,SELECT Category FROM Products WHERE ProductName = '远程数据恢复';,,"function: query_word
+哪些产品属于*",,有哪些产品是计算机
+远程数据恢复属于哪个分类,远程数据恢复属于哪个分类,SELECT Category FROM Products WHERE ProductName = '远程数据恢复';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate1",select columns,,
-9,台式机与笔记本有什么区别,台式机与笔记本有什么区别,SELECT DISTINCT Property FROM Products WHERE Category = '台式机' OR Category = '笔记本电脑';,,"function: query_word
+response: product_cate1",select columns,,,远程数据恢复属于哪个分类
+台式机与笔记本有什么区别,台式机与笔记本有什么区别,SELECT DISTINCT Property FROM Products WHERE Category = '台式机' OR Category = '笔记本电脑';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate8",select diff,,
-5,有什么与鼠标有关的产品,有什么与鼠标有关的产品,SELECT * FROM Products WHERE RelatedTo = '鼠标';,,"function: query_multi_fields
+response: product_cate8",select diff,,,台式机与笔记本有什么区别
+有什么与鼠标有关的产品,有什么与鼠标有关的产品,SELECT * FROM Products WHERE RelatedTo = '鼠标';,,"function: query_multi_fields
 field:*
 kword:""鼠标""
-response: process_result",related to,与*相关的docs,
-11,想买一台笔记本，价格在5000块左右，请问怎么选择,想买一台笔记本，价格在5000块左右，请问怎么选择,"SELECT product_name
+response: process_result",related to,与*相关的docs,,有什么与鼠标有关的产品
+想买一台笔记本，价格在5000块左右，请问怎么选择,想买一台笔记本，价格在5000块左右，请问怎么选择,"SELECT product_name
 FROM products
 WHERE price BETWEEN 4900 AND 5100
-  AND product_name LIKE '%笔记本%';",,,,,
-6,有哪些新上市的产品,有哪些新上市的产品,SELECT * FROM Products WHERE ReleaseDate >= '2024-01-01';,,"function: query_word
+  AND product_name LIKE '%笔记本%';",,,,,,想买一台笔记本，价格在5000块左右，请问怎么选择
+有哪些新上市的产品,有哪些新上市的产品,SELECT * FROM Products WHERE ReleaseDate >= '2024-01-01';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate5",new release,与上市相关的docs,
-12,请按品牌对产品分组，并给出每种品牌下产品类别的数量,请按品牌对产品分组，并给出每种品牌下产品类别的数量,"SELECT brand, COUNT(product_name) FROM products GROUP BY brand;",,,,,
-7,列出价格在1000~15000的电脑,列出价格在1000~15000的电脑,SELECT * FROM Products WHERE Category = '电脑' AND Price BETWEEN 1000 AND 15000;,,"function: query_range
+response: product_cate5",new release,与上市相关的docs,,有哪些新上市的产品
+请按品牌对产品分组，并给出每种品牌下产品类别的数量,请按品牌对产品分组，并给出每种品牌下产品类别的数量,"SELECT brand, COUNT(product_name) FROM products GROUP BY brand;",,,,,,请按品牌对产品分组，并给出每种品牌下产品类别的数量
+列出价格在1000~15000的电脑,列出价格在1000~15000的电脑,SELECT * FROM Products WHERE Category = '电脑' AND Price BETWEEN 1000 AND 15000;,,"function: query_range
 field:product_name
 kword:远程数据恢复
-response: product_cate6",conditional select *,在某区间的某类产品,
-13,找出所有白色的笔记本电脑。,找出所有白色的笔记本电脑。,"```sql
+response: product_cate6",conditional select *,在某区间的某类产品,,列出价格在1000~15000的电脑
+找出所有白色的笔记本电脑。,找出所有白色的笔记本电脑。,"```sql
 SELECT * FROM products 
 WHERE color = '白色' 
 AND category = '笔记本电脑';
-```",,,,,
-8,有没有价格低于50的鼠标,有没有价格低于50的鼠标,SELECT * FROM Products WHERE Category = '鼠标' AND Price < 50;,,"function: query_word
+```",,,,,,找出所有白色的笔记本电脑。
+有没有价格低于50的鼠标,有没有价格低于50的鼠标,SELECT * FROM Products WHERE Category = '鼠标' AND Price < 50;,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate7",condidtional select *,条件查询,
-14,搜索所有价格在1000到1500美元之间的智能手机。,搜索所有价格在1000到1500美元之间的智能手机。,"```sql
+response: product_cate7",condidtional select *,条件查询,,有没有价格低于50的鼠标
+搜索所有价格在1000到1500美元之间的智能手机。,搜索所有价格在1000到1500美元之间的智能手机。,"```sql
 SELECT * FROM products
 WHERE category = 'smartphone' AND price >= 1000 AND price <= 1500;
-```",,,,,
-10,笔记本电脑一般多少钱,笔记本电脑一般多少钱,SELECT AVG(Price) FROM Products WHERE Category = '笔记本电脑';,,"function: query_word
+```",,,,,,搜索所有价格在1000到1500美元之间的智能手机。
+笔记本电脑一般多少钱,笔记本电脑一般多少钱,SELECT AVG(Price) FROM Products WHERE Category = '笔记本电脑';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate9",select avg,平均值聚合,
-16,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,"```
+response: product_cate9",select avg,平均值聚合,,笔记本电脑一般多少钱
+找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,"```
 SELECT * FROM products
 WHERE category = 'Game Desktop'
 AND gpu_series = 'NVIDIA GeForce'
 AND cpu_speed > 3.0;
-```",,,,,
-15,列出所有折叠型的平板电脑。,列出所有折叠型的平板电脑。,"```
+```",,,,,,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。
+列出所有折叠型的平板电脑。,列出所有折叠型的平板电脑。,"```
 SELECT * FROM Products
 WHERE category = 'Tablet' AND type = 'Foldable';
-```",,,,,
-20,搜索所有配备Intel处理器的笔记本电脑。,搜索所有配备Intel处理器的笔记本电脑。,"```sql
+```",,,,,,列出所有折叠型的平板电脑。
+搜索所有配备Intel处理器的笔记本电脑。,搜索所有配备Intel处理器的笔记本电脑。,"```sql
 SELECT * FROM laptops WHERE processor = 'Intel';
-```",,,,,
-17,显示所有已经下架的产品。,显示所有已经下架的产品。,"```sql
+```",,,,,,搜索所有配备Intel处理器的笔记本电脑。
+显示所有已经下架的产品。,显示所有已经下架的产品。,"```sql
 SELECT * FROM products WHERE status = '下架';
-```",,,,,
-6,有哪些新上市的产品,有哪些新上市的产品,SELECT * FROM Products WHERE ReleaseDate >= '2024-01-01';,,"function: query_word
+```",,,,,,显示所有已经下架的产品。
+有哪些新上市的产品,有哪些新上市的产品,SELECT * FROM Products WHERE ReleaseDate >= '2024-01-01';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate5",new release,与上市相关的docs,
-18,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,"```sql
+response: product_cate5",new release,与上市相关的docs,,有哪些新上市的产品
+查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,"```sql
 SELECT * FROM products
 WHERE category = '笔记本电脑'
 AND brand = '华硕'
 AND screen_size >= 13
 AND screen_size <= 15;
-```",,,,,
-7,列出价格在1000~15000的电脑,列出价格在1000~15000的电脑,SELECT * FROM Products WHERE Category = '电脑' AND Price BETWEEN 1000 AND 15000;,,"function: query_range
+```",,,,,,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。
+列出价格在1000~15000的电脑,列出价格在1000~15000的电脑,SELECT * FROM Products WHERE Category = '电脑' AND Price BETWEEN 1000 AND 15000;,,"function: query_range
 field:product_name
 kword:远程数据恢复
-response: product_cate6",conditional select *,在某区间的某类产品,
-19,找出所有内存容量大于16 GB的服务器。,找出所有内存容量大于16 GB的服务器。,"```sql
+response: product_cate6",conditional select *,在某区间的某类产品,,列出价格在1000~15000的电脑
+找出所有内存容量大于16 GB的服务器。,找出所有内存容量大于16 GB的服务器。,"```sql
 SELECT * FROM servers WHERE memory_capacity > 16;
-```",,,,,
-8,有没有价格低于50的鼠标,有没有价格低于50的鼠标,SELECT * FROM Products WHERE Category = '鼠标' AND Price < 50;,,"function: query_word
+```",,,,,,找出所有内存容量大于16 GB的服务器。
+有没有价格低于50的鼠标,有没有价格低于50的鼠标,SELECT * FROM Products WHERE Category = '鼠标' AND Price < 50;,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate7",condidtional select *,条件查询,
-21,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,"```sql
+response: product_cate7",condidtional select *,条件查询,,有没有价格低于50的鼠标
+显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,"```sql
 SELECT * FROM products
 WHERE brand = '苹果' AND screen_size > 15 AND price < 2000;
-```",,,,,
-9,台式机与笔记本有什么区别,台式机与笔记本有什么区别,SELECT DISTINCT Property FROM Products WHERE Category = '台式机' OR Category = '笔记本电脑';,,"function: query_word
+```",,,,,,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。
+台式机与笔记本有什么区别,台式机与笔记本有什么区别,SELECT DISTINCT Property FROM Products WHERE Category = '台式机' OR Category = '笔记本电脑';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate8",select diff,,
-22,找出所有兼容Windows 10操作系统的台式电脑。,找出所有兼容Windows 10操作系统的台式电脑。,"```sql
+response: product_cate8",select diff,,,台式机与笔记本有什么区别
+找出所有兼容Windows 10操作系统的台式电脑。,找出所有兼容Windows 10操作系统的台式电脑。,"```sql
 SELECT * FROM desktop WHERE compatibility = 'Windows 10';
-```",,,,,
-10,笔记本电脑一般多少钱,笔记本电脑一般多少钱,SELECT AVG(Price) FROM Products WHERE Category = '笔记本电脑';,,"function: query_word
+```",,,,,,找出所有兼容Windows 10操作系统的台式电脑。
+笔记本电脑一般多少钱,笔记本电脑一般多少钱,SELECT AVG(Price) FROM Products WHERE Category = '笔记本电脑';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate9",select avg,平均值聚合,
-1,鼠标属于哪个分类,鼠标属于哪个分类,SELECT Category FROM Products WHERE ProductName = '鼠标';,"{Category:category,
+response: product_cate9",select avg,平均值聚合,,笔记本电脑一般多少钱
+鼠标属于哪个分类,鼠标属于哪个分类,SELECT Category FROM Products WHERE ProductName = '鼠标';,"{Category:category,
 Products:product,
 ProductName:product_name
 }","table:product
@@ -124,68 +124,68 @@ doFunc: searchValueInField
 kwargs:{field: product_name, value: '鼠标'}
 showFunc::outputField
 kwargs:{field:category}
-",select columns,*属于哪个分类,
-12,请按品牌对产品分组，并给出每种品牌下产品类别的数量,请按品牌对产品分组，并给出每种品牌下产品类别的数量,"SELECT brand, COUNT(product_name) FROM products GROUP BY brand;",,,,,
-2,远程数据恢复属于哪个分类,远程数据恢复属于哪个分类,SELECT Category FROM Products WHERE ProductName = '远程数据恢复';,,"function: query_word
+",select columns,*属于哪个分类,,鼠标属于哪个分类
+请按品牌对产品分组，并给出每种品牌下产品类别的数量,请按品牌对产品分组，并给出每种品牌下产品类别的数量,"SELECT brand, COUNT(product_name) FROM products GROUP BY brand;",,,,,,请按品牌对产品分组，并给出每种品牌下产品类别的数量
+远程数据恢复属于哪个分类,远程数据恢复属于哪个分类,SELECT Category FROM Products WHERE ProductName = '远程数据恢复';,,"function: query_word
 field:product_name
 kword:远程数据恢复
-response: product_cate1",select columns,,
-14,搜索所有价格在1000到1500美元之间的智能手机。,搜索所有价格在1000到1500美元之间的智能手机。,"```sql
+response: product_cate1",select columns,,,远程数据恢复属于哪个分类
+搜索所有价格在1000到1500美元之间的智能手机。,搜索所有价格在1000到1500美元之间的智能手机。,"```sql
 SELECT * FROM products
 WHERE category = 'smartphone' AND price >= 1000 AND price <= 1500;
-```",,,,,
-3,列出所有电子产品分类下的产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
+```",,,,,,搜索所有价格在1000到1500美元之间的智能手机。
+列出所有电子产品分类下的产品,列出所有电子产品分类下的产品,SELECT * FROM Products WHERE Category = '电子产品';,,"function: query_word
 field:product_cate1
 kword:电子产品
-response: product_cate2",select all,列出该分类下的所有品牌,
-16,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,"```
+response: product_cate2",select all,列出该分类下的所有品牌,,列出所有电子产品分类下的产品
+找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。,"```
 SELECT * FROM products
 WHERE category = 'Game Desktop'
 AND gpu_series = 'NVIDIA GeForce'
 AND cpu_speed > 3.0;
-```",,,,,
-4,有哪些产品是计算机,有哪些产品是计算机,SELECT * FROM Products WHERE Category = '计算机';,,"function: query_word
+```",,,,,,找出GPU系列为NVIDIA GeForce、CPU主频超过3.0 GHz的游戏台式电脑。
+有哪些产品是计算机,有哪些产品是计算机,SELECT * FROM Products WHERE Category = '计算机';,,"function: query_word
 field:product_name
 kword:远程数据恢复
 response: product_cate3",select all,"哪些产品是*
-哪些产品属于*",
-17,显示所有已经下架的产品。,显示所有已经下架的产品。,"```sql
+哪些产品属于*",,有哪些产品是计算机
+显示所有已经下架的产品。,显示所有已经下架的产品。,"```sql
 SELECT * FROM products WHERE status = '下架';
-```",,,,,
-5,有什么与鼠标有关的产品,有什么与鼠标有关的产品,SELECT * FROM Products WHERE RelatedTo = '鼠标';,,"function: query_multi_fields
+```",,,,,,显示所有已经下架的产品。
+有什么与鼠标有关的产品,有什么与鼠标有关的产品,SELECT * FROM Products WHERE RelatedTo = '鼠标';,,"function: query_multi_fields
 field:*
 kword:""鼠标""
-response: process_result",related to,与*相关的docs,
-18,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,"```sql
+response: process_result",related to,与*相关的docs,,有什么与鼠标有关的产品
+查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。,"```sql
 SELECT * FROM products
 WHERE category = '笔记本电脑'
 AND brand = '华硕'
 AND screen_size >= 13
 AND screen_size <= 15;
-```",,,,,
-11,想买一台笔记本，价格在5000块左右，请问怎么选择,想买一台笔记本，价格在5000块左右，请问怎么选择,"SELECT product_name
+```",,,,,,查找品牌为华硕、屏幕尺寸在13到15英寸之间的笔记本电脑。
+想买一台笔记本，价格在5000块左右，请问怎么选择,想买一台笔记本，价格在5000块左右，请问怎么选择,"SELECT product_name
 FROM products
 WHERE price BETWEEN 4900 AND 5100
-  AND product_name LIKE '%笔记本%';",,,,,
-19,找出所有内存容量大于16 GB的服务器。,找出所有内存容量大于16 GB的服务器。,"```sql
+  AND product_name LIKE '%笔记本%';",,,,,,想买一台笔记本，价格在5000块左右，请问怎么选择
+找出所有内存容量大于16 GB的服务器。,找出所有内存容量大于16 GB的服务器。,"```sql
 SELECT * FROM servers WHERE memory_capacity > 16;
-```",,,,,
-13,找出所有白色的笔记本电脑。,找出所有白色的笔记本电脑。,"```sql
+```",,,,,,找出所有内存容量大于16 GB的服务器。
+找出所有白色的笔记本电脑。,找出所有白色的笔记本电脑。,"```sql
 SELECT * FROM products 
 WHERE color = '白色' 
 AND category = '笔记本电脑';
-```",,,,,
-20,搜索所有配备Intel处理器的笔记本电脑。,搜索所有配备Intel处理器的笔记本电脑。,"```sql
+```",,,,,,找出所有白色的笔记本电脑。
+搜索所有配备Intel处理器的笔记本电脑。,搜索所有配备Intel处理器的笔记本电脑。,"```sql
 SELECT * FROM laptops WHERE processor = 'Intel';
-```",,,,,
-15,列出所有折叠型的平板电脑。,列出所有折叠型的平板电脑。,"```
+```",,,,,,搜索所有配备Intel处理器的笔记本电脑。
+列出所有折叠型的平板电脑。,列出所有折叠型的平板电脑。,"```
 SELECT * FROM Products
 WHERE category = 'Tablet' AND type = 'Foldable';
-```",,,,,
-21,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,"```sql
+```",,,,,,列出所有折叠型的平板电脑。
+显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。,"```sql
 SELECT * FROM products
 WHERE brand = '苹果' AND screen_size > 15 AND price < 2000;
-```",,,,,
-22,找出所有兼容Windows 10操作系统的台式电脑。,找出所有兼容Windows 10操作系统的台式电脑。,"```sql
+```",,,,,,显示品牌为苹果、屏幕尺寸大于15英寸且价格低于2000美元的产品。
+找出所有兼容Windows 10操作系统的台式电脑。,找出所有兼容Windows 10操作系统的台式电脑。,"```sql
 SELECT * FROM desktop WHERE compatibility = 'Windows 10';
-```",,,,,
+```",,,,,,找出所有兼容Windows 10操作系统的台式电脑。

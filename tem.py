@@ -1,32 +1,39 @@
-class Animal:
-    def __init__(self, name):
-        self.name = name
+import multiprocessing
+from zebura_core.LLM.llm_agent import LLMAgent
 
-    def speak(self):
-        print("The animal makes a sound.")
+class MyClass:
+    instance_count = 0
+    def __init__(self, data):
+        MyClass.instance_count += 1
+        #self.llm = LLMAgent("AZURE","gpt-3.5-turbo")
 
-class Dog(Animal):
-    def __init__(self, name, breed):
-        super().__init__(name)
-        self.breed = breed
-        print(self.name)
-        
-    def speak(self):
-        super().speak()
-        print("The dog barks.")
+        print(f"MyClass {MyClass.instance_count}th init success")
+        self.data = data
 
-class Cat(Animal):
-    def __init__(self, name, breed):
-        super().__init__(name)
-        self.breed = breed
+    def process_data(self, item):
+        # 类的方法逻辑
+        result = f"Processed {item} with data {self.data}"
+        return result
 
+def worker(instance, item):
+    # 全局函数，调用类的方法
+    return instance.process_data(item)
+
+def run_concurrent_processes(instance, items):
+    # 创建进程池
+    for item in items:
+        p = multiprocessing.Process(target=worker, args=(instance, item))
+        p.start()
+        p.join()
     
-# 创建一个Animal实例
-animal = Animal("Generic Animal")
-animal.speak()
+    return [1,2,3]
 
-# 创建一个Dog实例
-dog = Dog("Buddy", "Golden Retriever")
-dog.speak()
-cat = Cat("Kitty", "Siamese")
-cat.speak()
+if __name__ == "__main__":
+    instance = MyClass("example data")
+    items_to_process = ["item1", "item2", "item3"]
+
+    # 并发执行类的方法
+    results = run_concurrent_processes(instance, items_to_process)
+
+    for result in results:
+        print(result)

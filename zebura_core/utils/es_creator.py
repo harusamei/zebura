@@ -1,60 +1,56 @@
+# Description: 创建ES索引，加载数据
+#######################################
 import sys
 import os
-if os.getcwd().lower() not in sys.path:
-    sys.path.insert(0, os.getcwd().lower())
+sys.path.insert(0, os.getcwd())
 import settings
-from embedding import Embedding
-from zebura_core.knowledges.schema_loader import Loader
+import logging
+
+from utils.embedding import Embedding
 from utils.es_base import ES_BASE
+from zebura_core.knowledges.schema_loader import Loader
+
 from csv_processor import pcsv
 from datetime import datetime
 import re
-from elasticsearch.exceptions import RequestError
+from elasticsearch.exceptions import RequestError # type: ignore
+
+from constants import C_ES_SHORT_MAX
 
 # 创建索引
 class ESIndex(ES_BASE):
      
     def __init__(self):
         super().__init__()
-        print(self.es_version)
 
-        base_attrs = [attr for attr in dir(super()) if not attr.startswith('__')]
-        base_methods = [method for method in dir(ES_BASE) if not method.startswith('__')]
-        # print("base attributes",base_attrs)
-        print("base methods",base_methods)
+        self.embedding = None
+        self.text_analyzer = "cn_analyzer"       # 分词器名称
+        self.keyword_analyzer = "keyword_analyzer"       # 关键词分词器名称
 
-        self.info_loader = None
-        self.analyzer = "cn_analyzer"
-
-    def set_schema(self, schema_file):
-        self.info_loader = Loader(schema_file)
+        logging.debug("ESIndex init success")
 
     def set_embedding(self):
         if not self.embedding:
             self.embedding = Embedding()
-    # 设置要创建索引的table名和数据文件
-    # table的列信息，index name等默认已经放在info_loader中
-    # info_loader 已经加载了schema信息
-    def store_table(self, table_name, data_file, size=100):
 
-        if not self.info_loader:
-            print("table info not found.")
-            return False
-        else:
-            print("table info loaded.")
-        
-        table_info = self.info_loader.get_table_info(table_name)
+    def json2mapping(self, json_file, table_name='') ->tuple:
+
+        loader = Loader(json_file)
+        if table_name is None or table_name == '':
+            table_name = loader.get_table_nameList()[0]
+        table_info = loader.get_table_info(table_name)
         if not table_info:
-            print(f"Table '{table_name}' not found in schema.")
+            logging.error(f"Table '{table_name}' not found in schema.")
             return False
         
+        # 从table的schema中抽取index的mapping
+        # 默认index name为table name
         index_name = table_name
+        es_mapping = {}      # es mapping
         
-        # 从table的columns中抽取index的schema
-        es_schema = {}
         columns = table_info.get('columns')
         if not columns:
-            print(f"Table '{table_name}' not found in schema.")
+            logging.warning(f"Table '{table_name}' not found in schema.")
             return False
         
         for column in columns:
@@ -62,22 +58,17 @@ class ESIndex(ES_BASE):
             field_type = column.get("type")
             if not field_type:
                 field_type = "text"
-            es_schema[field_name] = {"type": field_type}
+            es_mapping[field_name] = {"type": field_type}
             if field_type == "text":
-                es_schema[field_name]["analyzer"] = self.analyzer
-        
-        # 创建索引
-        if self.is_index_exist(index_name):
-            print(f"Index '{index_name}' already exists.")
-        else:
-            self.create_index(index_name, es_schema)
-        # 加载数据
-        return self.load_csv_data(index_name, data_file,es_schema=es_schema,size=size)
+                es_mapping[field_name]["analyzer"] = self.text_analyzer
+            # elif field_type == "keyword":
+            #     es_mapping[field_name]["analyzer"] = self.keyword_analyzer
 
+        return index_name,es_mapping
 
     # 创建索引
-    def create_index(self,index_name,schema):
-        body = schema
+    def create_index(self,index_name,es_mapping):
+        body = es_mapping
         # 定义索引主分片个数和分析器
         index_mapping = {
                 "settings": {
@@ -90,9 +81,14 @@ class ESIndex(ES_BASE):
                             }
                         },
                         "analyzer": {
-                            self.analyzer: {
+                            "cn_analyzer": {
                             "type": "custom",
                             "tokenizer": "smartcn_tokenizer",
+                            },
+                            "keyword_analyzer": {
+                                "type": "keyword",
+                                "tokenizer": "keyword",
+                                "filter": ["lowercase"]
                             }
                         }
                     }
@@ -104,44 +100,19 @@ class ESIndex(ES_BASE):
         # 索引的每个field都可以设置不同的analyzer
         try:
             self.es.indices.create(index=index_name, body=index_mapping)
-            print(f"Index '{index_name}' created successfully with 5 primary shards.")
+            logging.info(f"Index '{index_name}' created successfully with 5 primary shards.")
         except RequestError as e:
-            print(e)
+            logging.error(e)
             return False
         
         return True
     
-    # size=负数,None，表示全部加载
-    def load_csv_data(self,index_name, data_filename, es_schema, size=-1):
-
-        mypcsv = pcsv()
-        csv_rows = mypcsv.read_csv(data_filename,size)
-        if not csv_rows:
-            return False
-        
-        docs=[]
-        for doc in csv_rows:
-            # 已经在Index里面的数据不需要再次插入
-            if doc.get('uid'):
-                continue
-            self.format_doc(doc,es_schema)
-            docs.append(doc)
-
-        # 计算文本的embedding
-        docs = self.complete_embs(docs, es_schema)
-                
-        if self.insert_docs(index_name, docs):
-            print(f"Data loaded into index '{index_name}' successfully.")
-            return True
-        else:
-            print(f"Failed to load data into index '{index_name}'.")
-            return False
     # 补全embedding
-    def complete_embs(self, docs, es_schema):
+    def complete_embs(self, docs, es_mapping):
         # 计算文本的embedding
         denseSet = []
-        for field in es_schema.keys():
-            if es_schema[field]['type'] == 'dense_vector':
+        for field in es_mapping.keys():
+            if es_mapping[field]['type'] == 'dense_vector':
                 denseSet.append(field)
 
         # 如果有dense_vector字段，需要计算embedding
@@ -160,22 +131,38 @@ class ESIndex(ES_BASE):
                 doc[field] = embs[i].tolist()
 
         return docs
-       
-    def insert_docs(self,index_name, docs):
+    
+    # 返回ES操作文档数量  
+    # docs是一个list，每个元素是一个dict
+    def insert_docs(self, index_name, docs):
+        if not self.is_index_exist(index_name):
+            logging.error(f"index {index_name} not exist")
+            return 0
         if docs is None or len(docs) == 0:
-            return None
-        
-        print(f"Inserting {len(docs)} documents into index '{index_name}'")
-        new_docs = list(map(lambda doc:[
-                                        {"index": {"_index": index_name}},
-                                        doc],
-                            docs))
-        new_docs = sum(new_docs,[])
-        response = self.es.bulk(index=index_name, body=new_docs)     
-        return response
+            logging.error(f"no docs to insert")
+            return 0
+        try:
+            count = len(docs)
+            new_docs = list(map(lambda doc:[
+                                            {"index": {"_index": index_name}},
+                                            doc],
+                                docs))
+            new_docs = sum(new_docs,[])
+            # 在索引中添加文档, refresh=True 使得文档立即可见
+            response = self.es.bulk(index=index_name, body=new_docs,refresh='true') 
+        except Exception as e:
+            logging.error(f"Error inserting documents: {e}")
+        else:
+            if response['errors']:
+                logging.error(f"can not insert docs in {index_name}")
+                count = 0
+            else:
+                logging.info(f'insert {count} in {index_name}')
+                
+        return count
     
     # 格式规范化
-    def format_doc(self, doc,es_schema):
+    def format_doc(self, doc, es_mapping) -> dict:
         delkeys = []
         # clear empty fileds
         for key in doc.keys():
@@ -187,12 +174,12 @@ class ESIndex(ES_BASE):
         dateSet=[]
         shortSet=[]
         NumSet=[]
-        for key in es_schema.keys():
-            if es_schema[key]['type'] == 'date':
+        for key in es_mapping.keys():
+            if es_mapping[key]['type'] == 'date':
                 dateSet.append(key)
-            elif es_schema[key]['type'] == 'short':
+            elif es_mapping[key]['type'] == 'short':
                 shortSet.append(key)
-            elif es_schema[key]['type'] in ['float','integer','long','double','half_float','scaled_float','byte']:
+            elif es_mapping[key]['type'] in ['float','integer','long','double','half_float','scaled_float','byte']:
                 NumSet.append(key)
         # date format
         now = datetime.now()
@@ -215,26 +202,58 @@ class ESIndex(ES_BASE):
         for key in doc.keys():
             if key in shortSet:
                 doc[key] = re.sub(r'\D', '', doc[key])
-                doc[key] = min(int(doc[key]), 32767)
+                doc[key] = min(int(doc[key]), C_ES_SHORT_MAX)
             elif key in NumSet:
                 doc[key] = re.sub(r'[^\d.]', '', doc[key])
                 doc[key] = float(doc[key])
+
+        return doc
+    
+    ########用于测试的methods
+    # 简单加载CSV数据，没有去重
+    def load_csv(self,index_name, csv_file, sch_file):
+        mypcsv = pcsv()
+        csv_rows = mypcsv.read_csv(csv_file)
+        if not csv_rows:
+            return False
         
-        return
+        index_name,es_mapping = self.json2mapping(sch_file,index_name)
+        if self.is_index_exist(index_name):
+            print(f"Index '{index_name}' already exists.")
+        else:
+            self.create_index(index_name, es_mapping)
+
+        docs=[]
+        for doc in csv_rows:
+            doc = self.format_doc(doc,es_mapping)
+            docs.append(doc)
+
+        # 计算文本的embedding
+        docs = self.complete_embs(docs, es_mapping)       
+        if self.insert_docs(index_name, docs):
+            print(f"Data loaded into index '{index_name}' successfully.")
+            return True
+        else:
+            print(f"Failed to load data into index '{index_name}'.")
+            return False   
     
-    def search(self, index_name, qbody):
-        result = self.es.search(index=index_name, body={"query": {"match": qbody}})
-        return result
-    
+    def test(self,index, field, word, size=5):
+        query = {
+            "size": size,  # Return top3 results
+            "query": {
+                "match": {field: word}
+            }
+        }
+        return self.es.search(index=index, body=query)
+       
+  
 # examples usage
 if __name__ == '__main__':
 
     cwd = os.getcwd()
-    name = 'dbaccess\\ikura\\ikura_meta.json'
+    name = 'dbaccess\\es\\ikura_meta.json'
     sch_file = os.path.join(cwd, name)
-    
-    escreator = ESIndex()
-    escreator.set_schema(sch_file)
-    escreator.store_table('sales_info', os.path.join(cwd,'dbaccess\\ikura\\leproducts.csv'))
-    results = escreator.search('sales_info', {'product_name': '鼠标'})
-    print(results)
+    creator = ESIndex()
+    creator.load_csv('sales_info', os.path.join(cwd,'dbaccess\\es\\leproducts.csv'),sch_file)
+    print(creator.test('sales_info','product_name','iphone'))
+   

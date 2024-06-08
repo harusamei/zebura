@@ -2,7 +2,7 @@
 import os
 import sys
 sys.path.insert(0, os.getcwd())
-
+import logging
 from settings import z_config
 from utils.es_searcher import ESearcher
 from knowledges.schema_loader import Loader
@@ -25,22 +25,24 @@ class CaseStudy:
             self.gcase_index = f"{project_code}_gcases"  # 'gcases'
             table = self.loader.get_table_nameList()[0]
             self.columns = self.loader.get_all_columns(table)
+
+            logging.debug("CaseStudy init success")
             
             
         # 欧氏距离或manhattan distance, _score 越小越相似，区间是[0, +∞)
         def find_similar_query(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "query", query, topk)
+            results = self.es.search(index, "query", query, topk)
             return results
         
         def find_similar_sql(self, sql, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "sql", sql, topk)
+            results = self.es.search(index, "sql", sql, topk)
             return results
         # ES为了保证所有的得分为正，实际使用（1 + 余弦相似度）/ 2，_score [0，1]。得分越接近1，表示两个向量越相似  
         def find_similar_vector(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "qembedding", query, topk)
+            results = self.es.search(index, "qembedding", query, topk)
             return results
         
         """
@@ -64,7 +66,8 @@ class CaseStudy:
             
             sorted_docs = sorted(docs.items(), key=lambda item: item[1], reverse=True)
             return sorted_docs
-
+        
+        # hybrid search
         def assemble_find(self, query, sql=None, topk=dtk) -> list:
 
             resps = [None]*3

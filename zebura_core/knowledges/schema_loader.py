@@ -12,6 +12,7 @@ class Loader:
         if "tables" not in self._info:
             logging.critical("tables not in schema file")
         self.tables = self._info["tables"] # [{}],每个表一个dict
+        self.project = self._info.get("_project_code","")
         logging.debug("Loader init success")
         
     def load_schema(self,file) -> Dict[str,str]:
@@ -47,7 +48,7 @@ class Loader:
 if __name__ == '__main__':
     # Load the SQL patterns
     cwd = os.getcwd()
-    name = 'training\it\dbInfo\metadata.json'
+    name = 'training/ikura/ikura_meta.json'
     file = os.path.join(cwd, name)
     print(file)
     loader =Loader(file)

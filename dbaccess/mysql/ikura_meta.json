@@ -1,0 +1,222 @@
+﻿{
+    "_comment": "The schema is generated through file metadata.xlsx ,created in the 2024-05-15",
+    "_desc": "This database is applied to an e-commerce platform, providing product information to assist customers in making purchasing decisions. The data content includes product descriptions, prices, inventory, purchase links, etc.",
+    "_domain": "e commerce ",
+    "_possessor": "zebura inc",
+    "_project_code": "ikura",
+    "tables": [
+        {
+            "desc": "data and details related to the sales of a particular product or a range of products. This information can include various metrics such as sales volume, revenue generated, profit margins, customer demographics, geographic distribution of sales, sales channels utilized (e.g., online, offline, wholesale), and trends over time",
+            "name_zh": "销售表",
+            "table_name": "sales_info",
+            "columns": [
+                {
+                    "desc": "The amount of money required to purchase a product.",
+                    "column_name": "price",
+                    "alias": "cost; amount; value"
+                },
+                {
+                    "desc": "\"time_to_market\" is the length of time it takes for a product to go from initial concept or design to being available for sale in the market.",
+                    "column_name": "time_to_market",
+                    "alias": "launch_date; release_date; introduction_date"
+                },
+                {
+                    "desc": "A unique identifier assigned to each product in the database to distinguish it from other products.",
+                    "column_name": "uid",
+                    "type":"keyword",
+                    "alias": "unique_identifier; product_id; serial_number"
+                }
+            ]
+        },
+        {
+            "desc": "The product database stores product information, inventory, and sales data. The products mainly include Computer, Communication, and Consumer electronics",
+            "table_name": "products",
+            "desc_zh": "产品数据库，存放产品信息和产品的库存、销售信息。 产品主要电脑、通讯设备和消费电子产品",
+            "columns": [
+                {
+                    "desc": "The brand column in the products table would contain the name of the company or manufacturer that produces a specific product. It identifies the specific manufacturer or producer of the product within the database.",
+                    "column_name": "brand",
+                    "alias": "manufacturer"
+                },
+                {
+                    "desc": "The color column in a product database stores information about the color of a product, indicating the specific shade or hue of the item.",
+                    "column_name": "color",
+                    "alias": "hue; shade; tint"
+                },
+                {
+                    "desc": "The brand of the central processing unit (CPU) used in the product. The CPU is the primary component responsible for carrying out instructions and performing calculations in a computer system.",
+                    "column_name": "cpu_brand",
+                    "alias": "processor_manufacturer; chip_maker; cpu_company; chip_brand"
+                },
+                {
+                    "desc": "The number of cores in the central processing unit (CPU) of a computer system.",
+                    "column_name": "cpu_core_number",
+                    "alias": "cores"
+                },
+                {
+                    "desc": "The speed at which the central processing unit (CPU) of a computer operates, measured in Hertz (Hz).",
+                    "column_name": "cpu_main_frequency",
+                    "alias": "CPU Speed"
+                },
+                {
+                    "desc": "The distance from the front to the back of a product, typically measured in inches or centimeters.",
+                    "column_name": "depth",
+                    "alias": "dimensions; measurements; size"
+                },
+                {
+                    "desc": "The amount of data that a disk drive can store, usually measured in gigabytes (GB) or terabytes (TB).",
+                    "column_name": "disk_capacity",
+                    "alias": "storage; memory; size"
+                },
+                {
+                    "column_name": "disktype",
+                    "alias": "storage_type; drive_category; disk_category"
+                },
+                {
+                    "column_name": "foldability"
+                },
+                {
+                    "desc": "The current status or condition of the goods, such as available, out of stock, discontinued, etc.",
+                    "column_name": "goods_status",
+                    "alias": "product_status; item_status; inventory_status"
+                },
+                {
+                    "desc": "The brand of the Graphics Processing Unit (GPU) which is a specialized electronic circuit designed to rapidly manipulate and alter memory to accelerate the creation of images in a frame buffer intended for output to a display device.",
+                    "column_name": "gpu_brand",
+                    "alias": "graphics_card_manufacturer"
+                },
+                {
+                    "desc": "A specific line or family of graphics processing units (GPUs) created by a particular manufacturer.",
+                    "column_name": "gpu_series",
+                    "alias": "graphics card series; graphics model; chipset family"
+                },
+                {
+                    "desc": "The measurement of the distance from the top to the bottom of an object. In the context of a product database, it typically refers to the physical height of a product.",
+                    "column_name": "height",
+                    "alias": "length; tallness; stature"
+                },
+                {
+                    "column_name": "intelligence"
+                },
+                {
+                    "desc": "The maximum amount of memory that can be supported or installed in a specific product, such as a computer, smartphone, or other electronic device.",
+                    "column_name": "max_memory_capacity",
+                    "alias": "maximum_ram; memory_limit; ram_capacity"
+                },
+                {
+                    "desc": "The amount of storage capacity that a product has, typically measured in units such as gigabytes (GB) or terabytes (TB).",
+                    "column_name": "memory_capacity",
+                    "alias": "capacity"
+                },
+                {
+                    "desc": "The number of memory slots available in a computer system, typically used for installing RAM modules to increase the system's memory capacity.",
+                    "column_name": "memory_slot_number",
+                    "alias": "slots"
+                },
+                {
+                    "desc": "The type of memory used in the product, such as DDR4, SSD, HDD, etc.",
+                    "column_name": "memory_type",
+                    "alias": "type; kind; category"
+                },
+                {
+                    "desc": "The Manufacturer Part Number (MTM) is a unique identifier assigned by the manufacturer to a specific product model. It helps to distinguish between different versions or variations of a product within the same brand.",
+                    "column_name": "mtm_number",
+                    "alias": "model_number"
+                },
+                {
+                    "column_name": "os"
+                },
+                {
+                    "desc": "This column typically refers to any software applications that come already installed on the product before being purchased by the customer.",
+                    "column_name": "pre_installed_software",
+                    "alias": "bundled_software"
+                },
+                {
+                    "desc": "The primary category or classification of the product. In the context of this database, the main product categories are Computer, Communication, and Consumer electronics.",
+                    "column_name": "product_cate1",
+                    "alias": "category; type; classification"
+                },
+                {
+                    "column_name": "product_cate2",
+                    "alias": "category; type; classification"
+                },
+                {
+                    "desc": "The specific name or title given to a product that distinguishes it from other products in the database.",
+                    "column_name": "product_item_name",
+                    "alias": "name; title; item"
+                },
+                {
+                    "desc": "the name or title of a specific product within the product database.",
+                    "column_name": "product_name",
+                    "type":"keyword",
+                    "alias": "name; item; title"
+                },
+                {
+                    "desc": "Random Access Memory (RAM) is a type of computer memory that can be accessed randomly, meaning any byte of memory can be accessed without touching the preceding bytes. This allows information to be stored and retrieved quickly, making it a vital component for running programs and applications on a computer.",
+                    "column_name": "ram",
+                    "alias": "memory; random access memory; storage; memory module"
+                },
+                {
+                    "column_name": "rom"
+                },
+                {
+                    "column_name": "scene"
+                },
+                {
+                    "desc": "The measurement of the diagonal distance between opposite corners of the screen on a device, typically measured in inches.",
+                    "column_name": "screen_size",
+                    "alias": "display_size"
+                },
+                {
+                    "desc": "The type or technology of the screen used in the product, such as LCD, LED, OLED, etc.",
+                    "column_name": "screen_type",
+                    "alias": "display; monitor; panel"
+                },
+                {
+                    "desc": "A series refers to a group or collection of products that share common characteristics, features, or attributes. This grouping helps to differentiate products within a specific category or brand.",
+                    "column_name": "series",
+                    "alias": "product_line; model; collection"
+                },
+                {
+                    "desc": "A detailed description of the services or features offered by a particular product or service.",
+                    "column_name": "service_description",
+                    "alias": "description; overview; details"
+                },
+                {
+                    "desc": "A measurement or dimension of the product, such as the physical size or storage capacity.",
+                    "column_name": "size",
+                    "alias": "dimension; measurement; magnitude"
+                },
+                {
+                    "desc": "an identification number used to designate a specific quantity of a product in inventory.",
+                    "column_name": "stock_number",
+                    "alias": "product_code; item_number; SKU"
+                },
+                {
+                    "desc": "The intended group of people for whom the product or service is designed or marketed.",
+                    "column_name": "target_audience",
+                    "alias": "customer_segment; demographic; market_segment; audience; consumer_type"
+                },
+                {
+                    "desc": "A unique identifier assigned to each product in the database to distinguish it from other products.",
+                    "column_name": "uid",
+                    "alias": "unique_identifier; product_id; serial_number"
+                },
+                {
+                    "desc": "The URL column in a products table typically refers to the web address where more information about the product can be found on the Internet.",
+                    "column_name": "url",
+                    "alias": "web_address; link; website"
+                },
+                {
+                    "desc": "The type or category of video card, such as graphics card, gaming card, professional card, etc.",
+                    "column_name": "video_card_type",
+                    "alias": "graphics_card_type"
+                },
+                {
+                    "column_name": "width",
+                    "alias": "product_width; width_in_inches; size_dimension"
+                }
+            ]
+        }
+    ]
+}
