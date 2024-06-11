@@ -2,6 +2,8 @@
 <img src="image.png" width="100" height="100">
 In the fast-paced world of business, having quick and efficient access to your data is crucial. Whether you're analyzing sales trends, tracking inventory, or generating reports, you need a reliable tool that can retrieve the information you need, when you need it. This is a smart Query Tool – TalkQ， You can straight talk with your data.
 
+TalkQ is a platform for retrieving data from a database User-friendly interface built with Chainlit Utilizes OPENAI as its Language Learning Model (LLM).
+
 ## Features
 
 * *Advanced Query Capabilities*
@@ -40,6 +42,24 @@ In the fast-paced world of business, having quick and efficient access to your d
 * *Demo Animation*
   * An animation demonstrating the usage process is currently being created. Please wait for its completion.
 
+## Installation
+
+* Clone the repository:
+
+    git clone https://github.com/harusamei/zebura/talkq.git
+
+* Navigate to the project directory:
+
+    cd talkq
+
+* Install the required dependencies:
+
+    pip install -r requirements.txt
+
 ## Documentation
 
 Read the Wiki for more information
+
+
+## License
+
