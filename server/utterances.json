@@ -1,0 +1,53 @@
+
+[
+    {
+        "lang": "en",
+        "intent": "greeting",
+        "msg": ["Hello, how can I assist you?",
+                "hi, how can I help you?",
+                "Hello, what can I do for you?"]
+    },
+    {
+        "lang": "en",
+        "intent": "goodbye",
+        "msg": ["Goodbye, have a nice day!",
+                "Bye, see you soon!",
+                "Goodbye, take care!"]
+    },
+    {
+        "lang": "en",
+        "intent": "say_again",
+        "msg": ["sorry, I didn't understand. Can you repeat that?",
+                "I didn't get that. Can you say it again?",
+                "I'm sorry, I didn't understand. Can you repeat that?"]
+    },
+    {
+        "lang": "en",
+        "intent": "affirm",
+        "msg": ["yes",
+                "ok",
+                "sure"]
+    },
+    {
+        "lang": "en",
+        "intent": "deny",
+        "msg": ["no",
+                "nope",
+                "I don't think so"]
+    },
+    {
+        "lang": "en",
+        "intent": "hint",
+        "msg": ["please provide more information",
+                "if you give me details for database, I can help you better",
+                "I need more information to help you"]
+    },
+    {
+        "lang": "en",
+        "intent": "error",
+        "msg": ["I'm sorry, I'm not able to help you with that",
+                "no exception handling for this case",
+                "I'm not sure how to help you with that"]
+    }
+    
+]
