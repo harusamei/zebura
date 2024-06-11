@@ -119,7 +119,8 @@ class Controller:
     def transit(self,pipeline):
         log = pipeline[-1]
         new_Log = self.get_new_log("end")
-        
+        new_Log['msg'] = log['msg']
+        new_Log['status'] = log['status']
         pipeline.append(new_Log)
             
     def genAnswer(self,pipeline):
@@ -156,7 +157,7 @@ class Controller:
         new_Log['msg'] = markdown
         new_Log['format'] = 'md'
         if markdown == "":
-           new_Log['note'] = log.get('note','')+ '\nsql is correct, but no result found'
+           new_Log['note'] = log.get('note','')+ '\nThe SQL query was executed, but no results were found in the database.'
         pipeline.append(new_Log)
 
     async def askLLM(self,query,prompt):
@@ -186,13 +187,14 @@ async def apply(request):
     return pipeline[-1]
 
 async def main():
-    request = {'msg': '找出所有内存容量大于16 GB的服务器的SQL查询语句应该怎么写？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '请问数据库的名字是什么', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
-    # context.append(resp)
-    # # msg ='Remote end closed connection without response'
-    # request1 = {'msg': '查一下产品名 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
-    # resp = await apply(request1)
+    print(resp)
+    context.append(resp)
+    # msg ='Remote end closed connection without response'
+    request1 = {'msg': '查一下产品名 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    resp = await apply(request1)
 
 if __name__ == "__main__":
       

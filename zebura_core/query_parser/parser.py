@@ -54,6 +54,7 @@ class Parser:
         # sql_1 失败为None
         answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
         resp['msg'] = answ['msg']
+        # TODO,  status 状态规范为 failed/succ
         if answ['status'] is False:
             resp['status'] = "failed"
             return resp
