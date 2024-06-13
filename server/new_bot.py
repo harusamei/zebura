@@ -1,16 +1,8 @@
 import chainlit as cl
 import asyncio
 from controller import apply
+from msg_maker import make_a_req
 # 设置全局变量
-
-# chainlit与 controller 之间的交互的request格式
-# request={
-#         "msg": content,
-#         "context": context,
-#         "type": "user/assistant", # 用户， controller
-#         "format": "text/md/sql...", # content格式，与显示相关
-#         "status": "new/hold/failed/succ", # 新对话,多轮继续；controller查询失败；查询成功
-#     } 
 
 @cl.on_chat_start
 def on_chat_start():
@@ -20,20 +12,21 @@ def on_chat_start():
 @cl.on_message
 async def main(message: cl.Message):
     context = cl.user_session.get("context")
-    request={
-        "msg": message.content,
-        "context": context,
-        "type": "user", # 用户， 机器人，内部执行的中间结果
-        "format": "text", # 与显示相关的格式信息
-        "status": "new", # 任务状态
-    }
-    if len(context) > 0:
-        request['status'] = "hold"
-    answer = asyncio.run(apply(request))
+    request = make_a_req(message.content)
+    context.append(request)
 
-    context.append(answer)
+    request['context'] = context    
+    if len(context) > 1:
+        request['status'] = "hold"
+
+    resp = asyncio.run(apply(request))
+    context.append(resp)
+    if resp['status'] == "failed":
+        answer = f"ANSWER:\n{resp['msg']}\nHINT:\n{resp['hint']}"
+    else:
+        answer = f"ANSWER:\n{resp['msg']}\nNOTE:\n{resp['note']}"
     cl.user_session.set("context", context)
-    await cl.Message(content=answer['msg']).send()
+    await cl.Message(content=answer).send()
 
 @cl.on_chat_end
 def on_chat_end():

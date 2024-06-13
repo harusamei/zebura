@@ -15,8 +15,10 @@ from schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
 from constants import D_TOP_GOODCASES as topK
+from server.msg_maker import make_a_log
+
 class Parser:
-        
+
     def __init__(self):
         self.norm =Normalizer()
         self.te = Extractor()
@@ -40,26 +42,22 @@ class Parser:
         else:
             print(f"parse.apply()-> table:{table_name}, query:{query}")     
 
-        resp ={
-            "status":"succ",
-            "msg":""
-        }
+        resp = make_a_log("parse")
         # few shots from existed good cases
-        results = self.find_good_cases(query,topK=topK)
+        gcases = self.find_good_cases(query,topK=topK)
         
         #得到 system prompt, fewshots prompt
-        prompt1 = self.prompter.gen_sql_prompt_dial(results, table_name, query)
+        prompt1 = self.prompter.gen_sql_prompt_dial(gcases, table_name,style='lite')
      
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
-        # sql_1 失败为None
+        # query to sql
         answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
         resp['msg'] = answ['msg']
-        # TODO,  status 状态规范为 failed/succ
-        if answ['status'] is False:
-            resp['status'] = "failed"
+        resp['status'] = answ['status']
+        if answ['status'] == "failed":
             return resp
         
-        sql_1 = answ['msg']
+        sql_1 = resp['msg']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
         # 3. Link the slots to the schema

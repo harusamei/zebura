@@ -21,15 +21,20 @@ class Normalizer:
         logging.debug("Normalizer init done")
 
     # main method of class, convert natural language to SQL
+    # C_ERR_TAGS = ['ERR: LLM','ERR: NOSQL','ERR: CURSOR']    # error tags
     async def apply(self,query:str,prompt:str,fewshots=None) -> dict:
 
+        print(f"normalizer.apply()-> query:{query}, prompt:{prompt[:100]}")
         result = await self.convert_sql(query,prompt,fewshots)
-        # 结果有三种情况， LLM无回应，无法提取SQL，提取SQL
-        if result is None:
-            return {"status":"failed","msg":"ERR: [None from LLM]","from":"convert_sql"}
-
-        resp = self.extract_sql(result)
-        resp["from"] = "extract_sql"
+        # 结果有三种情况， LLM无回应，no sql，提取SQL   
+        resp = {"status":"failed","msg":result,"from":"convert_sql"}
+        if 'ERR' in result:
+            resp["note"] = "ERR: LLM"
+        elif result.lower() == "nosql":
+            resp["note"] = "ERR: NOSQL"
+        else:
+            resp = self.extract_sql(result)
+            resp["from"] = "extract_sql"
         return resp
 
     # 生成table details of prompts for nl2sql
@@ -75,9 +80,12 @@ class Normalizer:
         return result
 
     async def ask_agent(self, querys, sys_prompt,fewshots=None):
-
+        import time
         if isinstance(querys,str):
+            start = time.time()
+            print(f"length of prompt: {len(sys_prompt)}")
             results = await self.llm.ask_query(querys, sys_prompt,fewshots)
+            print(f"ask_agent done, time: {time.time()-start}")
         elif isinstance(querys,list):
             results = await self.llm.ask_query_list(querys, sys_prompt)
             if len(results) != len(querys):
@@ -103,11 +111,11 @@ class Normalizer:
             code_pa = "(select.*?from[^;]+;)"  # 不一定有where
         else:
             print("ERR: no sql found in result")
-            return {"status":"failed","msg":"ERR: [NO SQL]"}
+            return {"status":"failed","msg":"ERR: NOSQL"}
         matches = re.findall(code_pa, result, re.DOTALL | re.IGNORECASE)
         if len(matches) == 0:
             print("ERR: no sql found in result")
-            return {"status":"failed","msg":"ERR: [NO SQL]"}
+            return {"status":"failed","msg":"ERR: NOSQL"}
         else:
             return {"status":"succ","msg":matches[0]}
     

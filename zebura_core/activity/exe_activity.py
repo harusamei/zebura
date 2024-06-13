@@ -7,7 +7,7 @@ import pymysql
 import logging
 from tabulate import tabulate
 from zebura_core.constants import D_SELECT_LIMIT as k_limit
-
+from server.msg_maker import make_a_log
 class ExeActivity:
     # db_type: 数据库类型，sch_loader: 项目的schema
     def __init__(self, db_type, sch_loader):
@@ -41,9 +41,9 @@ class ExeActivity:
                 cursorclass=pymysql.cursors.DictCursor  # 返回字典类型的游标
             )
             return cnx
+        else:
+            raise ValueError(f"Error: {type} not supported")
         
-        print(f"Error: {type} not supported")
-        return None
 
     def checkDB(self) ->str:  # failed, succ
         cursor = self.cnx.cursor()
@@ -67,26 +67,32 @@ class ExeActivity:
         return "succ"
 
     def exeQuery(self, query):
-        answer= {"msg": {}, "status": "succ"}
+        answer= make_a_log("exeQuery")
+        answer["format"] = "dict"
+
         print(f"ExeActivity.exeQuery()-> {query}")
         if query.lower().startswith("select"):
             query = query.rstrip(";")
             query = query + f" LIMIT {k_limit};"
-            answer['note'] = f"Only show the first {k_limit} results"
         try:
             cursor = self.cnx.cursor()
             cursor.execute(f"USE {self.db_name}")
             cursor.execute(query)
             result = cursor.fetchall()
             cursor.close()
-            answer["msg"] = result
+            if len(result) > 0:
+                answer["msg"] = result
+                answer['note'] = f"Only show the first {k_limit} results"
+            else:
+                answer['status'] = "failed"
+                answer['note'] = "ERR: NORESULT"
         except Exception as e:
             print(f"Error: {e}")
-            answer["msg"] = f"Error: {e}"
+            answer["note"] = f"ERR: CURSOR, {e}"
             answer["status"] = "failed"
-            answer["format"] = "dict"
-        
+            
         return answer
+    
     @staticmethod
     def toMD_format(results):
         markdown = tabulate(results, headers="keys", tablefmt="pipe")
