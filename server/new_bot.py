@@ -21,10 +21,8 @@ async def main(message: cl.Message):
 
     resp = asyncio.run(apply(request))
     context.append(resp)
-    if resp['status'] == "failed":
-        answer = f"ANSWER:\n{resp['msg']}\nHINT:\n{resp['hint']}"
-    else:
-        answer = f"ANSWER:\n{resp['msg']}\nNOTE:\n{resp['note']}"
+
+    answer = f"ANSWER:\n{resp['msg']} Note:\n{resp['note']}"
     cl.user_session.set("context", context)
     await cl.Message(content=answer).send()
 

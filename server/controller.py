@@ -134,27 +134,35 @@ class Controller:
                     
         pipeline.append(new_log)
             
-    def genAnswer(self,pipeline):
+    async def genAnswer(self,pipeline):
         
         answer = ""
         notes = []
         hints =[]
+        resp = make_a_req(answer)
+        resp['status'] = 'failed'
         for log in pipeline[1:]:
             if log['from'] == "polish":
-                answer = log['msg']
+                resp['msg'] = log['msg']
+                resp['status'] = 'succ'
                 continue
             notes.append(f"{log['from']}: {log['status']}, {log['note']}")
             if len(log['hint'])>0:
                 hints.append(f"{log['from']}: {log.get('hint')}")
             
-        resp = make_a_req(answer)
+        
         resp['note'] = "\n".join(notes)
+        resp['hint'] = "\n".join(hints)
         resp['type'] = "assistant"
-        if len(hints)>0:
-            resp['hint'] = "\n".join(hints)
+        
+        if resp['status'] == "failed":
             resp['status'] = "failed"
-        else:
-            resp['status'] = 'succ'
+            prompt = "用户用自然语言查询数据库， agent将其转换为sql语句，然后执行查询，获得了返回结果。\
+                    下面是用户的查询，查询结果和agent执行中间过程的记录。\
+                    请对这些信息做总结，给出一个回答。包括查询结果， 执行成功与否，执行失败的原因和建议。"
+            query =f"answer: {resp['msg']}, status: {resp['status']}, note: {resp['note']}, hint: {resp.get('hint','')}"
+            result = await self.askLLM(query, prompt)
+            resp['msg'] = result
         return resp
              
     # 查库
@@ -178,7 +186,7 @@ class Controller:
                 hint = self.utterance.get("en_error_"+errtype.lower(),'')
                 if hint !='':
                     log["hint"] = hint['msg'][D_RANDINT]
-        print([log['from'] for log in pipeline])
+        
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
@@ -195,7 +203,6 @@ class Controller:
 
     async def askLLM(self,query,prompt):
         result = await self.llm.ask_query(query,prompt) 
-        print(result)
         return result
     
 
@@ -218,7 +225,7 @@ async def apply(request):
             getattr(controller,nextStep)(pipeline)
         nextStep = controller.get_next(pipeline)
     controller.interpret(pipeline)
-    return controller.genAnswer(pipeline)
+    return await controller.genAnswer(pipeline)
     
 
 async def main():
