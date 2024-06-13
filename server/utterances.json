@@ -1,53 +1,79 @@
-
-[
-    {
+{
+   "en_greeting": {
         "lang": "en",
         "intent": "greeting",
         "msg": ["Hello, how can I assist you?",
                 "hi, how can I help you?",
                 "Hello, what can I do for you?"]
     },
-    {
+    "en_goodbye":{
         "lang": "en",
         "intent": "goodbye",
         "msg": ["Goodbye, have a nice day!",
                 "Bye, see you soon!",
                 "Goodbye, take care!"]
     },
-    {
+    "en_say_again":{
         "lang": "en",
         "intent": "say_again",
         "msg": ["sorry, I didn't understand. Can you repeat that?",
                 "I didn't get that. Can you say it again?",
                 "I'm sorry, I didn't understand. Can you repeat that?"]
     },
-    {
+    "en_affirm":{
         "lang": "en",
         "intent": "affirm",
         "msg": ["yes",
                 "ok",
                 "sure"]
     },
-    {
+    "en_deny":{
         "lang": "en",
         "intent": "deny",
         "msg": ["no",
                 "nope",
                 "I don't think so"]
     },
-    {
+    "en_say_more":{
         "lang": "en",
-        "intent": "hint",
-        "msg": ["please provide more information",
+        "intent": "say_more",
+        "msg": ["please tell me more details for your database",
                 "if you give me details for database, I can help you better",
                 "I need more information to help you"]
     },
-    {
+    "en_error":{
         "lang": "en",
         "intent": "error",
         "msg": ["I'm sorry, I'm not able to help you with that",
                 "no exception handling for this case",
                 "I'm not sure how to help you with that"]
-    }
-    
-]
+    },
+    "en_error_noresult":{
+        "lang": "en",
+        "intent": "error_noresult",
+        "msg": ["SQL is correct, but I couldn't find any results",
+                "I'm sorry, I couldn't find any matches",
+                "I'm sorry, I couldn't find any information"]
+    },
+    "en_error_llm":{
+        "lang": "en",
+        "intent": "error_llm",
+        "msg": ["can not connect to LLM server",
+                "something went wrong with LLM server",
+                "I'm sorry, the remote server is not responding"]
+    },
+    "en_error_nosql":{
+        "lang": "en",
+        "intent": "error_nosql",
+        "msg": ["the query can not be converse to SQL",
+                "I'm sorry, I couldn't find any data information in your request",
+                "can not parse your message into SQL query"]
+    },
+    "en_error_cursor":{
+        "lang": "en",
+        "intent": "error_cursor",
+        "msg": ["can not execute the SQL in database",
+                "something went wrong with database server",
+                "I'm sorry, I couldn't run the SQL query in database"]
+    }   
+}

@@ -10,39 +10,32 @@ import asyncio
 import inspect
 from zebura_core.query_parser.parser import Parser
 from zebura_core.answer_refiner.synthesizer import Synthesizer
-# from zebura_core.answer_refiner.explainer import Explainer  
 from zebura_core.activity.exe_activity import ExeActivity
 from zebura_core.LLM.llm_agent import LLMAgent
-
+from msg_maker import (make_a_log,make_a_req)
+import json
+import random
+import re
 # 一个传递request的pipeline
 # 从 Chatbot request 开始，到 type变为assistant 结束
-# request={
-#         "msg": content,
-#         "context": context,
-#         "type": "user/assistant/transaction", # 用户， controller, 增加 action间切换
-#         "format": "text/md/sql/dict...", # content格式，与显示相关
-#         "status": "new/hold/failed/succ", # 新对话,多轮继续；执行失败；执行成
-#         
-# 增加      "from": "nl2sql/sql4db/interpret/polish" # 当前任务
-# 增加      "others": 当前步骤产生的次要信息 # 下一个任务
-#     } 
 
+D_RANDINT = random.randint(0,2)
 class Controller:
-    llm = LLMAgent("AZURE","gpt-3.5-turbo")
+    llm = LLMAgent("CHATANYWHERE","gpt-3.5-turbo")
     parser = Parser()
     st_matrix = {
-            "(new,user)"    : "nl2sql",
-            "(hold,user)"   : "rewrite",
-            "(succ,rewrite)": "nl2sql",
-            "(succ,nl2sql)" : "sql4db",
-            "(succ,sql4db)" : "polish",
-            "(succ,polish)" : "genAnswer",
-            "(failed,end)"  : "genAnswer",
-            "(succ,end)"    : "genAnswer",
-            "(failed,*)"    : "transit",        # 失败则重新设置状态
-            "(*,*)"         : "genAnswer"       # send to user
+            "(new,user)"        : "nl2sql",
+            "(hold,user)"       : "nl2sql",
+            "(succ,nl2sql)"     : "sql4db",
+            "(failed,nl2sql)"   : "transit", # reset action
+            "(failed,transit)"  : "end",    # send to user
+            "(succ,sql4db)"     : "polish",
+            "(failed,sql4db)"   : "end",
+            "(*,polish)"        : "end",
+            "(succ,rewrite)"    : "nl2sql",        
+            "(failed,rewrite)"  : "end",    # send to user
+            "(*,*)"             : "end"
     }
-    
     def __init__(self):
         
         self.matrix = Controller.st_matrix
@@ -54,29 +47,26 @@ class Controller:
 
         self.asw_refiner = Synthesizer()
         self.executor = ExeActivity('mysql',self.sch_loader)
-
+        # 一些套话
+        self.utterance = {}
+        with open("server\\utterances.json","r") as f:
+            self.utterance = json.load(f)
+        
         logging.info(f"Controller init success")
 
-    @staticmethod
-    def get_new_log(funName):
-        return {
-            'msg': '',
-            'status': 'succ',
-            'from': funName,
-            'type': 'transaction',
-            'format': 'text'
-        }
-    
     def get_next(self,pipeline):
 
         lastLog = pipeline[-1]
+        if lastLog['type'] == "reset" and lastLog['status'] == "succ":
+            return lastLog['from']
+        
         curSt =f'({lastLog["status"]},{lastLog["from"]})'
         count = 1
-        while curSt not in self.matrix and count < 4:
+        while curSt not in self.matrix and count < 3:
             if count == 1:
-                curSt = f'({lastLog["status"]},*)'
-            if count == 2:
                 curSt = f'(*,{lastLog["from"]})'
+            if count == 2:
+                curSt = f'({lastLog["status"]},*)'
             if count == 3:
                 curSt = f'(*,*)'
             count += 1
@@ -87,77 +77,120 @@ class Controller:
         log = pipeline[-1]
         content = log['msg']
         result = await self.parser.apply(content)
-        new_Log = self.get_new_log("nl2sql")
+        new_Log = make_a_log("nl2sql")
         new_Log['msg'] = result['msg']
         new_Log['status'] = result["status"]
+        if result["status"] == "succ":
+            new_Log['format'] = 'sql'
         new_Log['others'] = result
-        
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
 
         history=[]
-        log = pipeline[-1]
-        if log.get('context') is not None:
-            context = log['context']
-            for one_req in context[-3:]:
-                msg = f"{one_req['type']}: {one_req['msg']}"
-                history.append(msg)
+        log = pipeline[0]
+        new_Log = make_a_log("rewrite")
+
+        if log['status'] == "new":  # 多轮才需要重写
+            new_Log['status'] = "failed"
+            new_Log['note'] = "ERR: NOCONTEXT, new request can't rewrite"
+            pipeline.append(new_Log)
+            return
+    
+        context = log['context']
+        for one_req in context[-3:]:
+            msg = f"{one_req['type']}: {one_req['msg']}"
+            history.append(msg)
         
         history_context= "\n".join(history)
         query = log['msg']
         template = self.prompter.gen_default_prompt("rewrite")
         prompt = template.format(history_context=history_context,query=query)
         result = await self.askLLM(query, prompt)
-        
-        print(result)
-        new_Log = self.get_new_log("rewrite")
-        new_Log['msg'] = result
-        
+        if "ERR" in result:
+            new_Log['status'] = "failed"
+            new_Log['note'] = result
+        else:
+            new_Log['msg'] = result
         pipeline.append(new_Log)
+
 
     def transit(self,pipeline):
-        log = pipeline[-1]
-        new_Log = self.get_new_log("end")
-        new_Log['msg'] = log['msg']
-        new_Log['status'] = log['status']
-        pipeline.append(new_Log)
+        
+        new_log=make_a_log("transit")
+        new_log['status'] = "failed"
+        new_log['type']="reset"
+
+        rewritted = False
+        for log in pipeline:
+            if log['from'] == "rewrite":
+                rewritted = True
+                break
+        log = pipeline[0]
+        # 多轮且没有重写过
+        if rewritted is False and log['status'] == "hold":
+            new_log['from'] = "rewrite"  
+            new_log['status'] = "succ"  
+                    
+        pipeline.append(new_log)
             
     def genAnswer(self,pipeline):
-        log = pipeline[-1]
-        response = dict(log)
-        response['type'] = 'assistant'
-        response["format"]= log.get('format','text')
-
-        if log['status'] == "failed":
-            response['msg'] += "\n please tell me more details for your database."   
+        
+        answer = ""
+        notes = []
+        hints =[]
+        for log in pipeline[1:]:
+            if log['from'] == "polish":
+                answer = log['msg']
+                continue
+            notes.append(f"{log['from']}: {log['status']}, {log['note']}")
+            if len(log['hint'])>0:
+                hints.append(f"{log['from']}: {log.get('hint')}")
+            
+        resp = make_a_req(answer)
+        resp['note'] = "\n".join(notes)
+        resp['type'] = "assistant"
+        if len(hints)>0:
+            resp['hint'] = "\n".join(hints)
+            resp['status'] = "failed"
         else:
-            response['msg'] += response.get('note','')
+            resp['status'] = 'succ'
+        return resp
              
-        pipeline.append(response) 
-
     # 查库
     def sql4db(self,pipeline):
         log = pipeline[-1]
         query = log['msg']
-        resp = self.executor.exeQuery(query)
-        resp['from'] ="sql4db"
-        resp['type'] ='transaction'
-        pipeline.append(resp)
+        new_Log = self.executor.exeQuery(query)
+        new_Log['from'] = "sql4db"
+        pipeline.append(new_Log)
 
-    #上一步执行不成功，给出解释
+    #上一步执行不成功，给出提示
     def interpret(self,pipeline):
-        pass
+
+        for log in pipeline[1:]:
+            if log['type'] == 'reset':
+                log['from'] = 'transit' # 占用恢复
+            
+            match = re.search(r"ERR: (\w+)",log['note'])
+            if match is not None:
+                errtype = match.group(1)
+                hint = self.utterance.get("en_error_"+errtype.lower(),'')
+                if hint !='':
+                    log["hint"] = hint['msg'][D_RANDINT]
+        print([log['from'] for log in pipeline])
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
         log = pipeline[-1]
+        new_Log = make_a_log("polish")
+       
         markdown = tabulate(log['msg'], headers="keys", tablefmt="pipe")
-        new_Log = self.get_new_log("polish")
         new_Log['msg'] = markdown
         new_Log['format'] = 'md'
-        if markdown == "":
-           new_Log['note'] = log.get('note','')+ '\nThe SQL query was executed, but no results were found in the database.'
+        if len(markdown) == 0:
+           new_Log['note'] ="ERR: NORESULT"
+           new_Log['status'] = "failed"
         pipeline.append(new_Log)
 
     async def askLLM(self,query,prompt):
@@ -170,31 +203,33 @@ class Controller:
 async def apply(request):
 
     print(request)
+    D_RANDINT = random.randint(0,2)
     controller = Controller()
     pipeline = list()
     request['from'] = "user"
     pipeline.append(request)
     nextStep = controller.get_next(pipeline)
 
-    while nextStep != "genAnswer":
+    while nextStep != "end":
         print(nextStep)
         if inspect.iscoroutinefunction(getattr(controller,nextStep)):
             await getattr(controller,nextStep)(pipeline)
         else:
             getattr(controller,nextStep)(pipeline)
         nextStep = controller.get_next(pipeline)
-    controller.genAnswer(pipeline)
-    return pipeline[-1]
+    controller.interpret(pipeline)
+    return controller.genAnswer(pipeline)
+    
 
 async def main():
-    request = {'msg': '请问数据库的名字是什么', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '查询颜色是黑色的小新电脑', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
-    print(resp)
+    print(resp['msg']+f"\n\n{resp['note']}")
     context.append(resp)
-    # msg ='Remote end closed connection without response'
-    request1 = {'msg': '查一下产品名 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    request1 = {'msg': '查小新电脑 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
     resp = await apply(request1)
+    print(resp['msg']+f"\n\n{resp['note']}")
 
 if __name__ == "__main__":
       
