@@ -4,8 +4,8 @@ sys.path.insert(0, os.getcwd())
 import settings
 import logging
 import re
-from knowledges.schema_loader import Loader
-from utils.compare import similarity
+from zebura_core.knowledges.schema_loader import Loader
+from zebura_core.utils.compare import similarity
 
 # schema linking, for table, column
 # todo must match schema

@@ -8,8 +8,8 @@ import re
 sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
-from LLM.llm_agent import LLMAgent
-from knowledges.schema_loader import Loader
+from zebura_core.LLM.llm_agent import LLMAgent
+from zebura_core.knowledges.schema_loader import Loader
 
 class Normalizer:
     

@@ -1,84 +1,60 @@
 import os
+import sys
+sys.path.insert(0, os.getcwd().lower())
+import asyncio
 import subprocess
 import chainlit as cl
-import asyncio
-import sys
-#sys.path.append("E:/zebura")
-sys.path.insert(0, os.getcwd().lower())
-import settings
-from zebura_core.query_parser.parser import Parser
-import pymysql
-import random   
-    
-table_name = 'products'
-parser = Parser()
-conn = pymysql.connect(
-    host='localhost',		# 主机名（或IP地址）
-    port=3306,				# 端口号，默认为3306
-    user='root',			# 用户名
-    password='zebura',	# 密码
-    charset='utf8mb4'  		# 设置字符编码
-)
-print(conn.get_server_info())
-cursor = conn.cursor()
-conn.select_db("ikura")
+import chainlit.data as cl_data
+from chainlit.types import ThreadDict
+from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
+from talker_controller import Controller
 
 secret = subprocess.check_output(["chainlit", "create-secret"], text=True)
 os.environ["CHAINLIT_AUTH_SECRET"] = secret
+controller=Controller()
+user_name = 'postgres'
+pass_word = '123456'
+host = 'localhost'
+port = 5432
+database = 'zebura'
+
+cl_data._data_layer = SQLAlchemyDataLayer(
+    conninfo = f'postgresql+asyncpg://{user_name}:{pass_word}@{host}:{port}/{database}',
+    ssl_require = False,  # 如果需要SSL连接的话
+    storage_provider = "credentials",  # 如果有的话
+    user_thread_limit = 1000,  # 你的用户线程限制111
+)
 
 @cl.password_auth_callback
-def auth_callback(username: str, password: str):
-    # Fetch the user matching username from your database
-    # and compare the hashed password with the value stored in the database
-    if (username, password) == ("admin", "eCrMT3h=peMlxZmGMwjr"):
-        return cl.User(
-            identifier="admin", metadata={"role": "admin", "provider": "credentials"}
-        )
-    else:
-        return None
+#用户名密码登录
+def auth_callback(username: str):
+    loop = asyncio.get_event_loop()
+    data = loop.run_until_complete(cl_data._data_layer.get_user(identifier=username))
+    if username==data.identifier:
+        return cl.User(identifier=username,metadata={"role": "admin", "provider": "credentials"})
+    return None
 
-@cl.on_chat_start
-def redefine_secret():
-    secret = subprocess.check_output(["chainlit", "create-secret"], text=True)
-    os.environ["CHAINLIT_AUTH_SECRET"] = secret
+@cl.on_chat_resume
+async def on_chat_resume(thread: ThreadDict):
+    print("The user resumed a previous chat session!")
 
-@cl.step
-def tool(message):
-    categoryList=[]
-    # TODO:在这里返回消息之后将数据塞入content就可以返回
-
-    try:
-        print(table_name,message.content)
-        result = asyncio.run(parser.apply(message.content,table_name))
-        print(result)
-        if result["status"] is True:
-            
-            cursor.execute(result["sql1"][0].lower())
-            answer = cursor.fetchall()
-            keys = [column[0] for column in cursor.description]
-            result_dicts = []
-            for row in answer:
-                result_dict = dict(zip(keys, row))
-                result_dicts.append(result_dict)
-            for result_dict in result_dicts:
-                categoryList.append(result_dict)
-            return categoryList
-        else:
-            return f"{result['msg']}"
-    except Exception as e:
-        return "遇到如下错误："+str(e)+"\n请您稍后重试"
 
 
 @cl.on_message
-async def main(message: cl.Message):
-    result = tool(message)
-    if type(result) is list:
-        answer="您所查找的数据如下:"+"\n"+str(result)
-    else:
-        answer="对不起，系统不能解析您的意图:"+"\n"+result
+async def main(message:cl.Message):
+    context=cl.user_session.get("context")
+    print("----获取内容----",context)
+    query={
+        "content":message.content,
+        "context":context,
+        "type":"user",#user/assistant/transition
+        "format":"text/md/sql...",#显示相关格式
+        "status":"new/processing/finished/failed",#任务状态
+    }
+    answer=asyncio.run(controller.apply(query))
     await cl.Message(content=answer).send()
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     from chainlit.cli import run_chainlit
     run_chainlit(__file__)

@@ -14,9 +14,9 @@ from normalizer import Normalizer
 from schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
-from constants import D_TOP_GOODCASES as topK
+from zebura_core.constants import D_TOP_GOODCASES as topK
 class Parser:
-        
+
     def __init__(self):
         self.norm =Normalizer()
         self.te = Extractor()
@@ -33,7 +33,6 @@ class Parser:
     # table_name None, 为多表查询
     # todo, refine()
     async def apply(self, query, table_name=None) -> dict:
-
         # 1. Normalize the query to sql format by LLM
         if table_name is None:
             print(f"parse.apply()-> all tables, query:{query}")
@@ -43,10 +42,9 @@ class Parser:
         # few shots from existed good cases
         results = self.find_good_cases(query,topK=topK)
         # system prompt, fewshots 不分离情况
-        #prompt = self.prompter.gen_sql_prompt(results,table_name)
+        # prompt = self.prompter.gen_sql_prompt(results,table_name)
         #得到 system prompt, fewshots prompt
         prompt1 = self.prompter.gen_sql_prompt_dial(results, table_name, query)
-     
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # sql_1 失败为None
         answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
@@ -103,10 +101,9 @@ class Parser:
 # Example usage
 if __name__ == '__main__':
     import asyncio
-
     querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别']
-    querys =['帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
-    table_name = 'products'
+    # querys =['帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
+    # table_name = 'products'
     parser = Parser()
     for query in querys:
         result = asyncio.run(parser.apply(query))

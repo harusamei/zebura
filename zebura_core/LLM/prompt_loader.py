@@ -5,7 +5,7 @@ sys.path.insert(0, os.getcwd())
 import re
 from settings import z_config
 import logging
-from knowledges.schema_loader import Loader
+from zebura_core.knowledges.schema_loader import Loader
 # 典型prompt, 分为三层， roles最基本对应自我认知， tasks 对应指令， details 对应细节， shots对应实例
 # 这里只存 roles 和 tasks
 class prompt_generator:
@@ -65,7 +65,6 @@ class prompt_generator:
     def gen_sql_prompt(self,gcases=None,table_name=None,style='full') -> str:
 
         role = self.roles["sql_assistant"]
-
         if gcases is None:
             task_name = "nl2sql_zero"
         else:

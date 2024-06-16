@@ -6,9 +6,9 @@ sys.path.insert(0, os.getcwd())
 import settings
 import logging
 
-from utils.es_base import ES_BASE
-from utils.embedding import Embedding
-from constants import D_TOP_K
+from zebura_core.utils.es_base import ES_BASE
+from zebura_core.utils.embedding import Embedding
+from zebura_core.constants import D_TOP_K
 
 class ESearcher(ES_BASE):
 

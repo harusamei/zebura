@@ -13,14 +13,14 @@ def connect():
         host='localhost',		# 主机名（或IP地址）
         port=3306,				# 端口号，默认为3306
         user='root',			# 用户名
-        password='zebura',	# 密码
+        password='123456',	# 密码
         charset='utf8mb4'  		# 设置字符编码
     )
     return cnx
 # Create the "it" database
 def create_db(cnx, db_name):
     cursor = cnx.cursor()
-    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     cursor.close()
     return cnx
 
@@ -115,7 +115,7 @@ def test_query(cnx, db_name, query):
 
 def usecase():
     cnx = connect()
-    load_schema('mysql/ikura_meta.json')
+    load_schema('D:/zebura/dbaccess/mysql/ikura_meta.json')
     db_name = sch_loader.project
     create_db(cnx, db_name)
     tables = sch_loader.get_table_nameList()
@@ -123,20 +123,23 @@ def usecase():
         tb_schema = gen_schema(table_name)
         create_table(cnx, db_name, table_name, tb_schema)
     
-    load_data(cnx, db_name, 'products', 'mysql/leproducts.csv')
+    # load_data(cnx, db_name, 'products', 'D:/zebura/dbaccess/mysql/leproducts.csv')
+    load_data(cnx,db_name,"sales_info",'D:/zebura/dbaccess/mysql/sales_info.csv')
 
 # Example usage
 if __name__ == '__main__':
-
-    sql_queries =[  "SELECT product_name, disk_capacity FROM products WHERE disk_capacity > '500GB'",
-                    "SELECT brand FROM products;",
-                  "SELECT target_audience, service_description FROM products;",
-                  "SELECT size, width, foldability FROM products;",
-                "SELECT product_name, screen_size, screen_type FROM products;"  
-    ]
-    db_name ='ikura'
-    cnx = connect()
-    for query in sql_queries:
-        print(f"Executing query: {query}")
-        test_query(cnx, db_name,query)
-   
+    CNN =connect()
+    create_db(CNN,"ikura")
+    usecase()
+    # sql_queries =[  "SELECT product_name, disk_capacity FROM products WHERE disk_capacity > '500GB'",
+    #                 "SELECT brand FROM products;",
+    #               "SELECT target_audience, service_description FROM products;",
+    #               "SELECT size, width, foldability FROM products;",
+    #             "SELECT product_name, screen_size, screen_type FROM products;"
+    # ]
+    # db_name ='ikura'
+    # cnx = connect()
+    # for query in sql_queries:
+    #     print(f"Executing query: {query}")
+    #     test_query(cnx, db_name,query)
+    #

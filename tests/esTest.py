@@ -4,8 +4,8 @@ import os
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
-from utils.es_base import ES_BASE
-from utils.embedding import Embedding
+from zebura_core.utils.es_base import ES_BASE
+from zebura_core.utils.embedding import Embedding
 
 class ESTester(ES_BASE):
     
