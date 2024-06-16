@@ -21,19 +21,21 @@ class Normalizer:
         logging.debug("Normalizer init done")
 
     # main method of class, convert natural language to SQL
-    async def apply(self,query:str,prompt:str,fewshots=None) ->list:
+    # C_ERR_TAGS = ['ERR: LLM','ERR: NOSQL','ERR: CURSOR']    # error tags
+    async def apply(self,query:str,prompt:str,fewshots=None) -> dict:
 
+        print(f"normalizer.apply()-> query:{query}, prompt:{prompt[:100]}")
         result = await self.convert_sql(query,prompt,fewshots)
-        # 结果有三种情况， LLM无回应，无法提取SQL，提取SQL
-        if result is None:
-            return {"status":False,"msg":"[No response]: no answer from LLM"}
-
-        sql_list = self.extract_sql(result)
-        if len(sql_list) == 0:
-            logging.warning("ERR: no sql extracted",result)
-            return {"status":False, "msg": result}
-        
-        return {"status":True,"msg":sql_list}
+        # 结果有三种情况， LLM无回应，no sql，提取SQL   
+        resp = {"status":"failed","msg":result,"from":"convert_sql"}
+        if 'ERR' in result:
+            resp["note"] = "ERR: LLM"
+        elif result.lower() == "nosql":
+            resp["note"] = "ERR: NOSQL"
+        else:
+            resp = self.extract_sql(result)
+            resp["from"] = "extract_sql"
+        return resp
 
     # 生成table details of prompts for nl2sql
     # table_name, cloumn_name， 是DB的正式名，且作为英文名
@@ -78,23 +80,28 @@ class Normalizer:
         return result
 
     async def ask_agent(self, querys, sys_prompt,fewshots=None):
-
+        import time
         if isinstance(querys,str):
+            start = time.time()
+            print(f"length of prompt: {len(sys_prompt)}")
             results = await self.llm.ask_query(querys, sys_prompt,fewshots)
-        else:
+            print(f"ask_agent done, time: {time.time()-start}")
+        elif isinstance(querys,list):
             results = await self.llm.ask_query_list(querys, sys_prompt)
             if len(results) != len(querys):
                 print("ERR: queries and results do not match")
-        
+        else:
+            print("ERR: queries is not string or list")
+            return None
         return results
     
     # 提取SQL代码, 提取sql 全部小写
-    def extract_sql(self,result:str):
+    def extract_sql(self,result:str) -> dict:
         # Extract the SQL code from the LLM result
         logging.info(f"extract sql from LLM result: {result}")
         if not isinstance(result, str):
             print("ERR: result is not string")
-            return []
+            return {"status":"failed","msg":"ERR: [wrong format]"}
         
         if result.lower().startswith("```sql"):
             code_pa = "```sql\n(.*?)\n```"      # 标准code输出
@@ -103,9 +110,14 @@ class Normalizer:
             result = re.sub(' +', ' ', result)
             code_pa = "(select.*?from[^;]+;)"  # 不一定有where
         else:
-            return []
+            print("ERR: no sql found in result")
+            return {"status":"failed","msg":"ERR: NOSQL"}
         matches = re.findall(code_pa, result, re.DOTALL | re.IGNORECASE)
-        return matches
+        if len(matches) == 0:
+            print("ERR: no sql found in result")
+            return {"status":"failed","msg":"ERR: NOSQL"}
+        else:
+            return {"status":"succ","msg":matches[0]}
     
     # LLM 只负责转换，不对结果进行处理   
     async def convert_sql(self,queries,sys_prompt,fewshots=None):

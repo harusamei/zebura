@@ -13,9 +13,9 @@ Given a conversation (between Human and Assistant) and a follow up message from 
 Chat History (Sorted by request time from most recent to oldest):
 {history_context}
 
-Follow Up Input: {query}
+Follow Up Input: 
 
-**NOTE:** The detected language of the Input is '{lang}'. Please respond in '{lang}'.
+**NOTE:** Please respond in SAME language as the input message.
 
 Refined Standalone Question:
 </TASK>

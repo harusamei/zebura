@@ -80,9 +80,9 @@ class prompt_generator:
             neg_fewShots = self.gen_negShots()
             fewShots = pos_fewShots + neg_fewShots
             prompt= template.format(fewShots=fewShots,dbSchema=dbSchema)
-        print("prompt: ",role +"\n"+ prompt)
+        #print("prompt: ",role +"\n"+ prompt)
         return role +"\n"+ prompt
-    
+    # full, lite
     def gen_sql_prompt_dial(self,gcases:list,table_name=None,style='full') -> dict:
         role = self.roles["sql_assistant"]
         prompt = self.tasks["nl2sql_zero"]
@@ -151,19 +151,28 @@ class prompt_generator:
             tList.append(f"Table name: {table_name}, Purpose: {tDict.get('desc','')}\n")
             tList[-1]=tList[-1].replace("(Purpose: ,","Purpose: ")
 
-        tList.append('\nTable fields and their aliases:\n')
-        for table_name in tableList:
-            tDict = self.sch_loader.get_table_info(table_name)
-            columns = self.sch_loader.get_all_columns(table_name)
-            tList.append(f"Table: {table_name}\n")
-            for column in columns:
-                if style == 'full':
-                    tList.append(f"{column['column_name']}: {column.get('desc','')} (Alias: {column.get('name','')}, {column.get('alias','')})\n")
-                elif style == 'zh':
-                    tList.append(f"{column.get('column_name','')}: {column.get('desc','')} (Alias: {column.get('name_zh','')}, {column.get('alias_zh','')})\n")
-                else:
-                    tList.append(f"{column.get('column_name','')}: (Alias: {column.get('name','')}, {column.get('alias','')})\n")
-                tList[-1]=tList[-1].replace("(Alias: ,","(Alias: ")
+        if style == 'lite':
+            tList.append('\nTable fields are:\n')
+            for table_name in tableList:
+                columns = self.sch_loader.get_all_columns(table_name)
+                tList.append(f"Table: {table_name}\n")
+                tStr = "("
+                for column in columns:
+                    tStr+=column.get('column_name','')+','
+                tStr = tStr[:-1]+")"
+                tList.append(tStr)
+        else:
+            tList.append('\nTable fields and their aliases:\n')
+            for table_name in tableList:
+                tDict = self.sch_loader.get_table_info(table_name)
+                columns = self.sch_loader.get_all_columns(table_name)
+                tList.append(f"Table: {table_name}\n")
+                for column in columns:
+                    if style == 'full':
+                        tList.append(f"{column['column_name']}: {column.get('desc','')} (Alias: {column.get('name','')}, {column.get('alias','')})\n")
+                    elif style == 'zh':
+                        tList.append(f"{column.get('column_name','')}: {column.get('desc','')} (Alias: {column.get('name_zh','')}, {column.get('alias_zh','')})\n")
+                    tList[-1]=tList[-1].replace("(Alias: ,","(Alias: ")
 
         tStr="\n".join(tList)
         return re.sub('\n+', '\n', tStr)

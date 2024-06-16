@@ -55,7 +55,6 @@ class CaseStudy:
             docs={}
             # k是平滑因子，这里取最大的rank长度
             k =max(len(rank) for rank in ranks_lists)
-            print("k:",k)
             # 未出现在rank中的doc score为0
             for rank in ranks_lists:
                 for i,doc in enumerate(rank):
