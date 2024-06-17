@@ -4,8 +4,8 @@ import sys
 sys.path.insert(0, os.getcwd())
 import logging
 from settings import z_config
-from utils.es_searcher import ESearcher
-from knowledges.schema_loader import Loader
+from zebura_core.utils.es_searcher import ESearcher
+from zebura_core.knowledges.schema_loader import Loader
 
 dtk = 5     # default top k for search
 

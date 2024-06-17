@@ -6,8 +6,10 @@ import os
 class Settings:
     isinstance_count = 0
     def __init__(self):
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.config = configparser.ConfigParser()
-        self.config.read('config.ini',encoding='utf-8')
+        self.config.read(os.path.join(BASE_DIR, 'config.ini'), encoding="utf-8")
+        # self.config.read('config.ini',encoding='utf-8')
         self.settings()
         Settings.isinstance_count += 1
         print(f"Settings {Settings.isinstance_count}th init success")
@@ -46,12 +48,9 @@ if __name__ == '__main__':
 
     print("\n".join(sys.path))
     print(z_config['LLM','OPENAI_KEY'])
-    
     message = "logging message"
     logging.debug(message)
     logging.info(message)
     logging.warning(message)
     logging.error(message)
     logging.critical(message)
-
-

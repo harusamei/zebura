@@ -6,7 +6,7 @@ import sys
 import re
 sys.path.insert(0, os.getcwd())
 import settings
-from utils.sqlparser import parse_sql
+from zebura_core.utils.sqlparser import parse_sql
 
 class Extractor:
     def __init__(self):

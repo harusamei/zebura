@@ -6,7 +6,6 @@ import sys
 sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
-
 from elasticsearch import Elasticsearch
 
 class ES_BASE:
@@ -21,7 +20,7 @@ class ES_BASE:
             pwd = z_config['Eleasticsearch', 'pwd']
             self.es = Elasticsearch(
                 "https://"+host+":"+str(port),
-                ca_certs="E:/zebura/certs/http_ca.crt",
+                ca_certs="D:/zebura/certs/http_ca.crt",
                 basic_auth=(user, pwd)
             )
         else:

@@ -6,12 +6,12 @@ sys.path.insert(0, os.getcwd())
 import settings
 from elasticsearch.helpers import scan
 import logging
-from utils.csv_processor import pcsv
+from zebura_core.utils.csv_processor import pcsv
 
-from utils.es_base import ES_BASE
-from utils.es_searcher import ESearcher
-from utils.es_creator import ESIndex
-from constants import D_MAX_BATCH_SIZE as batch_size
+from zebura_core.utils.es_base import ES_BASE
+from zebura_core.utils.es_searcher import ESearcher
+from zebura_core.utils.es_creator import ESIndex
+from zebura_core.constants import D_MAX_BATCH_SIZE as batch_size
 
 class ESOps(ES_BASE):
 
@@ -174,14 +174,16 @@ def usecase1():
         esoper = ESOps()
         index_name = "ikura_gcases"
         tool = pcsv()
-        cwd = os.getcwd()
-        csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases1.csv')
+        # cwd = os.getcwd()
+        csv_file="D:/zebura/training/ikura/dbInfo/gcases.csv"
+        # csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases.csv')
         rows = tool.read_csv(csv_file)
         new_rows=[]
         cat = rows[0]['category']
         for row in rows:
             if row['query'] == '找出所有内存容量大于16 GB的服务器。':
                 print(row)
+                print("sql的数据",row.get("sql"))
                 print(row.get('category'))
             if esoper.is_doc_exist(index_name, row, ['tquery','category']):
                 print()#f"doc {row} already exist")

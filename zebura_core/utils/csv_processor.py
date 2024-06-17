@@ -2,7 +2,7 @@ import csv
 import json
 import os
 import sys
-from constants import D_MAX_ROWS as max_rows
+from zebura_core.constants import D_MAX_ROWS as max_rows
 class pcsv:
     
     def __init__(self):
@@ -13,7 +13,7 @@ class pcsv:
         if not rows or rows > self.max_rows or rows < 0:
             rows = self.max_rows
         try:
-            with open(csv_filename, 'r', encoding='utf-8-sig') as csv_file:
+            with open(csv_filename, 'r', encoding='utf-8-sig',newline='') as csv_file:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     row = {k.lstrip('\ufeff'): v for k, v in row.items()}

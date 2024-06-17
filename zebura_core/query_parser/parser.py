@@ -14,6 +14,7 @@ from normalizer import Normalizer
 from schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
+from zebura_core.constants import D_TOP_GOODCASES as topK
 from constants import D_TOP_GOODCASES as topK
 from server.msg_maker import make_a_log
 
@@ -35,7 +36,6 @@ class Parser:
     # table_name None, 为多表查询
     # todo, refine()
     async def apply(self, query, table_name=None) -> dict:
-
         # 1. Normalize the query to sql format by LLM
         if table_name is None:
             print(f"parse.apply()-> all tables, query:{query}")
@@ -45,7 +45,7 @@ class Parser:
         resp = make_a_log("parse")
         # few shots from existed good cases
         gcases = self.find_good_cases(query,topK=topK)
-        
+
         #得到 system prompt, fewshots prompt
         prompt1 = self.prompter.gen_sql_prompt_dial(gcases, table_name,style='lite')
      
@@ -56,7 +56,7 @@ class Parser:
         resp['status'] = answ['status']
         if answ['status'] == "failed":
             return resp
-        
+
         sql_1 = resp['msg']
         # 2. Extract the slots from the query
         slots1 = self.te.extract(sql_1)
@@ -67,11 +67,11 @@ class Parser:
         # sql1, slots1 为修正前，sql2, slots2 为修正后
         if slots1 is None:
             resp['status'] = "failed"
-        
+
         merged_dict = {**resp, **{"sql1":sql_1,"sql2":sql2,"slots1":slots1, "slots2":slots2}}
 
         return merged_dict
-     
+
     def find_good_cases(self,query,sql=None,topK=topK):
         # 从ES中获得候选 topK*1.5
         # {'doc':docs[id[0]], 'rank':i+1, 'score':id[1]}

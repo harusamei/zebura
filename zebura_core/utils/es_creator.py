@@ -3,19 +3,16 @@
 import sys
 import os
 sys.path.insert(0, os.getcwd())
-import settings
+sys.path.append("D:/zebura")
 import logging
-
-from utils.embedding import Embedding
-from utils.es_base import ES_BASE
+from zebura_core.utils.embedding import Embedding
+from zebura_core.utils.es_base import ES_BASE
 from zebura_core.knowledges.schema_loader import Loader
-
 from csv_processor import pcsv
 from datetime import datetime
 import re
 from elasticsearch.exceptions import RequestError # type: ignore
-
-from constants import C_ES_SHORT_MAX
+from zebura_core.constants import C_ES_SHORT_MAX
 
 # 创建索引
 class ESIndex(ES_BASE):
@@ -249,11 +246,11 @@ class ESIndex(ES_BASE):
   
 # examples usage
 if __name__ == '__main__':
-
     cwd = os.getcwd()
-    name = 'dbaccess\\es\\ikura_meta.json'
+    name="D:/zebura/training/ikura/ikura_gcases.json"
+    # name = 'D:/zebura/dbaccess/es/ikura_meta.json'
     sch_file = os.path.join(cwd, name)
+    print("文件地址",sch_file)
     creator = ESIndex()
-    creator.load_csv('sales_info', os.path.join(cwd,'dbaccess\\es\\leproducts.csv'),sch_file)
-    print(creator.test('sales_info','product_name','iphone'))
-   
+    creator.load_csv('ikura_gcases', "D:/zebura/training/ikura/dbInfo/gcases.csv",sch_file)
+    # print(creator.test('ikura_gcases','product_name','开关'))
