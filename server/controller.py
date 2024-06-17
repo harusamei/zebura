@@ -86,7 +86,7 @@ class Controller:
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
-
+# 请问您想查询的产品类型是什么？
         history=[]
         log = pipeline[0]
         new_Log = make_a_log("rewrite")
@@ -99,7 +99,7 @@ class Controller:
     
         context = log['context']
         for one_req in context[-3:]:
-            msg = f"{one_req['type']}: {one_req['msg']}"
+            msg = f"{one_req['type']}: {one_req.get('msg')}"
             history.append(msg)
         
         history_context= "\n".join(history)
@@ -136,33 +136,40 @@ class Controller:
             
     async def genAnswer(self,pipeline):
         
-        answer = ""
-        notes = []
-        hints =[]
-        resp = make_a_req(answer)
-        resp['status'] = 'failed'
-        for log in pipeline[1:]:
-            if log['from'] == "polish":
-                resp['msg'] = log['msg']
-                resp['status'] = 'succ'
-                continue
-            notes.append(f"{log['from']}: {log['status']}, {log['note']}")
-            if len(log['hint'])>0:
-                hints.append(f"{log['from']}: {log.get('hint')}")
-            
+        tmpl_succ = "{polish_msg}\nNOTE:{db2sql_note}\nSTEPS\n{stepInfo}"
+        tmpl_failed ="Sorry, there is no results matching your query.\nROOT CASUSE:{e_tag}\nSTEPS\n{stepInfo} "
         
-        resp['note'] = "\n".join(notes)
-        resp['hint'] = "\n".join(hints)
+        resp = pipeline.pop()
         resp['type'] = "assistant"
-        
-        if resp['status'] == "failed":
-            resp['status'] = "failed"
-            prompt = "用户用自然语言查询数据库， agent将其转换为sql语句，然后执行查询，获得了返回结果。\
-                    下面是用户的查询，查询结果和agent执行中间过程的记录。\
-                    请对这些信息做总结，给出一个回答。包括查询结果， 执行成功与否，执行失败的原因和建议。"
-            query =f"answer: {resp['msg']}, status: {resp['status']}, note: {resp['note']}, hint: {resp.get('hint','')}"
-            result = await self.askLLM(query, prompt)
-            resp['msg'] = result
+        status = resp['status']   
+        if status =='succ':
+            tmpl = tmpl_succ
+            steps = ['nl2sql', 'rewrite']
+        else:
+            tmpl =tmpl_failed
+            steps =[ 'nl2sql', 'rewrite', 'sql4db']
+            e_tag = resp['note']
+
+        polish_msg = db2sql_note = stepInfo =""
+        hint = ""
+        for log in pipeline[1:]:           
+            if log['from'] in steps:
+                stepInfo += f"{log['from']}:{log['status']}, {log['msg']}\n"
+                hint += log.get('hint')+'\n'
+            
+            if log['from'] == "polish":
+                polish_msg = log['msg']
+            if log['from'] == "sql4db":
+                db2sql_note = log['note']
+
+        if status == "succ":
+            resp['msg'] = tmpl.format(polish_msg=polish_msg,db2sql_note=db2sql_note,stepInfo=stepInfo)
+            resp['note'] = db2sql_note
+        else:
+            resp['msg'] = tmpl.format(e_tag=e_tag,stepInfo=stepInfo)
+            
+        resp['msg'] = re.sub(r'\n+', '\n', resp['msg'])
+        resp['hint'] = re.sub(r'\n+', '\n', hint)
         return resp
              
     # 查库
@@ -173,20 +180,31 @@ class Controller:
         new_Log['from'] = "sql4db"
         pipeline.append(new_Log)
 
-    #上一步执行不成功，给出提示
+    #对整个pipeline信息进行整理，分为msg主信息，note， hint
     def interpret(self,pipeline):
-
+        resp = make_a_req("waiting reply")
+        final_status = "failed"
         for log in pipeline[1:]:
             if log['type'] == 'reset':
-                log['from'] = 'transit' # 占用恢复
-            
+                log['from'] = 'transit'         # 恢复之前状态机占用
+            if log['from'] == "polish":
+                final_status = log['status']    # 只有走到polish才算成功
+                break
+        resp['status'] = final_status
+
+        root_cause = ""
+        for log in pipeline[1:]:    
             match = re.search(r"ERR: (\w+)",log['note'])
             if match is not None:
                 errtype = match.group(1)
-                hint = self.utterance.get("en_error_"+errtype.lower(),'')
-                if hint !='':
-                    log["hint"] = hint['msg'][D_RANDINT]
-        
+                root_cause = f"step {log['from']} met error of {errtype}"
+                utts = self.utterance.get("en_error_"+errtype.lower(),'')
+                if utts !='':
+                    log["hint"] = utts['msg'][D_RANDINT]
+        # 最后一次失败原因是整个pipeline最终原因
+        resp['note'] = root_cause
+        pipeline.append(resp)
+
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
@@ -218,7 +236,6 @@ async def apply(request):
     nextStep = controller.get_next(pipeline)
 
     while nextStep != "end":
-        print(nextStep)
         if inspect.iscoroutinefunction(getattr(controller,nextStep)):
             await getattr(controller,nextStep)(pipeline)
         else:
@@ -232,11 +249,11 @@ async def main():
     request = {'msg': '查询颜色是黑色的小新电脑', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
-    print(resp['msg']+f"\n\n{resp['note']}")
+    print(resp)
     context.append(resp)
-    request1 = {'msg': '查小新电脑 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    request1 = {'msg': '查类型 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
     resp = await apply(request1)
-    print(resp['msg']+f"\n\n{resp['note']}")
+    print(resp)
 
 if __name__ == "__main__":
       

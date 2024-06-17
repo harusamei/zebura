@@ -2,7 +2,7 @@
 # ignore #开头的行
 
 <TASK: rewrite>
-# 基于上文重写用户输入
+# 将多轮对话，重写为一条查询语句
 Given a conversation (between Human and Assistant) and a follow up message from Human, using the prior knowledge relationships, rewrite the message to be a standalone and detailed question that captures all relevant context from the conversation. Ensure the rewritten question:
 1. Preserves the original intent of the follow-up message.
 2. If the true intent of the follow-up message cannot be determined, make no modifications to avoid generating an incorrect question.
@@ -14,29 +14,52 @@ Chat History (Sorted by request time from most recent to oldest):
 {history_context}
 
 Follow Up Input: 
-
+{query}
 **NOTE:** Please respond in SAME language as the input message.
 
 Refined Standalone Question:
 </TASK>
 
-<TASK: nl2SQL_zero>
-# Follow these guidelines:
-# Conversion Requirement:
-# If the input intention can be converted into SQL, do so.
-# If it cannot be converted, output "NOSQL".
+<TASK:rewrite_nlsql>
+# 将多轮对话，重写为一条查询语句
+You are a chatbot that assists users in converting their natural language questions into SQL queries for database searching. 
+Given the multi-turn dialogue below between a user and the agent, along with the user's final question, rewrite the user's final question into a clearer and more structured form that can be easily translated into an SQL query. Your rewritten question should be specific, concise, and detail the data the user wants to retrieve or the operations they want to perform on the database.
+Example Dialogue:
 
-# Database Information:
-# If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
+User: I'm trying to find the total sales amount for each product in our store last month. How can I do that?
+Agent:
+SELECT product_name, SUM(sales_amount) 
+FROM sales 
+WHERE sale_date BETWEEN '2023-05-01' AND '2023-05-31' 
+GROUP BY product_name;
+
+User: And what about the top 5 products with the highest sales last month?
+Agent:
+no result in database
+
+User's final question: average sales amount per product
+
+Your Task:
+Rewrite the user's final question into a clearer and more structured form that is easy to translate into an SQL query.
+Example Rewritten Question:
+"Can you provide the average sales amount for each product sold in the store during May 2023?"
+History dialogue:
+{history_context}
+
+User's final question:
+</TASK>
+
+<TASK: nl2SQL_zero>
 
 Database Schema:
 {dbSchema}
-Note: Ensure that any values included in the SQL query exactly match those mentioned in the input.
-# If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
+Note: 
+Please ensure that any value appearing in the SQL must also appear in the query and must be in the same language.
+If it cannot be converted due to missing information, please output 'NOSQL' and prompt the user for the missing information.
 
 Format:
 Input: [User's natural language statement]
-Output: [Converted SQL query in code format or "NOSQL"]
+Output: [Converted SQL query in code format or "NOSQL，ask the user for the specific missing information"]
 
 </TASK>
 <TASK: nl2SQL>
@@ -74,7 +97,7 @@ Example Input and Output:
 # Input: "Show me the sales data for March."
 # Output: NOSQL (if table and column names are not provided)
 
-Note: Always ensure the integrity and accuracy of the data values from the input. If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
+Note: Please ensure that any value appearing in the SQL must also appear in the query and must be in the same language. If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
 
 Format:
 Input: [User's natural language statement]
@@ -95,7 +118,7 @@ SQL查询使用代码格式。
 示例输入与输出：
 {fewShots}
 
-注意：确保SQL查询中的数据值与输入中提到的值一致。如果由于缺少信息而无法进行直接转换，请勿做出假设，而是向用户寻求澄清。
+注意：确保SQL查询中的数据值必须出现在query中,并且与query所用的语言一致。如果由于缺少信息而无法进行直接转换，请勿做出假设，而是向用户寻求澄清。
 </TASK>
 
 <TASK: nl2SQL_lite>

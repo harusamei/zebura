@@ -10,7 +10,7 @@ import openai
 # agentName： OPENAI, CHATANYWHERE
 class LLMBase:
 
-    def __init__(self,agentName:str,model="gpt-3.5-turbo", temperature=0):
+    def __init__(self,agentName:str,model="gpt-3.5-turbo-ca", temperature=0):
 
         self.agentName = agentName.upper()
         self.temperature = temperature

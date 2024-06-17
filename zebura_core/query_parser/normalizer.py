@@ -24,7 +24,8 @@ class Normalizer:
     # C_ERR_TAGS = ['ERR: LLM','ERR: NOSQL','ERR: CURSOR']    # error tags
     async def apply(self,query:str,prompt:str,fewshots=None) -> dict:
 
-        print(f"normalizer.apply()-> query:{query}, prompt:{prompt[:100]}")
+        logging.debug(f"normalizer.apply()-> query:{query}, prompt:{prompt[:100]}")
+
         result = await self.convert_sql(query,prompt,fewshots)
         # 结果有三种情况， LLM无回应，no sql，提取SQL   
         resp = {"status":"failed","msg":result,"from":"convert_sql"}
@@ -82,10 +83,7 @@ class Normalizer:
     async def ask_agent(self, querys, sys_prompt,fewshots=None):
         import time
         if isinstance(querys,str):
-            start = time.time()
-            print(f"length of prompt: {len(sys_prompt)}")
             results = await self.llm.ask_query(querys, sys_prompt,fewshots)
-            print(f"ask_agent done, time: {time.time()-start}")
         elif isinstance(querys,list):
             results = await self.llm.ask_query_list(querys, sys_prompt)
             if len(results) != len(querys):
@@ -123,7 +121,7 @@ class Normalizer:
     async def convert_sql(self,queries,sys_prompt,fewshots=None):
         # Ask the GPT agent to convert the query to SQL
         results = await self.ask_agent(queries, sys_prompt,fewshots)
-        print("converse sql done")
+        #print("converse sql done")
       
         return results
     
