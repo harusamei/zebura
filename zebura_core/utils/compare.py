@@ -51,8 +51,8 @@ class similarity:
         ref_sent = ref_sent.lower() 
 
         score = 0
-        rouge = self.getRouge(gen_sent, ref_sent)[0]
-        score = max(score, rouge['rouge-1']['f'])
+        # rouge = self.getRouge(gen_sent, ref_sent)[0]
+        # score = max(score, rouge['rouge-1']['f'])
         chrf = self.getChrf(gen_sent, ref_sent, n_gram, beta)
         score = max(score, chrf)
         score = max(score, self.getMeteor(gen_sent, ref_sent))

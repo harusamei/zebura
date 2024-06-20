@@ -7,27 +7,37 @@ from settings import z_config
 import logging
 from zebura_core.knowledges.schema_loader import Loader
 # 典型prompt, 分为三层， roles最基本对应自我认知， tasks 对应指令， details 对应细节， shots对应实例
-# 这里只存 roles 和 tasks
+# prompt 模板通过文件导入，默认文件为当前目录下prompt.txt
 class prompt_generator:
 
     def __init__(self,prompt_file=None):
 
         self.roles = {}
         self.tasks = {}
+        self.db_structs = ""
         self.set_defaults()
 
         cwd = os.getcwd()
         name = z_config['Training','db_schema']  # 'training\ikura\ikura_meta.json'
         self.sch_loader = Loader(os.path.join(cwd, name))
-
+        name = z_config['Training','db_struct']  # 'training\ikura\ikura_db_structures.txt'
+        self.load_dbstruct(os.path.join(cwd, name))  # 读取数据库结构
+        
         if prompt_file is None:
             base= os.getcwd()
-            prompt_file = os.path.join(base,"zebura_core/LLM/prompt.txt")
+            prompt_file = os.path.join(base,"zebura_core/LLM/prompt.txt")   #自带模板文件
         
         if self.load_prompt(prompt_file):
             logging.debug("prompt_generator init success")
         else:
             logging.debug("no prompt file, generate prompt by default templates")
+    
+    def load_dbstruct(self,db_struct_file):
+        if not os.path.exists(db_struct_file):
+            return False
+        with open(db_struct_file, "r",encoding='utf-8') as f:
+            self.db_structs = f.read()
+        return True
     
     def load_prompt(self,prompt_file):
         if not os.path.exists(prompt_file):
@@ -85,8 +95,8 @@ class prompt_generator:
     # full, lite
     def gen_sql_prompt_dial(self,gcases:list,table_name=None,style='full') -> dict:
         role = self.roles["sql_assistant"]
-        prompt = self.tasks["nl2sql_zero"]
-        fewshots_dial= self.gen_fewShots_dial(gcases)
+        prompt = self.tasks["nl2sql_classic"]
+        fewshots_dial= self.gen_context(gcases)
         dbSchema = self.gen_dbSchema(table_name,style=style)
 
         return {"system":role+prompt+dbSchema,"fewshots":fewshots_dial}
@@ -108,7 +118,7 @@ class prompt_generator:
     # 生成user/assistant对
     # user: "Show me the sales data for March."
     # assistant: NOSQL (if table and column names are not provided)
-    def gen_fewShots_dial(self, gcases:list) -> list:
+    def gen_context(self, gcases:list) -> list:
 
         answ = 'sql'
         tlist =[]
@@ -119,63 +129,66 @@ class prompt_generator:
             tlist.append(tDict)
         return tlist
     
-
     def gen_negShots(self) -> str:
         ncase = (   "Input: show me the big data for March.\n"
                     "Output: NOSQL (if table and column names are not provided)\n"
                 )
         return ncase
     
-    # 生成table details of prompts for nl2sql， 样式见下
-    # Table names and purposes:
-    # Table name: users, Purpose: Stores user information
-
-    # Table fields and their aliases:
-    # Table: users 
-    # id: Unique identifier for the user (Alias: user_id)
-    # name: Name of the user (Alias: user_name)
-    # email: Email address of the user (Alias: user_email)
-    # registration_date: Date when the user registered (Alias: user_registration_date)
-    # registration_year: Year when the user registered (Alias: user_registration_year)
-    # style= full, zh, lite
     def gen_dbSchema(self, table_name=None, style='full') -> str:
+        # TODO， 按table_name拆分
+        return self.db_structs
+        
+    # # 生成table details of prompts for nl2sql， 样式见下
+    # # Table names and purposes:
+    # # Table name: users, Purpose: Stores user information
 
-        tList =['Table names and purposes:\n']
-        if table_name is None:
-            tableList = self.sch_loader.get_table_nameList()
-        else:
-            tableList = [table_name]
+    # # Table fields and their aliases:
+    # # Table: users 
+    # # id: Unique identifier for the user (Alias: user_id)
+    # # name: Name of the user (Alias: user_name)
+    # # email: Email address of the user (Alias: user_email)
+    # # registration_date: Date when the user registered (Alias: user_registration_date)
+    # # registration_year: Year when the user registered (Alias: user_registration_year)
+    # # style= full, zh, lite
+    # def gen_dbSchema(self, table_name=None, style='full') -> str:
 
-        for table_name in tableList:
-            tDict = self.sch_loader.get_table_info(table_name)
-            tList.append(f"Table name: {table_name}, Purpose: {tDict.get('desc','')}\n")
-            tList[-1]=tList[-1].replace("(Purpose: ,","Purpose: ")
+    #     tList =['Table names and purposes:\n']
+    #     if table_name is None:
+    #         tableList = self.sch_loader.get_table_nameList()
+    #     else:
+    #         tableList = [table_name]
 
-        if style == 'lite':
-            tList.append('\nTable fields are:\n')
-            for table_name in tableList:
-                columns = self.sch_loader.get_all_columns(table_name)
-                tList.append(f"Table: {table_name}\n")
-                tStr = "("
-                for column in columns:
-                    tStr+=column.get('column_name','')+','
-                tStr = tStr[:-1]+")"
-                tList.append(tStr)
-        else:
-            tList.append('\nTable fields and their aliases:\n')
-            for table_name in tableList:
-                tDict = self.sch_loader.get_table_info(table_name)
-                columns = self.sch_loader.get_all_columns(table_name)
-                tList.append(f"Table: {table_name}\n")
-                for column in columns:
-                    if style == 'full':
-                        tList.append(f"{column['column_name']}: {column.get('desc','')} (Alias: {column.get('name','')}, {column.get('alias','')})\n")
-                    elif style == 'zh':
-                        tList.append(f"{column.get('column_name','')}: {column.get('desc','')} (Alias: {column.get('name_zh','')}, {column.get('alias_zh','')})\n")
-                    tList[-1]=tList[-1].replace("(Alias: ,","(Alias: ")
+    #     for table_name in tableList:
+    #         tDict = self.sch_loader.get_table_info(table_name)
+    #         tList.append(f"Table name: {table_name}, Purpose: {tDict.get('desc','')}\n")
+    #         tList[-1]=tList[-1].replace("(Purpose: ,","Purpose: ")
 
-        tStr="\n".join(tList)
-        return re.sub('\n+', '\n', tStr)
+    #     if style == 'lite':
+    #         tList.append('\nTable fields are:\n')
+    #         for table_name in tableList:
+    #             columns = self.sch_loader.get_all_columns(table_name)
+    #             tList.append(f"Table: {table_name}\n")
+    #             tStr = "("
+    #             for column in columns:
+    #                 tStr+=column.get('column_name','')+','
+    #             tStr = tStr[:-1]+")"
+    #             tList.append(tStr)
+    #     else:
+    #         tList.append('\nTable fields and their aliases:\n')
+    #         for table_name in tableList:
+    #             tDict = self.sch_loader.get_table_info(table_name)
+    #             columns = self.sch_loader.get_all_columns(table_name)
+    #             tList.append(f"Table: {table_name}\n")
+    #             for column in columns:
+    #                 if style == 'full':
+    #                     tList.append(f"{column['column_name']}: {column.get('desc','')} (Alias: {column.get('name','')}, {column.get('alias','')})\n")
+    #                 elif style == 'zh':
+    #                     tList.append(f"{column.get('column_name','')}: {column.get('desc','')} (Alias: {column.get('name_zh','')}, {column.get('alias_zh','')})\n")
+    #                 tList[-1]=tList[-1].replace("(Alias: ,","(Alias: ")
+
+    #     tStr="\n".join(tList)
+    #     return re.sub('\n+', '\n', tStr)
     
     def set_defaults(self):
         self.roles["sql_assistant"]=(
@@ -203,3 +216,4 @@ if __name__ == '__main__':
     pg = prompt_generator()
     print(pg.gen_dbSchema())
     print(pg.gen_negShots())
+    print(pg.tasks["nl2sql_classic"])

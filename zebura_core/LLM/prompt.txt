@@ -1,4 +1,4 @@
-# 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
+﻿# 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
 # ignore #开头的行
 
 <TASK: rewrite>
@@ -20,162 +20,25 @@ Follow Up Input:
 Refined Standalone Question:
 </TASK>
 
-<TASK:rewrite_nlsql>
-# 将多轮对话，重写为一条查询语句
-You are a chatbot that assists users in converting their natural language questions into SQL queries for database searching. 
-Given the multi-turn dialogue below between a user and the agent, along with the user's final question, rewrite the user's final question into a clearer and more structured form that can be easily translated into an SQL query. Your rewritten question should be specific, concise, and detail the data the user wants to retrieve or the operations they want to perform on the database.
-Example Dialogue:
-
-User: I'm trying to find the total sales amount for each product in our store last month. How can I do that?
-Agent:
-SELECT product_name, SUM(sales_amount) 
-FROM sales 
-WHERE sale_date BETWEEN '2023-05-01' AND '2023-05-31' 
-GROUP BY product_name;
-
-User: And what about the top 5 products with the highest sales last month?
-Agent:
-no result in database
-
-User's final question: average sales amount per product
-
-Your Task:
-Rewrite the user's final question into a clearer and more structured form that is easy to translate into an SQL query.
-Example Rewritten Question:
-"Can you provide the average sales amount for each product sold in the store during May 2023?"
-History dialogue:
-{history_context}
-
-User's final question:
-</TASK>
-
-<TASK: nl2SQL_zero>
-
-Database Schema:
-{dbSchema}
-Note: 
-Please ensure that any value appearing in the SQL must also appear in the query and must be in the same language.
-If it cannot be converted due to missing information, please output 'NOSQL' and prompt the user for the missing information.
+<TASK: nl2SQL_classic>
+You are a programming assistant, and your task is to convert user’s natural language questions into executable SQL queries. 
+Given the database schema structures, including table names, column names and their data types, and the relationships between tables (foreign keys), for the following user input question, you need to:
+1. Language Parsing:
+- Extract key entities, such as table names and column names, from the input question.
+- Identify SQL keywords and clauses required to construct the query (e.g., SELECT, WHERE, JOIN, ORDER BY).
+2. Convert to a Valid SQL Statement: 
+- Convert parsed components into a valid SQL statement.
+- Ensure correct syntax and logical order of SQL clauses.
+3. Handle edge cases or bad cases:
+- Handle edge cases, such as ambiguous or incomplete questions, by providing the best possible SQL guess or requesting clarification.
+- Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
 
 Format:
-Input: [User's natural language statement]
-Output: [Converted SQL query in code format or "NOSQL，ask the user for the specific missing information"]
+   Input: [User's natural language question]
+   Output: [Converted SQL statement in code format] or [NOSQL, suggestions for improving the input question]
 
-</TASK>
-<TASK: nl2SQL>
-Follow these guidelines:
-Conversion Requirement:
-If the input intention can be converted into SQL, do so.
-If it cannot be converted, output "NOSQL".
-Value Consistency:
-Ensure that any values included in the SQL query exactly match those mentioned in the input.
-Database Information:
-
-If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
-
-Database Schema:
+Database schema structures:
 {dbSchema}
-# Table names and purposes:
-# Table name: users, Purpose: Stores user information
-
-# Table fields and their aliases:
-# users:
-# 
-# id: Unique identifier for the user (Alias: user_id)
-# name: Name of the user (Alias: user_name)
-# email: Email address of the user (Alias: user_email)
-# registration_date: Date when the user registered (Alias: user_registration_date)
-# registration_year: Year when the user registered (Alias: user_registration_year)
-
-Example Input and Output:
-{fewShots}
-# Input: "Find all users who registered in 2021."
-# Output:
-# sql
-# SELECT * FROM users WHERE registration_year = 2021;
-# 
-# Input: "Show me the sales data for March."
-# Output: NOSQL (if table and column names are not provided)
-
-Note: Please ensure that any value appearing in the SQL must also appear in the query and must be in the same language. If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
-
-Format:
-Input: [User's natural language statement]
-Output: [Converted SQL query in code format or "NOSQL"]
-</TASK>
-
-<TASK:nl2SQL_zh>
-# data schema 没有字段说明， zero-shot
-你将会收到一个自然语言查询，任务是将其转换为相应的SQL查询。根据提供的数据模式（schema），在输出时遵循以下规则：
-
-SQL查询使用代码格式。
-如果输入的意图不是数据查询，则直接输出"nosql"。
-如果转换时需要其他数据库信息，请直接向用户询问。
-如果SQL中包含值，这些值需要与输入中提到的值一致。
-数据模式：
-{dbSchema}
-
-示例输入与输出：
-{fewShots}
-
-注意：确保SQL查询中的数据值必须出现在query中,并且与query所用的语言一致。如果由于缺少信息而无法进行直接转换，请勿做出假设，而是向用户寻求澄清。
-</TASK>
-
-<TASK: nl2SQL_lite>
-# dbSchema 没有字段说明， zero-shot
-
-You will receive a natural language query, and your task is to convert it into an appropriate SQL query. Based on the provided data schema, follow these rules for output:
-Use code formatting for SQL queries.
-If the input intent is not a data query, output "nosql".
-If additional database information is needed for conversion, directly ask the user.
-If the SQL query includes values, ensure these values match those mentioned in the input.
-
-Data Schema:
-{dbSchema}
-
-# Table names and purposes:
-# Table name: users, Purpose: Stores user information
-# Table name: orders, Purpose: Stores order information
-# Table name: products, Purpose: Stores product information
-
-# Table fields and their aliases:
-# Table: employees (id,name,department,salary,hire_date)
-# Table: departments (id,name)
-# Table: salaries(employee_id,amount,effective_date)
-                   
-Example Inputs and Outputs:
-{fewShots}
-# Input: "List all employees' names and departments."
-# Output:
-# 
-# sql
-# 
-# SELECT employees.name, departments.name
-# FROM employees
-# JOIN departments ON employees.department = departments.id;
-# 
-# Input: "Tell me the average salary for each department."
-# Output:
-# 
-# sql
-# 
-# SELECT departments.name, AVG(salaries.amount) AS average_salary
-# FROM employees
-# JOIN salaries ON employees.id = salaries.employee_id
-# JOIN departments ON employees.department = departments.id
-# GROUP BY departments.name;
-# 
-# Input: "I want to insert a new employee record."
-# Output:
-# nosql
-# 
-# Input: "List the names and hire dates of all employees hired after 2020."
-# Output:
-# 
-# sql
-# SELECT name, hire_date
-# FROM employees
-# WHERE hire_date > '2020-01-01';
 
 </TASK>
 

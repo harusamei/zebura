@@ -31,8 +31,11 @@ class Normalizer:
         resp = {"status":"failed","msg":result,"from":"convert_sql"}
         if 'ERR' in result:
             resp["note"] = "ERR: LLM"
-        elif result.lower() == "nosql":
+        elif "nosql" in result.lower():
             resp["note"] = "ERR: NOSQL"
+            result = re.sub(r'nosql\W*', '', result, flags=re.IGNORECASE)
+
+            resp["hint"] = result
         else:
             resp = self.extract_sql(result)
             resp["from"] = "extract_sql"
@@ -70,16 +73,7 @@ class Normalizer:
                 "zh":db_zh,
                 "en":db_en
             }
-      
-    # 不确定数据信息prompt summary一下，是否效果更好？
-    async def summary(self,content):
-        
-        from zebura_core.LLM.prompt_loader import prompt_generator
-        prompter = prompt_generator()
-        prompt = prompter.gen_default_prompt["summary"]
-        result = await self.ask_agent(content, prompt)
-        return result
-
+   
     async def ask_agent(self, querys, sys_prompt,fewshots=None):
         import time
         if isinstance(querys,str):

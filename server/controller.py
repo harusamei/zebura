@@ -42,11 +42,12 @@ class Controller:
         self.llm = Controller.llm
 
         self.parser = Controller.parser
+
         self.sch_loader = Controller.parser.norm.sch_loader
         self.prompter = Controller.parser.prompter      # prompt generator
 
         self.asw_refiner = Synthesizer()
-        self.executor = ExeActivity('mysql',self.sch_loader)
+        self.executor = ExeActivity(self.sch_loader)
         # 一些套话
         self.utterance = {}
         with open("server\\utterances.json","r") as f:
@@ -82,7 +83,7 @@ class Controller:
         new_Log['status'] = result["status"]
         if result["status"] == "succ":
             new_Log['format'] = 'sql'
-        new_Log['others'] = result
+        new_Log['others'] = result['others']
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
@@ -106,14 +107,13 @@ class Controller:
         query = log['msg']
         template = self.prompter.gen_default_prompt("rewrite")
         prompt = template.format(history_context=history_context,query=query)
-        result = await self.askLLM(query, prompt)
+        result = await self.askLLM(query,"")
         if "ERR" in result:
             new_Log['status'] = "failed"
             new_Log['note'] = result
         else:
             new_Log['msg'] = result
         pipeline.append(new_Log)
-
 
     def transit(self,pipeline):
         

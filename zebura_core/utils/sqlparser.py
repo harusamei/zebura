@@ -1,9 +1,21 @@
 import sqlparse
 from sqlparse.sql import Where
-
+import itertools
+def make_a_slots():
+    return {
+        'columns': [],
+        'from': '',
+        'conditions': [],
+        'distinct': False,
+        'limit': '',
+        'offset': '',
+        'order by': '',
+        'group by': ''
+    }
 def parse_sql(sql):
 
-    formatted_sql = sqlparse.format(sql, keyword_case='upper')
+    formatted_sql = sqlparse.format(sql, keyword_case='upper', reindent=False)
+    formatted_sql = formatted_sql.strip()
     print("sql : "+formatted_sql)
 
     parsed = sqlparse.parse(formatted_sql)
@@ -11,7 +23,7 @@ def parse_sql(sql):
         print("Can't parse this SQL")
         return None
     # 可以解析的信息
-    slots = dict.fromkeys(['columns','from', 'conditions', 'distinct', 'limit', 'offset','order by','group by'])
+    slots = make_a_slots()
 
     tokens = parsed[0].tokens
     kwords = []
@@ -40,6 +52,9 @@ def parse_sql(sql):
     select_index = kwords.index("SELECT")
     from_index = kwords.index("FROM")
     slots['columns'] = kwords[select_index+1:from_index]
+    tList = [x.split(',') for x in slots['columns']]
+    slots['columns'] = list(itertools.chain.from_iterable(tList))
+
     slots['from'] = kwords[from_index+1]
 
     # 切分where条件
@@ -69,8 +84,8 @@ if __name__ == '__main__':
     SELECT column1 AS renamed_column1, column2 AS renamed_column2 FROM table_name;
     UPDATE table_name SET column1 = value1, column2 = value2 WHERE condition;
     """.split(";")
-    for sql in sql_querys:
-        parse_sql(sql)
+    for sql in sql_querys[:-1]:
+        print(parse_sql(sql))
     sql ="""
         SELECT * 
         FROM employees
@@ -83,5 +98,4 @@ if __name__ == '__main__':
         WHERE product_name LIKE "%apple%" AND price > 1000;
     """
     parse_sql(sql)
-        
         

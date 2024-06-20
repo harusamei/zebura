@@ -1,4 +1,4 @@
-# 执行活动
+# 查询用户数据库，执行SQL语句
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
@@ -10,10 +10,11 @@ from zebura_core.constants import D_SELECT_LIMIT as k_limit
 from server.msg_maker import make_a_log
 class ExeActivity:
     # db_type: 数据库类型，sch_loader: 项目的schema
-    def __init__(self, db_type, sch_loader):
+    def __init__(self, sch_loader):
 
         self.sch_loader = sch_loader
         self.db_name = z_config['Training','project_code']
+        db_type = z_config['TrainingDB','db_type']
         self.cnx = self.connect(db_type)
         if self.cnx is None:
             raise ValueError("Database connection failed")
@@ -23,15 +24,14 @@ class ExeActivity:
     @staticmethod
     def connect(type='mysql'):
 
-        if type.lower() == 'mysql':
-            type = 'Mysql'
+        section = 'TrainingDB'
 
-        host = z_config[type,'host']
-        port = int(z_config[type,'port']) 
-        user = z_config[type,'user']
-        pwd  = z_config[type,'pwd']
+        host = z_config[section,'host']
+        port = int(z_config[section,'port']) 
+        user = z_config[section,'user']
+        pwd  = z_config[section,'pwd']
 
-        if type == 'Mysql':
+        if type == 'mysql':
             cnx = pymysql.connect(
                 host= host,		        # 主机名（或IP地址）
                 port= port,		        # 端口号，默认为3306
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     name = z_config['Training','db_schema']  # 'training\ikura\ikura_meta.json'
     sch_loader = Loader(os.path.join(cwd, name))
-    exr = ExeActivity('mysql', sch_loader)
+    exr = ExeActivity(sch_loader)
     exr.checkDB()
     results = exr.exeQuery("SELECT * FROM products WHERE product_cate2 = '服务器' AND memory_capacity > 16;")
     exr.toMD_format(results['msg'])
