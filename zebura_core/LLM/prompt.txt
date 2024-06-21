@@ -3,24 +3,27 @@
 
 <TASK: rewrite>
 # 将多轮对话，重写为一条查询语句
-Given a conversation (between Human and Assistant) and a follow up message from Human, using the prior knowledge relationships, rewrite the message to be a standalone and detailed question that captures all relevant context from the conversation. Ensure the rewritten question:
-1. Preserves the original intent of the follow-up message.
-2. If the true intent of the follow-up message cannot be determined, make no modifications to avoid generating an incorrect question.
-3. The length of the rewritten question should not increase significantly compared to the follow-up message, to avoid altering the original intent.
-4. Do not directly use the content of the Assistant's responses to form the rewritten question. Prioritize referring to the information of the Human's historical question.
-5. Maintains the same language as the follow-up message (e.g., reply in Chinese if the question was asked in Chinese and in English if it was asked in English).
+# 例如请提供您想要查询的表的名称， could you please provide the name of the table you want to query? 
 
-Chat History (Sorted by request time from most recent to oldest):
+During a conversation, when a user questions for database and the agent provides search results, if the agent cannot find relevant data, it will prompt the user for more specific details. Based on the conversation and the subsequent message from the human, rewrite the message to be a standalone and detailed question that captures all relevant context from the conversation. Ensure the rewritten question:
+1. Maintain the original intent of the follow-up message.
+2. Rewrite the conversation directly as a question for database, without prompting the user to provide more specific information.
+3. Capture information pertaining to tables, fields, and query conditions discussed in the conversation.
+4. If the true intent of the follow-up message is unclear, refrain from making modifications to prevent generating an incorrect query.
+5. Ensure the length of the rewritten query does not significantly exceed that of the follow-up message to preserve the original intent.
+6. Avoid using the Agent's responses directly in formulating the rewritten query. Prioritize referencing the Human's historical questions.
+
+Conversation History (Sorted by request time from most recent to oldest):
 {history_context}
 
 Follow Up Input: 
-{query}
-**NOTE:** Please respond in SAME language as the input message.
+user: {query}
 
+NOTE: DO NOT prompt the user for additional specific information.
 Refined Standalone Question:
 </TASK>
 
-<TASK: nl2SQL_classic>
+<TASK: nl2sql_classic>
 You are a programming assistant, and your task is to convert user’s natural language questions into executable SQL queries. 
 Given the database schema structures, including table names, column names and their data types, and the relationships between tables (foreign keys), for the following user input question, you need to:
 1. Language Parsing:
@@ -33,13 +36,39 @@ Given the database schema structures, including table names, column names and th
 - Handle edge cases, such as ambiguous or incomplete questions, by providing the best possible SQL guess or requesting clarification.
 - Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
 
-Format:
-   Input: [User's natural language question]
-   Output: [Converted SQL statement in code format] or [NOSQL, suggestions for improving the input question]
+Examples of two output formats:
+1. 
+   ```sql
+   SELECT brand, COUNT(DISTINCT product_cate1) AS category_count
+   FROM products
+   GROUP BY brand;
+   ```
+2. 
+ NOSQL, To provide you with the average price of laptops, I would need more specific criteria or filters to narrow down the selection of laptops. 
 
 Database schema structures:
 {dbSchema}
 
+</TASK>
+
+<TASK: term_expansion>
+# 术语扩展
+Given the following keywords, generate a set of vocabulary expansions for each keyword including synonyms, related terms, spelling variants, conceptual expansion and translation (If the original word is in Chinese, translate it into English; if it is in English, translate it into Chinese). 
+Ensure to provide a diverse set of expansions to enrich the vocabulary.
+Examples of output
+[Innovation] 
+- Synonym Expansion: Creativity OR Originality OR Novelty OR Ingenuity 
+- Related Terms Expansion: Invention OR Breakthrough OR Disruption OR Modernization OR Revolution 
+- Spelling Variants: Innovación (Spanish) OR Innovation (French) OR Innovazione (Italian)
+- Conceptual Expansion: Technological Advancements OR Process Improvements OR Creative Solutions OR Business Transformation
+- Translation: 创新
+[Technology]
+- Synonym Expansion: Tech OR Engineering OR Applied Science OR High-tech
+- Related Terms Expansion: Gadgets OR Devices OR Digital Tools OR Software OR Hardware
+- Spelling Variants: Technologie (German) OR Tecnología (Spanish) OR Tecnologia (Italian)
+- Conceptual Expansion: Digital Transformation OR Innovation Enablers OR Modern Systems OR Computational Advancements
+- Translation: 技术
+Please generate expansions for each keyword following the format above.
 </TASK>
 
 # 根据db schema生成查询DB的自然语言问题
