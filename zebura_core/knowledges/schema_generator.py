@@ -72,9 +72,9 @@ class Scanner:
     # 每个sheet对应一个table
     # 格式：['no', 'table_name', 'column_name','name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
     def gen_schema(self, file_path):
-        musted ={'no', 'table_name', 'column_name', 'name','name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length'}
-        table_keys = {"table_name","name", "name_zh", "alias", "alias_zh", "desc", "desc_zh"}
-        column_keys = {"column_name", "name", "name_zh","alias", "alias_zh", "type", "length", "desc", "desc_zh"}
+        musted ={'table_name', 'column_name', 'alias', 'desc', 'type'}
+        table_keys = {"table_name","alias", "desc", }
+        column_keys = {"column_name", "alias", "type", "desc","key"}
 
         xls = pd.ExcelFile(file_path)
 
@@ -97,11 +97,8 @@ class Scanner:
             num_rows = df.shape[0]
             recap.append(f"{sheet_name}:table is {df.loc[0,'table_name']} ,num of columns is {num_rows-1}")
             # check the columns
-            if set(df.columns.tolist()) != musted:
+            if  not musted.issubset(set(df.columns.tolist())):
                 print(f"Error: incorrect columns in {sheet_name}")
-                return None
-            if df.loc[0,'table_name'] is None or len(df.loc[0,'table_name']) == 0:
-                print(f"Error: table_name not found in {sheet_name}")
                 return None
             
             tb = {}
@@ -116,8 +113,10 @@ class Scanner:
                 for key in column_keys:
                     column[key] = row[key] if not pd.isnull(row[key]) else None
                 column = self.filter_empty(column)
+                if len(column.keys()) == 0:
+                    break
                 tb["columns"].append(column)
-
+           
             schema["tables"].append(tb)
         # 生成project schema
         project_code = schema.get("_project_code")
@@ -168,8 +167,8 @@ class Scanner:
             ]
         }
         # sql: 模型结果； gt: ground truth 正确SQL; activity: 执行操作(这部分可写下一步的推荐)； explain: 解释； category: 类别
-        fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"]  
-        types = ["text", "text", "dense_vector", "text", "text", "text", "text", "keyword", "date"]
+        fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date","next_query"]  
+        types = ["text", "text", "dense_vector", "text", "text", "text", "text", "keyword", "date", "text"]
         for i, field in enumerate(fields):
             schema["tables"][0]["columns"].append({"column_name": field, "type": types[i]})
         
@@ -191,4 +190,4 @@ class Scanner:
 if __name__ == '__main__':
     scanner = Scanner()
     #asyncio.run(scanner.scan_table("C:\something\zebura\\training\it\dbInfo\product_info.csv"))
-    scanner.gen_schema("C:\something\zebura\\training\ikura\dbInfo\metadata.xlsx")
+    scanner.gen_schema("C:/something/zebura/training/amazon/dbInfo/metadata.xlsx")
