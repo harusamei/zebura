@@ -48,16 +48,17 @@ class Parser:
         gcases = self.find_good_cases(query,topK=topK)
 
         #得到 system prompt, fewshots prompt
-        prompt1 = self.prompter.gen_sql_prompt_dial(gcases, table_name,style='lite')
+        prompt = self.prompter.gen_sql_prompt_fewshots(gcases, table_name)
      
         logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
         # query to sql
-        answ = await self.norm.apply(query, prompt1['system'],prompt1['fewshots'])
+        answ = await self.norm.apply(query, prompt['system'],prompt['fewshots'])
+        
         resp['msg'] = answ['msg']
         resp['status'] = answ['status']
         if answ['status'] == "failed":
             resp['note'] = answ['note']
-            resp['hint'] = answ['hint']
+            resp['hint'] = answ.get('hint','')
             resp['others']['gcases'] = gcases
             return resp
 
@@ -187,6 +188,6 @@ if __name__ == '__main__':
               '列出所有的产品类别','查一下价格大于1000的产品']
     table_name = 'products'
     parser = Parser()
-    for query in querys:
+    for query in querys[:1]:
         result = asyncio.run(parser.apply(query))
         

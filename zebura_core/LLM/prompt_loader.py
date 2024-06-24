@@ -71,6 +71,9 @@ class prompt_generator:
         else:
             return self.roles['doc_assistant']+'\n'+self.tasks[task_name]
     
+    def gen_rewrite_prompt(self) -> str:
+        return self.tasks["rewrite"]
+    
     # style = full, zh, lite
     def gen_sql_prompt(self,gcases=None,table_name=None,style='full') -> str:
 
@@ -87,19 +90,18 @@ class prompt_generator:
             prompt= template.format(dbSchema=dbSchema)
         else:
             pos_fewShots = self.gen_fewShots(task_name,gcases)
-            neg_fewShots = self.gen_negShots()
-            fewShots = pos_fewShots + neg_fewShots
+            #neg_fewShots = self.gen_negShots()
+            fewShots = pos_fewShots #+ neg_fewShots
             prompt= template.format(fewShots=fewShots,dbSchema=dbSchema)
         #print("prompt: ",role +"\n"+ prompt)
         return role +"\n"+ prompt
     # full, lite
-    def gen_sql_prompt_dial(self,gcases:list,table_name=None,style='full') -> dict:
-        role = self.roles["sql_assistant"]
-        prompt = self.tasks["nl2sql_classic"]
-        fewshots_dial= self.gen_context(gcases)
-        dbSchema = self.gen_dbSchema(table_name,style=style)
+    def gen_sql_prompt_fewshots(self,gcases:list,table_name=None) -> dict:
+        tmpl = self.tasks["nl2sql_classic"]
+        fewshots= self.gen_context(gcases)
+        dbSchema = self.gen_dbSchema(table_name)
 
-        return {"system":role+prompt+dbSchema,"fewshots":fewshots_dial}
+        return {"system":tmpl.format(dbSchema=dbSchema),"fewshots":fewshots}
     
     # gcases: ES的返回结果 golden cases
     # fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"] 
@@ -131,65 +133,14 @@ class prompt_generator:
     
     def gen_negShots(self) -> str:
         ncase = (   "Input: show me the big data for March.\n"
-                    "Output: NOSQL (if table and column names are not provided)\n"
+                    "Output: NOSQL, please give more information for database)\n"
                 )
         return ncase
     
-    def gen_dbSchema(self, table_name=None, style='full') -> str:
+    def gen_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
         return self.db_structs
         
-    # # 生成table details of prompts for nl2sql， 样式见下
-    # # Table names and purposes:
-    # # Table name: users, Purpose: Stores user information
-
-    # # Table fields and their aliases:
-    # # Table: users 
-    # # id: Unique identifier for the user (Alias: user_id)
-    # # name: Name of the user (Alias: user_name)
-    # # email: Email address of the user (Alias: user_email)
-    # # registration_date: Date when the user registered (Alias: user_registration_date)
-    # # registration_year: Year when the user registered (Alias: user_registration_year)
-    # # style= full, zh, lite
-    # def gen_dbSchema(self, table_name=None, style='full') -> str:
-
-    #     tList =['Table names and purposes:\n']
-    #     if table_name is None:
-    #         tableList = self.sch_loader.get_table_nameList()
-    #     else:
-    #         tableList = [table_name]
-
-    #     for table_name in tableList:
-    #         tDict = self.sch_loader.get_table_info(table_name)
-    #         tList.append(f"Table name: {table_name}, Purpose: {tDict.get('desc','')}\n")
-    #         tList[-1]=tList[-1].replace("(Purpose: ,","Purpose: ")
-
-    #     if style == 'lite':
-    #         tList.append('\nTable fields are:\n')
-    #         for table_name in tableList:
-    #             columns = self.sch_loader.get_all_columns(table_name)
-    #             tList.append(f"Table: {table_name}\n")
-    #             tStr = "("
-    #             for column in columns:
-    #                 tStr+=column.get('column_name','')+','
-    #             tStr = tStr[:-1]+")"
-    #             tList.append(tStr)
-    #     else:
-    #         tList.append('\nTable fields and their aliases:\n')
-    #         for table_name in tableList:
-    #             tDict = self.sch_loader.get_table_info(table_name)
-    #             columns = self.sch_loader.get_all_columns(table_name)
-    #             tList.append(f"Table: {table_name}\n")
-    #             for column in columns:
-    #                 if style == 'full':
-    #                     tList.append(f"{column['column_name']}: {column.get('desc','')} (Alias: {column.get('name','')}, {column.get('alias','')})\n")
-    #                 elif style == 'zh':
-    #                     tList.append(f"{column.get('column_name','')}: {column.get('desc','')} (Alias: {column.get('name_zh','')}, {column.get('alias_zh','')})\n")
-    #                 tList[-1]=tList[-1].replace("(Alias: ,","(Alias: ")
-
-    #     tStr="\n".join(tList)
-    #     return re.sub('\n+', '\n', tStr)
-    
     def set_defaults(self):
         self.roles["sql_assistant"]=(
                         "You are a SQL conversion assistant. "
@@ -213,7 +164,14 @@ class prompt_generator:
     
 # Example usage
 if __name__ == '__main__':
+    from zebura_core.LLM.llm_agent import LLMAgent
+    import asyncio
+
+    llm = LLMAgent()
     pg = prompt_generator()
     print(pg.gen_dbSchema())
-    print(pg.gen_negShots())
     print(pg.tasks["nl2sql_classic"])
+    prompt = pg.tasks['term_expansion']
+    keywords = "product, price, 笔记本, 联想小新, lenovo, computer"
+    result = asyncio.run(llm.ask_query(keywords,prompt))
+    print(result)

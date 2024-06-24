@@ -79,15 +79,14 @@ class Controller:
         content = log['msg']
         result = await self.parser.apply(content)
         new_Log = make_a_log("nl2sql")
-        new_Log['msg'] = result['msg']
-        new_Log['status'] = result["status"]
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         if result["status"] == "succ":
             new_Log['format'] = 'sql'
-        new_Log['others'] = result['others']
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
-# 请问您想查询的产品类型是什么？
         history=[]
         log = pipeline[0]
         new_Log = make_a_log("rewrite")
@@ -101,13 +100,17 @@ class Controller:
         context = log['context']
         for one_req in context[-3:]:
             msg = f"{one_req['type']}: {one_req.get('msg')}"
+            index = msg.find("Root Cause")
+            if index != -1:
+                msg = msg[:index]
             history.append(msg)
         
         history_context= "\n".join(history)
         query = log['msg']
-        template = self.prompter.gen_default_prompt("rewrite")
-        prompt = template.format(history_context=history_context,query=query)
-        result = await self.askLLM(query,"")
+        tmpl = self.prompter.gen_rewrite_prompt()
+        prompt = tmpl.format(history_context=history_context,query=query)
+        result = await self.askLLM(prompt,"")
+        print('rewrite:',result)
         if "ERR" in result:
             new_Log['status'] = "failed"
             new_Log['note'] = result
@@ -136,8 +139,8 @@ class Controller:
             
     async def genAnswer(self,pipeline):
         
-        tmpl_succ = "{polish_msg}\nNOTE:{db2sql_note}\nSTEPS\n{stepInfo}"
-        tmpl_failed ="Sorry, there is no results matching your query.\nROOT CASUSE:{e_tag}\nSTEPS\n{stepInfo} "
+        tmpl_succ = "{polish_msg}\nNote:{db2sql_note}\n\n---Detailed Reasoning Steps---\n{stepInfo}"
+        tmpl_failed ="no results matching your query.\n{hint}\nRoot Cause:{e_tag}\n\n---Detailed Reasoning Steps---\n{stepInfo} "
         
         resp = pipeline.pop()
         resp['type'] = "assistant"
@@ -154,8 +157,8 @@ class Controller:
         hint = ""
         for log in pipeline[1:]:           
             if log['from'] in steps:
-                stepInfo += f"{log['from']}:{log['status']}, {log['msg']}\n"
-                hint += log.get('hint')+'\n'
+                stepInfo += f"{log['from']}:{log['status']}\n" # , {log['msg']}
+                hint = log.get('hint')+'\n'     # 最后一个hint
             
             if log['from'] == "polish":
                 polish_msg = log['msg']
@@ -166,7 +169,7 @@ class Controller:
             resp['msg'] = tmpl.format(polish_msg=polish_msg,db2sql_note=db2sql_note,stepInfo=stepInfo)
             resp['note'] = db2sql_note
         else:
-            resp['msg'] = tmpl.format(e_tag=e_tag,stepInfo=stepInfo)
+            resp['msg'] = tmpl.format(hint =hint, e_tag=e_tag,stepInfo=stepInfo)
             
         resp['msg'] = re.sub(r'\n+', '\n', resp['msg'])
         resp['hint'] = re.sub(r'\n+', '\n', hint)
@@ -199,7 +202,7 @@ class Controller:
                 errtype = match.group(1)
                 root_cause = f"step {log['from']} met error of {errtype}"
                 utts = self.utterance.get("en_error_"+errtype.lower(),'')
-                if utts !='':
+                if utts !='' and log['hint'] == "":  # 如果没有hint，就用默认的
                     log["hint"] = utts['msg'][D_RANDINT]
         # 最后一次失败原因是整个pipeline最终原因
         resp['note'] = root_cause
