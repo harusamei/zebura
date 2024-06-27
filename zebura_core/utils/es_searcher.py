@@ -27,8 +27,10 @@ class ESearcher(ES_BASE):
     def search(self,index, field, word, size=D_TOP_K):
 
         ty = self.get_field_type(index, field)
+        if ty is None:
+            return None
         # vector search
-        if ty is not None and ty == 'dense_vector':
+        if ty == 'dense_vector':
             if self.embedding is None:
                 self.embedding = Embedding()
             embs = self.embedding.get_embedding(word)
