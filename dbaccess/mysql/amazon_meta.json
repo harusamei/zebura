@@ -1,0 +1,124 @@
+﻿{
+    "_comment": "The schema is generated through file metadata.xlsx ,created in the 2024-06-25",
+    "_desc": "This database is applied to an e-commerce platform, providing product information to assist customers in making purchasing decisions. This database is used to record basic information about products, prices, discounts, user ratings, and links to the products.",
+    "_domain": "e commerce ",
+    "_possessor": "zebura inc",
+    "_project_code": "amazon",
+    "tables": [
+        {
+            "desc": "The product database stores product information,price, discount, rating, and so on",
+            "table_name": "product",
+            "columns": [
+                {
+                    "desc": "Unique identifier for each product",
+                    "key": "PRI",
+                    "alias": "ID; item_id",
+                    "column_name": "product_id",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Name or title of the product",
+                    "alias": "name;  title",
+                    "column_name": "product_name",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Category to which the product belongs",
+                    "alias": "type;  genre",
+                    "column_name": "category",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "USD, Price of the product after discount",
+                    "alias": "price_after_discount;  sale_price",
+                    "column_name": "discounted_price",
+                    "type": "FLOAT"
+                },
+                {
+                    "desc": "USD, Original price of the product",
+                    "alias": "original_price;  list_price",
+                    "column_name": "actual_price",
+                    "type": "FLOAT"
+                },
+                {
+                    "desc": "Percentage discount applied to the product",
+                    "alias": "discount_percent;  savings_percent",
+                    "column_name": "discount_percentage",
+                    "type": "FLOAT"
+                },
+                {
+                    "desc": "Rating given to the product by users",
+                    "alias": "user_rating;  average_rating",
+                    "column_name": "rating",
+                    "type": "FLOAT"
+                },
+                {
+                    "desc": "Number of ratings received for the product",
+                    "alias": "review_count;  feedback_count",
+                    "column_name": "rating_count",
+                    "type": "INT"
+                },
+                {
+                    "desc": "Description or details about the product",
+                    "alias": "product_description;  details",
+                    "column_name": "about_product",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Unique identifier for the user",
+                    "alias": "reviewer_id;  customer_id",
+                    "column_name": "user_id",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Display name of the user",
+                    "alias": "reviewer_name;  customer_name",
+                    "column_name": "user_name",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Unique identifier for each review or comment",
+                    "alias": "comment_id;  feedback_id",
+                    "column_name": "review_id",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Title of the review or comment",
+                    "alias": "comment_title;  review_subject",
+                    "column_name": "review_title",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Detailed content of the review or comment",
+                    "alias": "comment_content;  review_text",
+                    "column_name": "review_content",
+                    "type": "TEXT"
+                },
+                {
+                    "desc": "Link to an image associated with the product",
+                    "alias": "image_url;  picture_link",
+                    "column_name": "img_link",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "desc": "Link to the product's detailed page or purchase",
+                    "alias": "buy_link;  purchase_url",
+                    "column_name": "product_link",
+                    "type": "VARCHAR(255)"
+                },
+                {
+                    "column_name": "brand",
+                    "type": "#VIRTUAL_IN(product_name)"
+                },
+                {
+                    "column_name": "compatible",
+                    "type": "#VIRTUAL_IN(product_name)"
+                },
+                {
+                    "column_name": "scenario",
+                    "type": "#VIRTUAL_IN(category)"
+                }
+            ]
+        }
+    ]
+}

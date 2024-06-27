@@ -5,6 +5,7 @@ import settings
 from zebura_core.utils.csv_processor import pcsv
 import pymysql
 from zebura_core.knowledges.schema_loader import Loader
+import re
 
 sch_loader = None
 # Connect to MySQL
@@ -13,7 +14,7 @@ def connect():
         host='localhost',		# 主机名（或IP地址）
         port=3306,				# 端口号，默认为3306
         user='root',			# 用户名
-        password='123456',	# 密码
+        password='zebura',	# 密码
         charset='utf8mb4'  		# 设置字符编码
     )
     return cnx
@@ -24,67 +25,123 @@ def create_db(cnx, db_name):
     cursor.close()
     return cnx
 
-def create_table(cnx, db_name, table_name, schema):
+
+def create_table(cnx, db_name, table_name, tb_struct,t_comment=''):
     cursor = cnx.cursor()
     cursor.execute(f"USE {db_name}")
 
-    cursor.execute(f"""
+    command = f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
-            {schema}
-        )
-    """)
+            {tb_struct}
+        )COMMENT='{t_comment}';
+    """
+    cursor.execute(command)
+    cnx.commit()  # 确保提交你的更改
     cursor.close()
     return cnx
 
-def gen_schema(table_name):
+def gen_struct(table_name):
     
-    txt_type = 'VARCHAR(255)'
-    int_type = 'INT'
-    decimal_type = 'DECIMAL(10, 2)'
-    desc_type = 'TEXT'
-    date_type = 'DATE'
-    primary_type = 'PRIMARY KEY'
-
-    primary_fields = ['uid']
-    decimal_fields = ['price']
-    date_fields = ['time_to_market']
-    int_fields = ['cpu_core_number','memory_slot_number']
     table_info = sch_loader.get_table_info(table_name)
     columns = table_info.get('columns')
     fields = []
+    tmpl = '{field} {ty} {PRI} COMMENT "{comment}"'
     for column in columns:
         field = column['column_name']
-        if field in decimal_fields:
-            ty = decimal_type
-        elif field in date_fields:
-            ty = date_type
-        elif field in int_fields:
-            ty = int_type
-        else:
-            ty =  txt_type
-        fields.append(field+' '+ty)
-        if field in primary_fields:
-            fields.append(primary_type+'('+field+')')
+        ty = column['type']
+        if 'VIRTUAL_IN' in ty:      # 跳过自定义虚拟列
+            continue
 
+        comment = f"{column.get('alias','')}; {column.get('desc','')}"
+        if column.get('key','') == 'PRI':
+            primary_type = 'PRIMARY KEY'
+        else:
+            primary_type = ''
+        tStr = tmpl.format(field=field, ty=ty, PRI=primary_type, comment=comment)
+        tStr= tStr.replace('COMMENT (; )','')
+        fields.append(tStr)
+    
     print(len(fields))
-    return ', '.join(fields)
+    return ',\n'.join(fields)
+
+# def gen_schema(table_name):
+    
+#     txt_type = 'VARCHAR(255)'
+#     int_type = 'INT'
+#     decimal_type = 'DECIMAL(10, 2)'
+#     desc_type = 'TEXT'
+#     date_type = 'DATE'
+#     primary_type = 'PRIMARY KEY'
+
+#     primary_fields = ['uid']
+#     decimal_fields = ['price']
+#     date_fields = ['time_to_market']
+#     int_fields = ['cpu_core_number','memory_slot_number']
+#     table_info = sch_loader.get_table_info(table_name)
+#     columns = table_info.get('columns')
+#     fields = []
+#     for column in columns:
+#         field = column['column_name']
+#         if field in decimal_fields:
+#             ty = decimal_type
+#         elif field in date_fields:
+#             ty = date_type
+#         elif field in int_fields:
+#             ty = int_type
+#         else:
+#             ty =  txt_type
+#         fields.append(field+' '+ty)
+#         if field in primary_fields:
+#             fields.append(primary_type+'('+field+')')
+
+#     print(len(fields))
+#     return ', '.join(fields)
+
+def refine_data(fields_ty, data):
+    for k,v in data.items():
+        if v is None or v == '':
+            data[k] = None
+        elif fields_ty[k] == 'int':
+            cleaned_v = re.sub(r'[^0-9]', '', v)  # 替换非数字字符
+            data[k] = int(cleaned_v) if cleaned_v else 0  # 防止空字符串转换
+        elif fields_ty[k] == 'float':
+            cleaned_v = re.sub(r'[^0-9.]', '', v)  # 保留点号，替换其他非数字字符
+            data[k] = float(cleaned_v) if cleaned_v else 0  # 防止空字符串转换
+        elif fields_ty[k] == 'varchar(255)':
+            data[k] = str(v)[:254]
+    return data
+
+
+def insert_item(cursor, query, values):
+    cursor.execute(query, values)
+    cnx.commit()
 
 def load_data(cnx, db_name, table_name, csv_path):
     cursor = cnx.cursor()
     cursor.execute(f"USE {db_name}")
+
+    # 获取并打印表的列类型
+    cursor.execute(f"DESCRIBE {table_name}")
+    columns_info = cursor.fetchall()
+    fields_ty = {}
+    for column in columns_info:
+        fields_ty[column[0]] =column[1]
+   
     csv_reader  = pcsv()
     csv_path = os.path.join(os.getcwd(), 'dbaccess',csv_path)
     data = csv_reader.read_csv(csv_path)
-    for row in data:
-        row = {k:v for k,v in row.items() if v is not None and v != ''}
-        fields = ', '.join(row.keys())
-        values = ', '.join([f"'{v}'" if isinstance(v, str) else str(v) for v in row.values()])
-        print(f"""INSERT INTO {table_name} ({fields})
-            VALUES ({values})""")
-        cursor.execute(f"""
-            INSERT INTO {table_name} ({fields})
-            VALUES ({values})
-        """)
+    headers = data[0]
+    fields = ', '.join(headers)
+    vals ='%s, '*len(headers)
+    vals = vals[:-2]
+    #insert_query = f"INSERT INTO {table_name} (column1, column2, actual_price, discounted_price) VALUES (%s, %s, %s, %s)"
+    insert_query = f"INSERT IGNORE INTO {table_name} ({fields}) VALUES ({vals})"
+    
+    for i, row in enumerate(data):
+        row = refine_data(fields_ty, row)
+        values = tuple(row.values())
+        print(i, values[0])
+        insert_item(cursor, insert_query, values)
         
     cnx.commit()
     cursor.close()
@@ -114,32 +171,35 @@ def test_query(cnx, db_name, query):
     cursor.close()
 
 def usecase():
+    
     cnx = connect()
-    load_schema('D:/zebura/dbaccess/mysql/ikura_meta.json')
+    filePath = os.path.join(os.getcwd() , 'dbaccess/mysql/amazon_meta.json')
+    load_schema(filePath)
     db_name = sch_loader.project
     create_db(cnx, db_name)
     tables = sch_loader.get_table_nameList()
     for table_name in tables:
-        tb_schema = gen_schema(table_name)
+        tb_schema = gen_struct(table_name)
         create_table(cnx, db_name, table_name, tb_schema)
     
-    # load_data(cnx, db_name, 'products', 'D:/zebura/dbaccess/mysql/leproducts.csv')
-    load_data(cnx,db_name,"sales_info",'D:/zebura/dbaccess/mysql/sales_info.csv')
 
 # Example usage
 if __name__ == '__main__':
-    CNN =connect()
-    create_db(CNN,"ikura")
-    usecase()
-    # sql_queries =[  "SELECT product_name, disk_capacity FROM products WHERE disk_capacity > '500GB'",
-    #                 "SELECT brand FROM products;",
-    #               "SELECT target_audience, service_description FROM products;",
-    #               "SELECT size, width, foldability FROM products;",
-    #             "SELECT product_name, screen_size, screen_type FROM products;"
-    # ]
-    # db_name ='ikura'
-    # cnx = connect()
-    # for query in sql_queries:
-    #     print(f"Executing query: {query}")
-    #     test_query(cnx, db_name,query)
-    #
+
+    #usecase()
+    cnx = connect()
+    # filePath = os.path.join(os.getcwd() , 'dbaccess/mysql/amazon.csv')
+    # load_data(cnx, 'amazon', 'product', filePath)
+
+    sql_queries =[  "SELECT about_product FROM product WHERE rating > 4",
+                    "SELECT brand FROM products;",
+                    "SELECT target_audience, service_description FROM products;",
+                    "SELECT size, width, foldability FROM products;",
+                    "SELECT product_name, screen_size, screen_type FROM products;"
+                 ]
+    db_name ='amazon'
+    cnx = connect()
+    for query in sql_queries[:1]:
+        print(f"Executing query: {query}")
+        test_query(cnx, db_name,query)
+    

@@ -1,0 +1,22 @@
+Table: product
+Purpose: The product database stores product information,price, discount, rating, and so on
+Fields:
+product_id, varchar(255), PRIMARY KEY, COMMENT( ID; item_id )
+product_name, varchar(255), COMMENT( name;  title )
+category, varchar(255), COMMENT( type;  genre )
+discounted_price, float, COMMENT( price_after_discount;  sale_price )
+actual_price, float, COMMENT( original_price;  list_price )
+discount_percentage, float, COMMENT( discount_percent;  savings_percent )
+rating, float, COMMENT( user_rating;  average_rating )
+rating_count, int, COMMENT( review_count;  feedback_count )
+about_product, varchar(255), COMMENT( product_description;  details )
+user_id, varchar(255), COMMENT( reviewer_id;  customer_id )
+user_name, varchar(255), COMMENT( reviewer_name;  customer_name )
+review_id, varchar(255), COMMENT( comment_id;  feedback_id )
+review_title, varchar(255), COMMENT( comment_title;  review_subject )
+review_content, text, COMMENT( comment_content;  review_text )
+img_link, varchar(255), COMMENT( image_url;  picture_link )
+product_link, varchar(255), COMMENT( buy_link;  purchase_url )
+brand, varchar(255), COMMENT( manufacturer;  brand_name )
+compatible, varchar(255), COMMENT( compatible_with;  fits_with )
+scenario, varchar(255), COMMENT( use_case;  application )
