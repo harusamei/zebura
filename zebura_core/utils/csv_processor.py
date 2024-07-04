@@ -2,17 +2,18 @@ import csv
 import json
 import os
 import sys
+from zebura_core.constants import D_MAX_ROWS as max_rows
 class pcsv:
     
     def __init__(self):
-        self.max_rows = 1000000
+        self.max_rows = max_rows
 
     def read_csv(self,csv_filename, rows=None):
         csv_rows = []
         if not rows or rows > self.max_rows or rows < 0:
             rows = self.max_rows
         try:
-            with open(csv_filename, 'r', encoding='utf-8-sig') as csv_file:
+            with open(csv_filename, 'r', encoding='utf-8-sig',newline='') as csv_file:
                 csv_reader = csv.DictReader(csv_file)
                 for row in csv_reader:
                     row = {k.lstrip('\ufeff'): v for k, v in row.items()}
@@ -26,8 +27,12 @@ class pcsv:
         return csv_rows
 
     def write_csv(self,csv_rows, csv_filename):
+        fieldnames = set()
+        for row in csv_rows:
+                fieldnames.update(row.keys())
+        fieldnames = list(fieldnames)
         with open(csv_filename, 'w', newline='',encoding='utf-8-sig') as csv_file:
-            csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys())
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             csv_writer.writeheader()
             csv_writer.writerows(csv_rows)
 
@@ -57,16 +62,13 @@ if __name__ == '__main__':
     my_pcsv = pcsv()
     sys.path.insert(0, os.getcwd().lower())
     curPath = os.getcwd().lower()
-    csv_filename = 'datasets\\goodcases_schema.csv'
-    print(csv_filename)
-    csv_rows = my_pcsv.read_csv(csv_filename)
-    # aJson=my_pcsv.oneRow2json(csv_rows[0])
-    allJson=my_pcsv.csv2json(csv_rows)
-
-    temDict= {'table':'none','es_index':'none'}
-    temDict['columns'] =my_pcsv.json2dict(allJson)
+    csv_filename = 'datasets\output.csv'
+    filename = os.path.join(curPath,csv_filename)
+    csv_rows = my_pcsv.read_csv(filename)
     
-    with open(curPath+'\\datasets\\goodcases_info_tables.json', 'w',encoding='utf-8-sig') as json_file:
-        json_file.write(my_pcsv.dict2json({'tables':[temDict]}))
-           
-    
+    new_rows = []
+    for row in csv_rows:
+        if row.get('sentences') is None or len(row['sentences'])==0:
+            new_rows.append(row)
+    print(len(new_rows))
+    my_pcsv.write_csv(new_rows, 'output2.csv')

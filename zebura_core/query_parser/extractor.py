@@ -6,13 +6,14 @@ import sys
 import re
 sys.path.insert(0, os.getcwd())
 import settings
-from utils.sqlparser import parse_sql
+from zebura_core.utils.sqlparser import parse_sql
 
 class Extractor:
     def __init__(self):
         self.where_pats = [r'(\S+)\s+(LIKE)\s+\W(.*)\W', 
                            r'(\S+)\s*([><=]+)\s*(\d+)',
                            r'(\S+)\s*(=)\s*\W(.*)\W']
+        
 
 
     def extract(self,sql):
@@ -68,6 +69,7 @@ if __name__ == '__main__':
     #     d = te.extract(sql)
     #     print(d) 
     sql ="SELECT 价格 FROM 产品信息表 WHERE 品牌 = '联想' AND 系列 = '小新' AND 产品名 LIKE '%小新%';"
+    sql ="SELECT * FROM products WHERE release_date >= '2024-01-01';\n\nQ: 有什么与鼠标有关的产品\nA: SELECT * FROM products WHERE product_name LIKE '%鼠标%';\n\nQ: 列出所有电子产品分类下的产品\nA: SELECT * FROM products WHERE product_cate1 = 'Consumer electronics';"
     print(te.extract(sql))
    
     

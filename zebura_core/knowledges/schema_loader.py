@@ -2,37 +2,34 @@
 import os
 import json
 from typing import Dict
+import logging
 
-# load schema of tables
 class Loader:
     def __init__(self,file):
         
         # schema 必须存在，否则raise error
-        self._info = self.load_tablesInfo(file)
-        if self._info is None or "tables" not in self._info:
-            raise ValueError("Cannot load the schema file")
+        self._info = self.load_schema(file)
+        if "tables" not in self._info:
+            logging.critical("tables not in schema file")
         self.tables = self._info["tables"] # [{}],每个表一个dict
+        self.project = self._info.get("_project_code","")
+        logging.debug("Loader init success")
         
-    def load_tablesInfo(self,file) -> Dict[str,str]:
+    def load_schema(self,file) -> Dict[str,str]:
         
         # Load the config file
         try:
             with open(file, 'r',encoding='utf-8-sig') as file:
                 info_dict = json.load(file)
-        except:
-            return None
-        
+        except Exception as e:
+            raise ValueError(f"Cannot load the schema file{e}")            
         return info_dict
     
     def get_table_nameList(self):
-        return [table["table"] for table in self.tables]
-    
-    # table 在ES中的index名可以不同
-    def get_index_nameList(self):
-        return [table["es_index"] for table in self.tables]
+        return [table["table_name"] for table in self.tables]
     
     def get_table_info(self,tableName) -> Dict[str,str]:
-        tDict = next((table for table in self.tables if table["table"] == tableName), None)
+        tDict = next((table for table in self.tables if table["table_name"] == tableName), None)
         return tDict
     
     def get_all_columns(self,tableName): # [Dict]
@@ -43,22 +40,20 @@ class Loader:
     def get_column(self, tableName, columnName) -> Dict[str,str]:
         
         columns = self.get_table_info(tableName).get("columns")
-        result = next((column for column in columns if column["column_en"] == columnName), None)
+        result = next((column for column in columns if column["column_name"] == columnName), None)
         return result
     
-    # def __getitem__(self, key):
-    #     return self._info.get(key)
 
 # Example usage
 if __name__ == '__main__':
     # Load the SQL patterns
     cwd = os.getcwd()
-    name = 'datasets\gcases_schema.json'
+    name = 'training/ikura/ikura_meta.json'
     file = os.path.join(cwd, name)
     print(file)
     loader =Loader(file)
-    print(loader.tables[0]["table"])
-    print(loader.get_column('gcases','query'))
-    print(loader.get_table_info('gcases').get('alias_en'))
+    print(loader.tables[0]["table_name"])
+    print(loader.get_column('products','brand'))
+    print(loader.get_table_info('products').get('desc'))
 
     

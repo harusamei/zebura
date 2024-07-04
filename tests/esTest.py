@@ -4,10 +4,9 @@ import os
 if os.getcwd().lower() not in sys.path:
     sys.path.insert(0, os.getcwd().lower())
 import settings
-from utils.es_base import ES_BASE
-from utils.embedding import Embedding
+from zebura_core.utils.es_base import ES_BASE
+from zebura_core.utils.embedding import Embedding
 
-# base methods ['all_indices', 'get_fields', 'is_exist_field', 'search_vector', 'search_word']
 class ESTester(ES_BASE):
     
     def __init__(self):
@@ -15,7 +14,7 @@ class ESTester(ES_BASE):
         print(self.es_version)
 
         
-    def get_indices(self):
+    def get_all_indices(self):
         # 获取集群中的所有有别名的索引
         aliases = self.es.cat.aliases(format="json")
         # 过滤系统自动生成的index
@@ -93,7 +92,7 @@ class ESTester(ES_BASE):
     
 
     def test_field_search(self, index_name, field_name,query):
-        fields = self.get_fields(index_name)
+        fields = self.get_all_fields(index_name)
         
         if not fields.get(field_name):
             print(f"Field {field_name} not found in index {index_name}")
@@ -113,7 +112,7 @@ class ESTester(ES_BASE):
     
     def output_result(self, index_name, result, size=3):
 
-        fields = self.get_fields(index_name)
+        fields = self.get_all_fields(index_name)
         dv_fields = []
         for field_name in fields.keys():
             if fields[field_name].get('type') == 'dense_vector':
@@ -134,7 +133,7 @@ if __name__ == '__main__':
 
     tester = ESTester()
     tester.get_indices()
-    fields = tester.get_fields('goldencases')
+    fields = tester.get_all_fields('goldencases')
     print(fields)
 
     result = tester.test_field_search('goldencases', 'query', '列出所有电子产品分类下的产品')   

@@ -1,46 +1,48 @@
 # case study 模式，找相似的案例
 import os
 import sys
-if os.getcwd().lower() not in sys.path:
-    sys.path.insert(0, os.getcwd().lower())
+sys.path.insert(0, os.getcwd())
+import logging
 from settings import z_config
-from utils.es_searcher import ESearcher
-from knowledges.schema_loader import Loader
+from zebura_core.utils.es_searcher import ESearcher
+from zebura_core.knowledges.schema_loader import Loader
 
 dtk = 5     # default top k for search
+
 class CaseStudy:
         
         def __init__(self):
             # good cases 存放在ES中，通过ES查询
             self.es = ESearcher()
             # load schema of goodcases
+            name = z_config['Training','db_schema']  # 'Training\ikura\ikura_meta.json'
+            # 获得<project_code>_gcases.json
+            name = name.replace('_meta','_gcases')
             cwd = os.getcwd()
-            name = z_config['Training','case_schema']  # 'Training\it\gcases_schema.json'
             self.loader = Loader(os.path.join(cwd, name))
 
-            self.gcase_index = self.loader.get_index_nameList()[0]  # 'gcases'
+            project_code = os.path.basename(name).split('_')[0]
+            self.gcase_index = f"{project_code}_gcases"  # 'gcases'
             table = self.loader.get_table_nameList()[0]
             self.columns = self.loader.get_all_columns(table)
-            # check necessary columns
-            must_columns = ['query', 'qembedding', 'sql', 'action']
-            for col in must_columns:
-                if col not in [c['column_en'] for c in self.columns]:
-                    raise ValueError(f"Column {col} not found in table {table}")
+
+            logging.debug("CaseStudy init success")
+            
             
         # 欧氏距离或manhattan distance, _score 越小越相似，区间是[0, +∞)
         def find_similar_query(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "query", query, topk)
+            results = self.es.search(index, "query", query, topk)
             return results
         
         def find_similar_sql(self, sql, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "sql", sql, topk)
+            results = self.es.search(index, "sql", sql, topk)
             return results
         # ES为了保证所有的得分为正，实际使用（1 + 余弦相似度）/ 2，_score [0，1]。得分越接近1，表示两个向量越相似  
         def find_similar_vector(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search_word(index, "qembedding", query, topk)
+            results = self.es.search(index, "qembedding", query, topk)
             return results
         
         """
@@ -53,7 +55,6 @@ class CaseStudy:
             docs={}
             # k是平滑因子，这里取最大的rank长度
             k =max(len(rank) for rank in ranks_lists)
-            print("k:",k)
             # 未出现在rank中的doc score为0
             for rank in ranks_lists:
                 for i,doc in enumerate(rank):
@@ -64,7 +65,8 @@ class CaseStudy:
             
             sorted_docs = sorted(docs.items(), key=lambda item: item[1], reverse=True)
             return sorted_docs
-
+        
+        # hybrid search
         def assemble_find(self, query, sql=None, topk=dtk) -> list:
 
             resps = [None]*3

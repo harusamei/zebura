@@ -1,18 +1,13 @@
-# 非全局，子模块内部使用的常量
-import os
-import logging
-# DEBUG or RELEASE
-os.environ['ENV'] = 'RELEASE'
+################################################
+# 非全局，子模块内部使用的default or constant values
+# D, default; C, constant
+################################################
 
-# 输出查询结果的数量
-os.environ['DEFAULT_OUTPUT_SIZE'] = '20'
-os.environ['DEFAULT_SEARCH_SIZE'] = '20'
-
-# case study的好样本信息
-os.environ['CASE_STUDY_SCHEMA'] = 'datasets\gcases_schema.json'
-os.environ['GOLDEN_CASES_INDEX'] = 'goldencases'
-
-if os.getenv('ENV') == 'DEBUG':
-    logging.basicConfig(level=logging.DEBUG)        #输出debug信息
-else:
-    logging.basicConfig(level=logging.INFO)
+D_TOP_K = 5   # default top k for search
+D_SELECT_LIMIT = 10  # default limit for search
+D_TOP_GOODCASES = 3            # default top k for good cases
+D_MAX_BATCH_SIZE = 1000        # default max batch size for insert_docs
+D_MAX_ROWS = 1000000           # default max rows for read_csv
+C_PROJECT_SHEET = 'project'     # 包含项目信息的sheet_name in metadata.xlsx
+C_ES_SHORT_MAX = 32767          # default max value of short type in ES
+C_ERR_TAGS = ['ERR: LLM','ERR: NOSQL','ERR: CURSOR','ERR: NORESULT','ERR: NOCONTEXT']    # error tags

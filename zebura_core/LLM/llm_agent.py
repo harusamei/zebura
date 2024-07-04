@@ -1,11 +1,10 @@
 import sys
 import os
-#import requests
-#import json
 import asyncio
 sys.path.insert(0, os.getcwd())
 import settings
 from zebura_core.LLM.llm_base import LLMBase
+import logging
 
 class LLMAgent(LLMBase):
    
@@ -41,31 +40,46 @@ class LLMAgent(LLMBase):
         
         return results
 
-    async def ask_query(self,query:str,prompt:str)->str:
-        print(f"query: {query}")
+    # fewshots 单独时， shots是一个list，包含{user,assistant}
+    async def ask_query(self,query:str, prompt:str,shots=None)->str:
+        logging.info(f"LLMAgent:ask_query() -> query: {query}, shots: {shots}")
+
         if query is None or len(query) == 0:
             return ""
         messages = [{"role": "system", "content": prompt}]
-        messages.append({"role": "user", "content": query})  # Convert the list of queries to a string with newlines between the]
+        if shots is not None:   # few shots 与 system prompt 分开
+            for shot in shots:
+                messages.append({"role": "user", "content": shot['user']})
+                messages.append({"role": "assistant", "content": shot['assistant']})
+        messages.append({"role": "user", "content": query}) 
     
         try:
             answer = self.postMessage(messages)
             return answer
         except Exception as e:
-            return e
-
+            return f"ERR: LLM, {e.args[0]}"
 
 # Example usage  
 if __name__ == '__main__':
-    import zebura_core.LLM.agent_prompt as ap
-    print(ap.roles)
-    querys = [  "请问联想小新电脑多少钱",
+    from zebura_core.LLM.prompt_loader import prompt_generator
+    import time
+
+    querys = [  "What is the price of a Lenovo Xiaoxin computer?",
+                "How much does a Lenovo Xiaoxin computer cost?",
+                "Which brand is the Xiaoxin computer?",
+                "The weather is pretty nice today, don't you think?"]
+    querys1 =[   "请问联想小新电脑多少钱",
                 "联想小新电脑多少钱",
                 "请问小新电脑是什么品牌的",
                 "今天天气挺好的，你觉得呢？"]
-
+    pg = prompt_generator()
+    prompt = pg.gen_sql_prompt(style='lite')
     agent = LLMAgent()
-    answers = asyncio.run(agent.ask_query(querys[1],ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
+    start = time.time() 
+    answers = asyncio.run(agent.ask_query(querys[1],prompt))
     print(answers)
-    results = asyncio.run(agent.ask_query_list(querys,ap.roles["sql_assistant"]+ap.tasks["nl2sql"]))
+    print(f"single query time: {time.time()-start}")
+    start =time.time()
+    results = asyncio.run(agent.ask_query_list(querys,prompt))
     print(results)
+    print(f"batch query time: {time.time()-start}")

@@ -1,0 +1,18 @@
+training目录用于存放项目的原始数据和schema
+
+- 命名规范
+  - 每个项目一个目录, 以project_code命名
+  - golden cases 数据库名：<project_code>_gcases
+  - schema of golden cases：<project_code>_gcases.json
+  - schema_of_DB：<project_code>_meta.json
+
+- <project_code>目录下包括：
+  - dbInfo目录：原始样例， metadata.xlsx，文件必须包含project sheet, 表格样式固定（强制约定）， 项目和数据表信息，用于生成schema
+  - <project_code>_gcases.json：golden cases的schema
+  - <project_code>_meta.json： 数据表的schema
+
+- <project_code>_gcases.json：只有一个table， 且table名==golden cases 数据库名（强制）
+
+- json中字段的含义
+  - table_name, column_name为数据库正式使用名
+  - xx_zh为中文名称，没有后缀的为英文

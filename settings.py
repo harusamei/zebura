@@ -1,13 +1,18 @@
 import configparser
+import logging
 import sys
 import os
 
 class Settings:
-
+    isinstance_count = 0
     def __init__(self):
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.config = configparser.ConfigParser()
-        self.config.read('config.ini',encoding='utf-8')
+        self.config.read(os.path.join(BASE_DIR, 'config.ini'), encoding="utf-8")
+        # self.config.read('config.ini',encoding='utf-8')
         self.settings()
+        Settings.isinstance_count += 1
+        print(f"Settings {Settings.isinstance_count}th init success")
 
     def settings(self):
         # insert paths
@@ -24,7 +29,13 @@ class Settings:
                     sys.path.insert(0, os.path.join(root, dir))
         # remove duplicates
         sys.path= list(dict.fromkeys(path.lower() for path in sys.path))
-       
+
+        # logging level
+        log_level = self.config.get('Logging', 'level')
+        logging.basicConfig(level=log_level, format='%(levelname)s - %(message)s')
+        #current_level = logging.getLogger().getEffectiveLevel()
+        print(f'display log level: {log_level} - {logging.getLevelName(log_level)}')
+      
     def __getitem__(self, keys):
         return self.config.get(keys[0], keys[1])
     
@@ -35,7 +46,11 @@ z_config = Settings()
 # Example usage
 if __name__ == '__main__':
 
-    Settings()
     print("\n".join(sys.path))
     print(z_config['LLM','OPENAI_KEY'])
-
+    message = "logging message"
+    logging.debug(message)
+    logging.info(message)
+    logging.warning(message)
+    logging.error(message)
+    logging.critical(message)
