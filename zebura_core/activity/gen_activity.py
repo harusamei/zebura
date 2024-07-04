@@ -10,13 +10,16 @@ import asyncio
 from settings import z_config
 from zebura_core.knowledges.schema_loader import Loader
 from zebura_core.query_parser.schema_linker import Sch_linking
-from zebura_core.query_parser.extractor import Extractor
+from zebura_core.utils.sqlparser import ParseSQL
+from zebura_core.LLM.llm_agent import LLMAgent
 from server.msg_maker import make_a_log
+from zebura_core.LLM.prompt_loader import prompt_generator
 
 import pymysql
 import logging
 import re
 import datetime
+import random
 # connect sql server
 def conn_srv(host, port, user, pwd, type='mysql'):
     try:
@@ -36,7 +39,8 @@ def conn_srv(host, port, user, pwd, type='mysql'):
     except Exception as e:
         logging.error(f"connect_sql() error: {e}")
         return None
-    
+
+# check SQL 错误，包括表名，列名，条件值
 class CheckSQL:
 
     def __init__(self):
@@ -56,7 +60,7 @@ class CheckSQL:
         name = z_config['Training','db_schema']  # 'training\it\products_schema.json'
         self.sl = Sch_linking(os.path.join(cwd, name))
 
-        self.te = Extractor()
+        self.sp = ParseSQL()
 
         self.db_name = z_config['Training','project_code']
         self.db_Info = self.get_dbInfo(self.db_name)
@@ -65,40 +69,58 @@ class CheckSQL:
     # 主功能
     def check_sql(self,sql):
 
-        slots = self.te.extract(sql)
+        slots = self.sp.parse_sql(sql)
 
         all_checks ={ 'status': 'succ', 'msg':'correct SQL',
                       'table':{}, 'fields':{}, 'conds':{}
                     }
-        if slots is None:
+        if slots is None:       # 无法解析
             all_checks['status'] = 'failed'
-            all_checks['msg'] = 'SQL is not parsed'
+            all_checks['msg'] = 'SQL cannot be parsed, only SELECT-type is supported.'
+            all_checks['table'] = None
             return all_checks
        
+        # get check points
+        ckps = self.get_checkPoints(slots)
         # 表名 mapping
-        table_check ={'status': 'succ', 'items':[]}
-        table_name = self.te.get_table_name(slots)
+        table_name = ckps['table']
+        table_check = {'status':'succ'}
         linked = self.sl.link_table(table_name)
         if linked != table_name:
             table_check['status'] = 'failed'
-            table_check['items'].append((False,table_name,linked))
+            table_check[table_name]=(False,linked)
         else:
-            table_check['items'].append((True,table_name,linked))
+            table_check[table_name]=True
         
         # 列名 mapping
         table_name = linked         # 修正后的表名
-        field_names = self.te.get_fields(slots)
-        fields_check ={'status': 'succ', 'items':[]}
+        field_names = ckps['fields']
+        fields_check ={'status': 'succ'}
         for field in field_names:
             t1, f1 = self.sl.link_field(field)
             if f1 != field or t1 != table_name:
                 fields_check['status'] = 'failed'
-                fields_check['items'].append((False, field,f'{t1}.{f1}'))
+                fields_check[field]=(False, f'{t1}.{f1}')
             else:
-                fields_check['items'].append((True, field,f'{t1}.{f1}'))
+                fields_check[field]=True
   
         # 条件检查
-        conds_check = self.check_cond(slots,fields_check)
+        conds_check ={'status': 'succ'}
+        conds = ckps['conds']
+        
+        for (col,val) in conds:
+            table = table_name
+            field = col
+            tfield = fields_check.get(col, None)
+            if  tfield is not None and tfield != True:
+                table = tfield[1].split('.')[0]
+                field = tfield[1].split('.')[1]
+
+            check =self.check_value(table, field, val)
+            conds_check[f'{col},{val}'] = check
+            if not check[0]:
+                conds_check['status'] = 'failed'
+               
         all_checks['conds'] = conds_check
         all_checks['table'] = table_check
         all_checks['fields'] = fields_check
@@ -108,17 +130,102 @@ class CheckSQL:
             all_checks['msg'] = 'SQL needs revise'
 
         return all_checks
-    
     @staticmethod
-    def get_col_val(parsed_sql):
-        if parsed_sql is None:
+    def get_checkPoints(slots):
+        if slots is None:
             return None
-        pairs = []
-        for cond in parsed_sql['conditions']:
-            if isinstance(cond,dict):
-                pairs.append((cond.get('column',''), cond.get('value','')))
-        pairs = list(set(pairs))
-        return [pair for pair in pairs if pair[1] != '']
+        all_checks ={   'conds' : [],     # only equations
+                        'fields': [],
+                        'table' :''
+                    }
+        all_checks['table'] = slots['table']['name']
+        # Note: Where 里面涉及的field，不放入 fields 中
+        # 抽取condition中等式，其它条件不处理
+        # WHERE (department = 'Sales' OR salary > 10000) AND department = 'Marketing'
+        for cond in slots['conditions']:
+            match = re.search(r'(?i)([^><() ]+)\s*(=|like)\s*([^><() ]+)',cond)
+            if match:
+                all_checks['conds'].append((match.group(1),match.group(3)))
+        
+        for k,v in slots['columns']['all_cols'].items():
+            if v.get('ttype').lower()!= 'function':
+                all_checks['fields'].append(k)
+
+        others = ['order by','group by']
+        for kname in others:
+            if slots['table'].get(kname) != '':
+                tVal = slots['table'][kname]
+                if isinstance(tVal, list):
+                    all_checks['fields'].extend(tVal)
+                else:
+                    all_checks['fields'].append(tVal)
+        
+        # 替换AS为原列名
+        fields = list(set(all_checks['fields']))
+        for k,v in slots['columns']['all_cols'].items():
+            if v.get('as') != '':
+                asName = v.get('as')
+                if asName in fields:
+                    fields.remove(asName)
+                    if v.get('ttype').lower()!= 'function': 
+                        fields.append(k)
+        all_checks['fields'] = list(set(fields))
+        all_checks['conds'] = list(set(all_checks['conds']))
+        return all_checks
+    
+    def check_value(self, table_name, col, val):
+        # 字符类value， 可能需要模糊和查询扩展              
+        col_Info = self.db_Info[table_name][col]
+        ty = col_Info.get('Type').lower()
+        # 数字和日期类型
+        if ty != 'varchar(255)' and ty != 'text':
+            return self.check_format(col_Info, val)
+        
+        # 精确匹配
+        val = val.strip('\'"')
+        query = f"SELECT {col} FROM {table_name} WHERE {col} = '{val}' LIMIT 1"
+        # 模糊匹配
+        query2 = f"SELECT {col} FROM {table_name} WHERE {col} LIKE '%{val}%' LIMIT 1"
+        cursor = self.cnx.cursor()
+        check = [False, 'NIL','VARCHAR']
+        if '%' not in val:
+            cursor.execute(query)
+            result = cursor.fetchall()
+            if len(result) > 0:
+                return True
+        else:
+            query2 = f"SELECT {col} FROM {table_name} WHERE {col} LIKE '{val}' LIMIT 1"    
+        
+        cursor.execute(query2)
+        result = cursor.fetchall()
+        if len(result) > 0 and '%' in val:
+            check = True
+        elif len(result) > 0:
+            check[1] = f'%{val}%'
+    
+        return check
+    
+    # 数字和日期只检查格式
+    def check_format(self, col_Info, val) -> tuple: 
+        # TODO, date 格式未处理
+        numeric = ['int', 'float', 'double', 'decimal', 'numeric', 'real', 'bigint', 'smallint', 'tinyint']
+        date = ['date', 'datetime', 'timestamp', 'time', 'year']
+        
+        ty = col_Info.get('Type').lower()
+        check = True
+        if ty in numeric:
+            if not val.isdigit():
+                check = (False, 'NIL','NUMERIC')
+        elif ty in date:
+            # 根据实际情况调整格式
+            date_format = '%Y-%m-%d %H:%M:%S' if ty in ['datetime', 'timestamp'] else '%Y-%m-%d'
+            try:
+                val = datetime.strptime(val, date_format)
+                check = True
+            except ValueError:
+                check = (False, 'NIL','DATE')   
+        
+        return check
     
     # 数据库自有信息
     def get_dbInfo(self, db_name):
@@ -136,76 +243,23 @@ class CheckSQL:
         
         return db_Info
     
-    def check_cond(self, parsed_sql, fields_check):
-        # # 值 mapping
-        cv_pairs = self.get_col_val(parsed_sql)
-        fields_mapping = fields_check['items']
-        field_list = [f[1] for f in fields_mapping]
-        # conditions check
-        conds_check ={'status': 'succ', 'items':[]}
+    # 字符类值的扩展vocabuary
+    def check_expn(self, table_name, col, voc):
+        limit = 10
+        choice = [random.randint(0, len(voc)-1) for _ in range(limit)]
+        tmpl = "SELECT {col} FROM {table_name} WHERE {col} LIKE '%{val}%' LIMIT 1"
+        check = [False, 'NIL','EXPN']
+        for indx in choice:
+            val = voc[indx]
+            query = tmpl.format(col=col, table_name=table_name, val=val)
+            cursor = self.cnx.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            # 第一个匹配成功即可
+            if len(result) > 0:
+                return [True, val, 'EXPN']
+        return check
        
-        for (col,val) in cv_pairs:
-            idx = field_list.index(col)
-            table = fields_mapping[idx][2].split('.')[0]
-            flag,val,val_new =self.check_value(table, col,val)
-            if not flag:
-                conds_check['status'] = 'failed'
-            conds_check['items'].append((flag, col,val,val_new))
-        
-        return conds_check
-
-    def check_value(self, table_name, col, val):
-        # 字符类value， 可能需要模糊和查询扩展      
-        
-        col_Info = self.db_Info[table_name][col]
-        ty = col_Info.get('Type').lower()
-        # 数字和日期类型
-        if ty != 'varchar(255)' and ty != 'text':
-            return self.check_num_date(col_Info, val)
-        
-        # 精确匹配
-        query = f"SELECT {col} FROM {table_name} WHERE {col} = '{val}' LIMIT 1"
-        # 模糊匹配
-        query2 = f"SELECT {col} FROM {table_name} WHERE {col} LIKE '%{val}%' LIMIT 1"
-        cursor = self.cnx.cursor()
-        cursor.execute(query)
-        result = cursor.fetchall()
-        if len(result) > 0:
-            return (True, 'varchar', val, val)
-
-        cursor.execute(query2)
-        result = cursor.fetchall()
-        if len(result) > 0:
-            return (True,'varchar', val, f'%{val}%')
-        
-        return (False, 'varchar', val, '')
-
-    def check_num_date(self, col_Info, val) -> tuple: 
-        # TODO, date 格式未处理
-        numeric = ['int', 'float', 'double', 'decimal', 'numeric', 'real', 'bigint', 'smallint', 'tinyint']
-        date = ['date', 'datetime', 'timestamp', 'time', 'year']
-        
-        ty = col_Info.get('Type').lower()
-        result = [True,'numeric', val, val]
-
-        if ty in numeric:
-           if val.isdigit():
-            result[-1] = float(val)
-           else:
-            result[0] = False
-            result[-1] = -1
-        if ty in date:
-            # 根据实际情况调整格式
-            result[1] ='date'
-            date_format = '%Y-%m-%d %H:%M:%S' if ty in ['datetime', 'timestamp'] else '%Y-%m-%d'
-            try:
-                result[-1] = datetime.strptime(val, date_format)
-            except ValueError:
-                result[0] = False
-                result[-1] = ''
-        
-        return tuple(result)
-    
 class GenActivity:
 
     def __init__(self):
@@ -224,6 +278,8 @@ class GenActivity:
         self.db_name = z_config['Training','project_code']
 
         self.checker = CheckSQL()
+        self.prompter = prompt_generator()
+        self.llm = LLMAgent()
         logging.info("GenActivity init done")
     
     # 主功能
@@ -232,25 +288,28 @@ class GenActivity:
         resp = make_a_log('gen_activity')
         resp['msg'] = sql
         all_checks = self.checker.check_sql(sql)
-        
+
         if all_checks['status'] == 'succ':
             return resp
-        # 表或字段匹配不上，直接失败返回
-        if 'failed' in [all_checks['table']['status'], all_checks['fields']['status']]:
-            resp['hint'] = 'table or fields not in database'
+        elif all_checks['table'] is None:   # 无法解析，彻底失败
             resp['status'] = 'failed'
-            return resp
-        # 值扩展
-        conds_check = self.term_refine(query, all_checks['conds'])
-        all_checks['conds'] = conds_check
-        if conds_check['status'] == 'failed':
-            resp['hint'] = 'some value in SQL not in database'
-            resp['status'] = 'failed'
+            resp['msg'] = all_checks['msg']
             return resp
         
-        new_sql = await self.revise(query, sql, all_checks)
-        resp['msg'] = new_sql  
+        # 表或字段 succ, conds failed, 需要refine conds
+        if 'failed' not in [all_checks['table']['status'], all_checks['fields']['status']]:
+            conds_check = await self.refine_conds(all_checks)
+            all_checks['conds'] = conds_check
+
+        new_sql, hint = self.revise(query, sql, all_checks)
+        resp['hint'] = hint
+        if sql is None:
+            resp['status'] = 'failed'   
+        else:
+            resp['msg'] = new_sql
+        
         return resp
+        
     
     # 考虑到DB是用户的，comment等信息，没有，需要自建，放在schema中
     def gen_db_structures(self):
@@ -324,26 +383,91 @@ class GenActivity:
                 f.write("\n")
         print(f"DB structures are saved to {filename}")
 
+    # 生成check发现的错误信息
+    # conds_check:{'status': 'failed', "category,'电脑'": (True, 'Computer', 'EXPN')}
+    # conds_check:{'status': 'failed', "price, abc": (False, 'NIL','DATE')}, False, 'NIL','NUMERIC', （False, 'NIL','VARCHAR'）
+    # table_check:{'status': 'failed', 'product': (False, 'products')}
+    # fields_check:{'status': 'failed', 'product_name': (False, 'product.product_name')}
+    def gen_checkMsgs(self, all_checks):
+        checkMsgs ={ 'table':[], 'fields':[], 'conds':[]}
+        table_tmpl = "'{table_name}' was not found. Please find a similar table name based on database schema"
+        checks = all_checks['table']
+        tlist = checks.keys()
+        table_name = ' '.join(tlist).replace('status','')
+        # table msg
+        if checks['status'] == 'failed':
+            checkMsgs['table'].append(table_tmpl.format(table_name=table_name))
         
-    #todo, check 不合格，需要revise
-    async def revise(self,query, sql, checks):
-        if checks['status'] == 'succ':
-            return sql
-        
-        
-        vals = checks['vals']
-        fields = checks['fields']
-        ni_terms =[]            # need improve terms
-        if vals['status'] == 'failed':
-            for val in vals['terms']:
-                ni_terms.append(val[0])
-            prompt = f"请从下面句子中抽出与输入的terms意思相同的部分\n句子:{query}"
-            query ='\n'.join(ni_terms)
-            query = f"terms:{query}"
-            result = await self.norm.ask_agent(query, prompt)
-        
-        return sql
+        # fields msg
+        checks = all_checks['fields']
+        fields_tmpl = "The fields {cols} are not in the table '{table_name}'"
+        join_tmpl = "The field {col} is not in {table_name}; it is in {table_name1}. You need to use a JOIN."
+        cols = []
+        cols_j = []
+        for k,v in checks.items():
+            if k == 'status' or v == True:
+                continue
+            table_name1 = v[1].split('.')[0]
+            if table_name1 == table_name:
+                cols.append(k)
+            else:
+                cols_j.append((k,table_name1))
+        if checks['status'] == 'failed':
+            if len(cols)>0:
+                checkMsgs['fields'].append(fields_tmpl.format(cols=','.join(cols), table_name=table_name))
+            if len(cols_j)>0:
+                for col,table_name1 in cols_j:
+                    checkMsgs['fields'].append(join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
+
+        # conds msg
+        conds_tmpl_1 = "value {vals} was not found in the fields '{cols}'."
+        conds_tmpl_2 = "value {val} was not found in the field {col}. It is recommended to replace it with '{new_val}'."
+        conds_tmpl_3 = "format of value {vals} are incorrect'."
+        checks = all_checks['conds']
+        names = [[],[],[]]
+        for k,v in checks.items():
+            if k == 'status' or v == True:
+                continue
+            if v[2] == 'VARCHAR':   # 无值，且term expansion 无结果
+                names[0].append(k)
+            elif v[2] == 'EXPN':    # expansion 有结果
+                names[1].append((k,v[1]))
+            else:                   # 日期数字格式错误
+                names[2].append(k)
+        if checks['status'] == 'failed':
+            if len(names[0])>0:
+                vals = [x.split(',')[1] for x in names[0]]
+                cols = [x.split(',')[0] for x in names[0]]    
+                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals), cols=','.join(cols)))
+            if len(names[1])>0:
+                for k,new_val in names[1]:
+                    val = k.split(',')[1]
+                    col = k.split(',')[0]
+                    checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val))
+            if len(names[2])>0:
+                vals = [x.split(',')[1] for x in names[2]]
+                cols = [x.split(',')[0] for x in names[2]]
+                checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals), cols=','.join(cols)))
+
+        return checkMsgs
     
+    #check 不合格，需要revise, 返回 sql, hint
+    def revise(self, query, sql, all_checks) -> tuple:
+        if all_checks['status'] == 'succ':
+            return (sql, '')
+        
+        checkMsgs = {}
+        checkMsgs = self.gen_checkMsgs(all_checks)
+        hints = []
+        for k,v in checkMsgs.items():
+            if len(v) == 0:
+                continue
+            hints.append(f"{k} errors:")
+            hints.extend(v)
+        print("checkMsgs:"+'\n'.join(hints))
+        
+        return sql, '\n'.join(hints)
+                
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):
         if slots is None:
@@ -369,28 +493,66 @@ class GenActivity:
         return f"{str_select} {str_from} {str_where}"
     
     # TODO, 应该是refine SQL, 2024-06-24
-    def term_refine(self,query, conds_check):
-       
-       ni_words =[]            # need improve terms
-       for term in conds_check['items']:
+    # 解析term_expansion from LLM
+    def parse_expansion(self,llm_answer) -> dict:
+        tlist = llm_answer.split('\n')
+        tem_dic ={}
+        kword = '##'
+        for temstr in tlist:
+            if '[Keyword:' in temstr:
+                kword = temstr.split(':')[1]
+                kword = re.sub(r'\s*]\s*','',kword).strip()
+                tem_dic[kword] = ''
+            else:
+                temstr = re.sub(r'-.*:','',temstr).strip()
+                tem_dic[kword]+= temstr+'\n'
+        new_terms = {}
+        for k,v in tem_dic.items():
+            v = v.replace('OR','\n')
+            v = v.replace('(','\n')
+            v = v.replace(')','\n')
+            v = re.sub('[ ]+',' ',v)
+            v = re.sub(r'(\s*\n\s*)+','\n',v)
+            v=v.strip()
+            new_terms[k] = list(set(v.split('\n')))
+        return new_terms
 
+    # term expansion to refine the equations in Where
+    async def refine_conds(self, all_check):
+       
+        conds_check = all_check['conds']
+        if conds_check['status'] == 'succ':
+            return conds_check
         
-        columns = slots['columns']
-        for idx, column in enumerate(columns):
-            st_table, st_col = self.link_field(column, tableName)
-            columns[idx] = st_col
-            
-        # conditions
-        for cond in slots.get('conditions', []):
-            if isinstance(cond, str):
+        ni_words ={}           # need improve terms
+        for cond,v in conds_check.items():
+            if v == True:
                 continue
-            st_table, st_col = self.link_field(cond['column'], tableName)
-            cond['column'] = st_col
-            
-        return slots
-    
-    
-        
+            if v[2] == 'VARCHAR':
+                col, word = cond.split(',')
+                word = word.strip('\'"')
+                ni_words[word] = [col,cond]
+
+        query = ','.join(ni_words.keys())
+        prompt = self.prompter.tasks['term_expansion']
+        result = await self.llm.ask_query(query,prompt)
+        new_terms = self.parse_expansion(result)
+
+        table = all_check['table'].keys()
+        tname = ' '.join(table).replace('status','')
+
+        for word,voc in new_terms.items():
+            tItem = ni_words.get(word,None)
+            if tItem is None:
+                logging.error(f"Error: {word} not in ni_words")
+                continue
+            col,cond = tItem
+            check = self.checker.check_expn(tname, col, voc)
+            conds_check[cond] = check
+
+        print(f"refined conds_check:{conds_check}")
+        return conds_check
+               
 if __name__ == "__main__":
     gentor = GenActivity()
     qalist = [('查一下价格大于1000的产品','SELECT *\nFROM product\nWHERE actual_price > 1000'),
