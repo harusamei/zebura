@@ -1,4 +1,4 @@
-﻿# 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
+# 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
 # ignore #开头的行
 
 <TASK: rewrite>
@@ -57,22 +57,74 @@ Database schema structures:
 
 <TASK: term_expansion>
 # 术语扩展
-Given the following keywords, generate a set of vocabulary expansions for each keyword including synonyms, related terms, spelling variants, conceptual expansion and translation (If the original word is in Chinese, translate it into English; if it is in English, translate it into Chinese). 
+Given the following keywords, generate a set of vocabulary expansions for each keyword including synonyms, related terms, conceptual expansion and translation (If the original word is in Chinese, translate it into English; if it is in English, translate it into Chinese). 
 Ensure to provide a diverse set of expansions to enrich the vocabulary.
-Examples of output
-[Innovation] 
+Examples of output format:
+[Keyword: Innovation] 
 - Synonym Expansion: Creativity OR Originality OR Novelty OR Ingenuity 
 - Related Terms Expansion: Invention OR Breakthrough OR Disruption OR Modernization OR Revolution 
-- Spelling Variants: Innovación (Spanish) OR Innovation (French) OR Innovazione (Italian)
+#- Spelling Variants: Innovación (Spanish) OR Innovation (French) OR Innovazione (Italian)
 - Conceptual Expansion: Technological Advancements OR Process Improvements OR Creative Solutions OR Business Transformation
 - Translation: 创新
-[Technology]
-- Synonym Expansion: Tech OR Engineering OR Applied Science OR High-tech
-- Related Terms Expansion: Gadgets OR Devices OR Digital Tools OR Software OR Hardware
-- Spelling Variants: Technologie (German) OR Tecnología (Spanish) OR Tecnologia (Italian)
-- Conceptual Expansion: Digital Transformation OR Innovation Enablers OR Modern Systems OR Computational Advancements
-- Translation: 技术
+[Keyword: 电脑]
+- Synonym Expansion: 计算机 (Computer)
+- Related Terms Expansion: 笔记本电脑 (Laptop) OR 台式电脑 (Desktop Computer) OR 平板电脑 (Tablet) OR 个人电脑 (Personal Computer)
+- Conceptual Expansion: 数字设备 (Digital Device) OR 信息技术 (Information Technology) OR 电子产品 (Electronic Product) OR 硬件设备 (Hardware Device)     
+- Translation: Computer
 Please generate expansions for each keyword following the format above.
+</TASK>
+
+# 根据错误信息修正SQL
+<TASK: sql_revise>
+You are an SQL programming expert specializing in diagnosing and correcting errors in SQL queries. Your task involves correcting SQL queries by addressing errors such as non-existent column or table names, JOIN operation issues, number or date format errors, and discrepancies in WHERE clause values. The corrected SQL should execute successfully while preserving the original query's intent. Below are the specific requirements:
+1.	Name Non-existence: Substitute non-existent field or table names with the closest match from the database schema in terms of lexical and syntactic similarity.
+2.	Join Errors: Resolve any errors arising from JOIN operations.
+3.	Number or Date Format Errors: Rectify any errors pertaining to the format of numbers or dates.
+4.	Value Issues in WHERE Condition: Replace any values in the WHERE condition that do not exist in the database with a suggested or semantically similar value, ensuring query correctness.
+5.	Preserve Query Intent: Ensure that corrections do not alter the intended functionality of the query.
+6.	Output Format: Provide the corrected SQL query formatted as per the example.
+
+An example of a corrected SQL query
+- Database Schema:
+
+Table: Employees
+Purpose: save the information of employees
+Fields:
+employee_id, INTEGER, PRIMARY KEY , COMMENT( unique_identifier)
+first_name, VARCHAR, COMMENT(name of employee)
+last_name, VARCHAR, COMMENT(surname of employee)
+department_id, INTEGER, FOREIGN KEY 
+
+Table: Departments
+Fields:
+department_id , INTEGER, PRIMARY KEY ,COMMENT(unique identifier)
+department_name, VARCHAR, COMMENT(name of department)
+
+- Original SQL :
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name FROM Employees e
+
+- Existing errors：
+   Join Error: The query involves two tables that need to be joined using a JOIN clause.
+
+- Corrected SQL：
+```sql
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM Employees e
+JOIN Departments d ON e.department_id = d.department_id;
+```
+
+Follow-up database schema, original SQL and existing errors:
+- Database Schema:：
+{ dbSchema }
+
+- Original SQL：
+{ori_sql}
+
+- Existing Errors：
+{check_msgs}
+
+- Corrected SQL:
+
 </TASK>
 
 # 根据db schema生成查询DB的自然语言问题
