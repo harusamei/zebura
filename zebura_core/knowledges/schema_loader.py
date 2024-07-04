@@ -38,8 +38,8 @@ class Loader:
     
     # 表信息或表头信息
     def get_column(self, tableName, columnName) -> Dict[str,str]:
-        
-        columns = self.get_table_info(tableName).get("columns")
+        table = self.get_table_info(tableName)
+        columns = table.get("columns", None)
         result = next((column for column in columns if column["column_name"] == columnName), None)
         return result
     
@@ -48,12 +48,12 @@ class Loader:
 if __name__ == '__main__':
     # Load the SQL patterns
     cwd = os.getcwd()
-    name = 'training/ikura/ikura_meta.json'
+    name = 'training/amazon/amazon_meta.json'
     file = os.path.join(cwd, name)
     print(file)
     loader =Loader(file)
     print(loader.tables[0]["table_name"])
-    print(loader.get_column('products','brand'))
-    print(loader.get_table_info('products').get('desc'))
+    print(loader.get_column('product','brand'))
+    print(loader.get_table_info('product').get('desc'))
 
     

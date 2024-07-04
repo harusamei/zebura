@@ -40,8 +40,7 @@ class Normalizer:
             resp = self.extract_sql(result)
             resp["from"] = "extract_sql"
         return resp
-
-   
+ 
     async def ask_agent(self, querys, sys_prompt,fewshots=None):
         if isinstance(querys,str):
             results = await self.llm.ask_query(querys, sys_prompt,fewshots)

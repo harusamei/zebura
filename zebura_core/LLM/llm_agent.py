@@ -11,7 +11,6 @@ class LLMAgent(LLMBase):
     def __init__(self, agentName="CHATANYWHERE", model="gpt-3.5-turbo"):
         super().__init__(agentName,model)
         
-
     async def ask_query_list(self, queries:list[str], prompt:str) -> list[str]:
         # create a task list
         if len(queries) == 0:
@@ -53,11 +52,11 @@ class LLMAgent(LLMBase):
                 messages.append({"role": "assistant", "content": shot['assistant']})
         messages.append({"role": "user", "content": query}) 
         # 输出prompt 和 query check
-        outFile = 'message.txt'
-        with open(outFile, 'a', encoding='utf-8') as f:
-            for message in messages:
-                f.write(f"{message['role']}: {message['content']}\n")
-            f.write("----------------------------end\n")
+        # outFile = 'message.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     for message in messages:
+        #         f.write(f"{message['role']}: {message['content']}\n")
+        #     f.write("----------------------------end\n")
         try:
             answer = self.postMessage(messages)
             return answer

@@ -60,7 +60,6 @@ class prompt_generator:
                     tList.append(task_name)
                 else:
                     content += line
-        print("loaded tasks: ",tList)     
         return True
     
     def gen_default_prompt(self,task_name:str) -> str:
@@ -84,7 +83,7 @@ class prompt_generator:
             task_name = "nl2sql"
 
         template = self.tasks[task_name]
-        dbSchema = self.gen_dbSchema(table_name,style=style)
+        dbSchema = self.get_dbSchema(table_name,style=style)
 
         if gcases is None:
             prompt= template.format(dbSchema=dbSchema)
@@ -99,7 +98,7 @@ class prompt_generator:
     def gen_sql_prompt_fewshots(self,gcases:list,table_name=None) -> dict:
         tmpl = self.tasks["nl2sql_classic"]
         fewshots= self.gen_context(gcases)
-        dbSchema = self.gen_dbSchema(table_name)
+        dbSchema = self.get_dbSchema(table_name)
 
         return {"system":tmpl.format(dbSchema=dbSchema),"fewshots":fewshots}
     
@@ -137,7 +136,7 @@ class prompt_generator:
                 )
         return ncase
     
-    def gen_dbSchema(self, table_name=None) -> str:
+    def get_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
         return self.db_structs
         
@@ -169,9 +168,21 @@ if __name__ == '__main__':
 
     llm = LLMAgent()
     pg = prompt_generator()
-    print(pg.gen_dbSchema())
-    print(pg.tasks["nl2sql_classic"])
-    prompt = pg.tasks['term_expansion']
-    keywords = "product, price, 笔记本, 联想小新, lenovo, computer"
-    result = asyncio.run(llm.ask_query(keywords,prompt))
+    # print(pg.get_dbSchema())
+    # print(pg.tasks["nl2sql_classic"])
+    # prompt = pg.tasks['term_expansion']
+    # keywords = "product, price, 笔记本, 联想小新, lenovo, computer"
+    # result = asyncio.run(llm.ask_query(keywords,prompt))
+    # print(result)
+
+    prompt = pg.tasks['sql_revise']
+    db_struct = pg.get_dbSchema()
+    orisql = "SELECT product_name\nFROM produt\nWHERE category = '电脑';"
+    errmsg = ( "table name errors:\n"
+               "no 'produt' table found in the database schema.\n"
+                "conditions errors:\n"
+                "value '电脑' was not found in the field category. ")
+    query = prompt.format(dbSchema=db_struct,ori_sql=orisql,err_msgs=errmsg)
+    result = asyncio.run(llm.ask_query(query,''))
+    print(query)
     print(result)

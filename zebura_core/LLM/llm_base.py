@@ -39,7 +39,7 @@ class LLMBase:
         else:
             raise ValueError("No available LLM agents, please check the agentName")
         try:
-            print(f"connect GPT through {agentName}\n Message:"+self.postMessage(messages))
+            print(f"connect GPT through {agentName}\n Message for connection test:"+self.postMessage(messages))
         except Exception as e:
             raise ValueError("LLM agent is not available",e)
 

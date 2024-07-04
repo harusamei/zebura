@@ -1,8 +1,12 @@
-# sqlparse 扩展，解析SQL语句，提取SQL中的列名，表名，条件等信息
+##########################################################
+# 对SQL进行解析，提取基本元素, check the SQL syntax
+# 基于sqlparse库的扩展，解析SQL语句，提取SQL中的列名，表名，条件等信息
+##########################################################
 import sqlparse
 from sqlparse.tokens import Keyword, DML, Whitespace, Wildcard, Name,Punctuation, Token, Literal
 from sqlparse.sql import IdentifierList, Identifier,Where,Function
 import logging
+import re
 
 class ParseSQL:
     def __init__(self):
@@ -48,15 +52,19 @@ class ParseSQL:
                 if token.is_whitespace:
                     continue
                 if token.ttype is Name:
-                    full_name = token.value #all_cols[k].get('full_name','')+
-                    all_cols[k]['name'] = full_name
-                # 列名不保留表名前缀， 如需要直接上SQL语句中抽取
-                # if token.ttype is Punctuation:
-                #     full_name = all_cols[k].get('full_name','')+token.value
-                #     all_cols[k]['full_name'] = full_name
+                    full_name = all_cols[k].get('full_name','')+token.value 
+                    all_cols[k]['full_name'] = full_name
+                    all_cols[k]['name'] = token.value
+                # full_name保留表名前缀
+                if token.ttype is Punctuation:
+                    full_name = all_cols[k].get('full_name','')+token.value
+                    all_cols[k]['full_name'] = full_name
                 if token.ttype is Wildcard:
                     all_cols[k]['ttype'] ='Wildcard'
                     all_cols[k]['name'] = '*'
+                if isinstance(token, Function):
+                    all_cols[k]['ttype'] ='Function'
+                    all_cols[k]['name'] = token.value
                 if token.ttype is Keyword and token.value.upper() == 'AS':
                     asFlag = True
                     continue
@@ -99,7 +107,7 @@ class ParseSQL:
                 if isinstance(key_token, Identifier):
                     table[key.lower()] = key_token.get_real_name()
                 elif isinstance(key_token, IdentifierList):
-                    table[key.lower()] = [x.get_real_name() for x in key_token if isinstance(x, Identifier)]
+                    table[key.lower()] = [(x.get_real_name()) for x in key_token if isinstance(x, Identifier)]
                 else:
                     table[key.lower()] = key_token
         table_names = [x for i,x in enumerate(table_names) if i not in processed]
@@ -149,7 +157,14 @@ class ParseSQL:
         slots['conditions'] = self.get_conditions(tokens)
 
         return slots
-        
+    
+    @staticmethod
+    def formate(sql):
+        tStr = sqlparse.format(sql, reindent=True, keyword_case='upper')
+        tStr = re.sub(r'\n|\t',' ', tStr)
+        tStr = re.sub(' +', ' ', tStr)
+        return tStr
+    
     def make_a_slots(self):
         return {
             'columns': {'all_cols':{},'distinct':False},
@@ -176,47 +191,21 @@ if __name__ == '__main__':
     SELECT column1 FROM table_name ORDER BY column1 FETCH FIRST 10 ROWS ONLY;
     SELECT column1 AS renamed_column1, column2 AS renamed_column2 FROM table_name;
     UPDATE table_name SET column1 = value1, column2 = value2 WHERE condition;
-    """.split(";")
-    sql ="""
-        SELECT * 
-        FROM employees
-        WHERE (department = 'Sales' or salary > 10000)
-        AND department = 'Marketing';
+    SELECT * FROM employees WHERE (department = 'Sales' or salary > 10000) AND department = 'Marketing';
+    SELECT * FROM products  WHERE product_name LIKE "%apple%" AND price > 1000;
+    SELECT d.department_name AS Department,COUNT(e.employee_id) AS NumberOfEmployees FROM departments d  LEFT JOIN employees e ON d.department_id = e.department_id  GROUP BY d.department_name  ORDER BY  NumberOfEmployees DESC;
+    SELECT order_id, customer_id, order_date, total_amount FROM  orders  WHERE  order_date BETWEEN '2024-01-01' AND '2024-12-31'  ORDER BY  order_date ASC;
     """
-    sql= """
-        SELECT * 
-        FROM products
-        WHERE product_name LIKE "%apple%" AND price > 1000;
-    """
-    sql = """
-            SELECT 
-                d.department_name AS Department,
-                COUNT(e.employee_id) AS NumberOfEmployees
-            FROM
-                departments d
-            LEFT JOIN
-                employees e ON d.department_id = e.department_id
-            GROUP BY
-                d.department_name
-            ORDER BY
-                NumberOfEmployees DESC;
-    """
-    sql ="""
-            SELECT
-                order_id,
-                customer_id,
-                order_date,
-                total_amount
-            FROM
-                orders
-            WHERE
-                order_date BETWEEN '2024-01-01' AND '2024-12-31'
-            ORDER BY
-                order_date ASC;
-    """
-    sql_querys.append(sql)
+    sql_querys = sql_querys.split("\n")[1:-1]
 
-    for sql in sql_querys[-1:]:
-        print(sql)
-        print(sparser.parse_sql(sql))
+    for sql in sql_querys:
+        sql =sparser.formate(sql)
+        slots = sparser.parse_sql(sql)
+        all_checks = sparser.get_checkPoints(slots)
+        if slots is not None:
+            print(sql)
+            print(all_checks)
+            print(slots)
+
+
    

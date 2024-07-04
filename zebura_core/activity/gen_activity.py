@@ -279,6 +279,7 @@ class GenActivity:
 
         self.checker = CheckSQL()
         self.prompter = prompt_generator()
+        self.db_struct = self.prompter.get_dbSchema()
         self.llm = LLMAgent()
         logging.info("GenActivity init done")
     
@@ -301,7 +302,7 @@ class GenActivity:
             conds_check = await self.refine_conds(all_checks)
             all_checks['conds'] = conds_check
 
-        new_sql, hint = self.revise(query, sql, all_checks)
+        new_sql, hint = await self.revise(sql, all_checks)
         resp['hint'] = hint
         if sql is None:
             resp['status'] = 'failed'   
@@ -390,7 +391,7 @@ class GenActivity:
     # fields_check:{'status': 'failed', 'product_name': (False, 'product.product_name')}
     def gen_checkMsgs(self, all_checks):
         checkMsgs ={ 'table':[], 'fields':[], 'conds':[]}
-        table_tmpl = "'{table_name}' was not found. Please find a similar table name based on database schema"
+        table_tmpl = "Name Non-existence: '{table_name}' is non-existent in the database."
         checks = all_checks['table']
         tlist = checks.keys()
         table_name = ' '.join(tlist).replace('status','')
@@ -400,8 +401,8 @@ class GenActivity:
         
         # fields msg
         checks = all_checks['fields']
-        fields_tmpl = "The fields {cols} are not in the table '{table_name}'"
-        join_tmpl = "The field {col} is not in {table_name}; it is in {table_name1}. You need to use a JOIN."
+        fields_tmpl = "Name Non-existence: the fields {cols} are non-existent in the '{table_name}' table."
+        join_tmpl = "Join Error: The field {col} is not in {table_name}; it is in {table_name1}. "
         cols = []
         cols_j = []
         for k,v in checks.items():
@@ -420,9 +421,9 @@ class GenActivity:
                     checkMsgs['fields'].append(join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
 
         # conds msg
-        conds_tmpl_1 = "value {vals} was not found in the fields '{cols}'."
-        conds_tmpl_2 = "value {val} was not found in the field {col}. It is recommended to replace it with '{new_val}'."
-        conds_tmpl_3 = "format of value {vals} are incorrect'."
+        conds_tmpl_1 = "Value Issues: value {vals} was not found."
+        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}'."
+        conds_tmpl_3 = "Format Errors: value {vals} are incorrect format."
         checks = all_checks['conds']
         names = [[],[],[]]
         for k,v in checks.items():
@@ -437,8 +438,7 @@ class GenActivity:
         if checks['status'] == 'failed':
             if len(names[0])>0:
                 vals = [x.split(',')[1] for x in names[0]]
-                cols = [x.split(',')[0] for x in names[0]]    
-                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals), cols=','.join(cols)))
+                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals)))
             if len(names[1])>0:
                 for k,new_val in names[1]:
                     val = k.split(',')[1]
@@ -446,13 +446,12 @@ class GenActivity:
                     checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val))
             if len(names[2])>0:
                 vals = [x.split(',')[1] for x in names[2]]
-                cols = [x.split(',')[0] for x in names[2]]
-                checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals), cols=','.join(cols)))
+                checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals)))
 
         return checkMsgs
     
     #check 不合格，需要revise, 返回 sql, hint
-    def revise(self, query, sql, all_checks) -> tuple:
+    async def revise(self, sql, all_checks) -> tuple:
         if all_checks['status'] == 'succ':
             return (sql, '')
         
@@ -462,11 +461,32 @@ class GenActivity:
         for k,v in checkMsgs.items():
             if len(v) == 0:
                 continue
-            hints.append(f"{k} errors:")
             hints.extend(v)
         print("checkMsgs:"+'\n'.join(hints))
         
-        return sql, '\n'.join(hints)
+        # revise by LLM
+        tmpl = self.prompter.tasks['sql_revise']
+        orisql = sql
+        db_struct = self.db_struct
+        errmsg = '\n'.join(hints)
+
+        query = tmpl.format(dbSchema=db_struct,ori_sql=orisql, err_msgs=errmsg)
+        result = await self.llm.ask_query(query,'')
+        print(result)
+        patn = "```sql\n(.*?)\n```"
+        matches = re.findall(patn, result, re.DOTALL | re.IGNORECASE)
+        new_sql = None
+        msg = ''
+        if matches:
+            new_sql = matches[0]
+            for hint in hints:
+                if 'Value Issues' in hint:
+                    msg += hint+'\n'
+        else:
+            new_sql = None
+            msg = "SQL revise failed, please check the error messages."
+            
+        return new_sql, hint
                 
     # 简单合成，只做了select,form,where
     def gen_sql(self,slots):
@@ -492,7 +512,6 @@ class GenActivity:
 
         return f"{str_select} {str_from} {str_where}"
     
-    # TODO, 应该是refine SQL, 2024-06-24
     # 解析term_expansion from LLM
     def parse_expansion(self,llm_answer) -> dict:
         tlist = llm_answer.split('\n')

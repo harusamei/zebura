@@ -11,6 +11,8 @@ import inspect
 from zebura_core.query_parser.parser import Parser
 from zebura_core.answer_refiner.synthesizer import Synthesizer
 from zebura_core.activity.exe_activity import ExeActivity
+from zebura_core.activity.gen_activity import GenActivity
+
 from zebura_core.LLM.llm_agent import LLMAgent
 from msg_maker import (make_a_log,make_a_req)
 import json
@@ -26,7 +28,9 @@ class Controller:
     st_matrix = {
             "(new,user)"        : "nl2sql",
             "(hold,user)"       : "nl2sql",
-            "(succ,nl2sql)"     : "sql4db",
+            "(succ,nl2sql)"     : "sql_refine",
+            "(succ,sql_refine)"   : "sql4db",
+            "(failed,sql_refine)" : "end", # send to user
             "(failed,nl2sql)"   : "transit", # reset action
             "(failed,transit)"  : "end",    # send to user
             "(succ,sql4db)"     : "polish",
@@ -42,7 +46,7 @@ class Controller:
         self.llm = Controller.llm
 
         self.parser = Controller.parser
-
+        self.act_maker = GenActivity()
         self.sch_loader = Controller.parser.norm.sch_loader
         self.prompter = Controller.parser.prompter      # prompt generator
 
@@ -84,6 +88,16 @@ class Controller:
         
         if result["status"] == "succ":
             new_Log['format'] = 'sql'
+        pipeline.append(new_Log)
+
+    async def sql_refine(self,pipeline):
+        log = pipeline[-1]
+        new_Log = make_a_log("sql_refine")
+        query = pipeline[0]['msg']
+        result = await self.act_maker.gen_activity(query, log['msg'])
+
+        new_Log['status'] = result['status']
+        new_Log['msg'] = log['msg']
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
@@ -230,7 +244,6 @@ class Controller:
 # 主要的处理逻辑, assign tasks to different workers
 async def apply(request):
 
-    print(request)
     D_RANDINT = random.randint(0,2)
     controller = Controller()
     pipeline = list()
@@ -249,7 +262,7 @@ async def apply(request):
     
 
 async def main():
-    request = {'msg': '查询颜色是黑色的小新电脑', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '查一下联想小新电脑的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
     print(resp)
