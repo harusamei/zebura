@@ -198,13 +198,11 @@ if __name__ == '__main__':
     """
     sql_querys = sql_querys.split("\n")[1:-1]
 
-    for sql in sql_querys:
+    for sql in sql_querys[-3:-2]:
         sql =sparser.formate(sql)
         slots = sparser.parse_sql(sql)
-        all_checks = sparser.get_checkPoints(slots)
         if slots is not None:
             print(sql)
-            print(all_checks)
             print(slots)
 
 

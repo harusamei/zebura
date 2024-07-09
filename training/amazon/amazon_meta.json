@@ -108,19 +108,19 @@
                 },
                 {
                     "desc": "A name or symbol used to identify a product or company.",
-                    "type": "#VIRTUAL_IN(product_name)",
+                    "type": "VIRTUAL_IN(product_name.%{value}%)",
                     "alias": "mark; label; trademark; logo",
                     "column_name": "brand"
                 },
                 {
                     "desc": "Able to work with another system or device without requiring modification.",
-                    "type": "#VIRTUAL_IN(product_name)",
+                    "type": "VIRTUAL_IN(product_name.%{value}%)",
                     "alias": "adaptable; interoperable",
                     "column_name": "compatible"
                 },
                 {
                     "desc": "An instance or occurrence of a particular situation",
-                    "type": "#VIRTUAL_IN(category)",
+                    "type": "VIRTUAL_IN(category.%{value}%)",
                     "alias": "context; case",
                     "column_name": "scenario"
                 }

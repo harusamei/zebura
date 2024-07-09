@@ -30,14 +30,14 @@ class Controller:
             "(hold,user)"       : "nl2sql",
             "(succ,nl2sql)"     : "sql_refine",
             "(succ,sql_refine)"   : "sql4db",
-            "(failed,sql_refine)" : "end", # send to user
-            "(failed,nl2sql)"   : "transit", # reset action
-            "(failed,transit)"  : "end",    # send to user
+            "(failed,sql_refine)" : "end",      # send to user
+            "(failed,nl2sql)"   : "transit",    # reset action
+            "(failed,transit)"  : "end",        # send to user
             "(succ,sql4db)"     : "polish",
             "(failed,sql4db)"   : "end",
             "(*,polish)"        : "end",
             "(succ,rewrite)"    : "nl2sql",        
-            "(failed,rewrite)"  : "end",    # send to user
+            "(failed,rewrite)"  : "end",        # send to user
             "(*,*)"             : "end"
     }
     def __init__(self):
@@ -95,7 +95,7 @@ class Controller:
         new_Log = make_a_log("sql_refine")
         query = pipeline[0]['msg']
         result = await self.act_maker.gen_activity(query, log['msg'])
-
+        print(f"sql_refine before: {log['msg']}\n after: {result}")
         new_Log['status'] = result['status']
         new_Log['msg'] = log['msg']
         pipeline.append(new_Log)
@@ -193,7 +193,7 @@ class Controller:
     def sql4db(self,pipeline):
         log = pipeline[-1]
         query = log['msg']
-        new_Log = self.executor.exeQuery(query)
+        new_Log = self.executor.exeSQL(query)
         new_Log['from'] = "sql4db"
         pipeline.append(new_Log)
 
@@ -262,7 +262,9 @@ async def apply(request):
     
 
 async def main():
-    request = {'msg': '查一下联想小新电脑的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    
+    request = {'msg': '查一下风扇的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
     print(resp)

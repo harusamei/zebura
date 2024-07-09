@@ -40,15 +40,16 @@ Given the database schema structures, including table names, column names and th
 - Handle edge cases, such as ambiguous or incomplete questions, by providing the best possible SQL guess or requesting clarification.
 - Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
 
-Examples of two output formats:
-1. 
+Example of two kinds of output formats:
+1. if the input question can be converted into SQL:
    ```sql
    SELECT brand, COUNT(DISTINCT product_cate1) AS category_count
    FROM products
    GROUP BY brand;
    ```
-2. 
- NOSQL, To provide you with the average price of laptops, I would need more specific criteria or filters to narrow down the selection of laptops. 
+2. if the input question cannot be converted into SQL:
+   NOSQL
+   Suggestions: Please provide more specific details for the query.
 
 Database schema structures:
 {dbSchema}
@@ -113,15 +114,15 @@ FROM Employees e
 JOIN Departments d ON e.department_id = d.department_id;
 ```
 
-Follow-up database schema, original SQL and existing errors:
+Follow-up inputs:
 - Database Schema:：
-{ dbSchema }
+{dbSchema}
 
 - Original SQL：
 {ori_sql}
 
 - Existing Errors：
-{check_msgs}
+{err_msgs}
 
 - Corrected SQL:
 

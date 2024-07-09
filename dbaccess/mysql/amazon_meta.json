@@ -108,15 +108,17 @@
                 },
                 {
                     "column_name": "brand",
-                    "type": "#VIRTUAL_IN(product_name)"
+                    "type": "#VIRTUAL_IN(product_name)",
+                    "alias": "manufacturer;  company"
                 },
                 {
                     "column_name": "compatible",
-                    "type": "#VIRTUAL_IN(product_name)"
-                },
+                    "type": "#VIRTUAL_IN(product_name)",
+                    "alias": "related_products;  similar_items"},
                 {
                     "column_name": "scenario",
-                    "type": "#VIRTUAL_IN(category)"
+                    "type": "#VIRTUAL_IN(category)",
+                    "alias": "use_case;  application"                    
                 }
             ]
         }

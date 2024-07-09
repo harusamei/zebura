@@ -1,3 +1,5 @@
+# 向mysql中写入数据，假设数据在csv文件中，schema在json文件中
+# 主要为demo用，实际使用中，数据库应该已经具备 
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
@@ -40,6 +42,7 @@ def create_table(cnx, db_name, table_name, tb_struct,t_comment=''):
     cursor.close()
     return cnx
 
+# 生成构建DB的表结构，根据schema
 def gen_struct(table_name):
     
     table_info = sch_loader.get_table_info(table_name)
@@ -49,9 +52,8 @@ def gen_struct(table_name):
     for column in columns:
         field = column['column_name']
         ty = column['type']
-        if 'VIRTUAL_IN' in ty:      # 跳过自定义虚拟列
+        if 'VIRTUAL_IN' in ty:      # 跳过自定义虚拟列,不在数据库中创建
             continue
-
         comment = f"{column.get('alias','')}; {column.get('desc','')}"
         if column.get('key','') == 'PRI':
             primary_type = 'PRIMARY KEY'
@@ -63,39 +65,6 @@ def gen_struct(table_name):
     
     print(len(fields))
     return ',\n'.join(fields)
-
-# def gen_schema(table_name):
-    
-#     txt_type = 'VARCHAR(255)'
-#     int_type = 'INT'
-#     decimal_type = 'DECIMAL(10, 2)'
-#     desc_type = 'TEXT'
-#     date_type = 'DATE'
-#     primary_type = 'PRIMARY KEY'
-
-#     primary_fields = ['uid']
-#     decimal_fields = ['price']
-#     date_fields = ['time_to_market']
-#     int_fields = ['cpu_core_number','memory_slot_number']
-#     table_info = sch_loader.get_table_info(table_name)
-#     columns = table_info.get('columns')
-#     fields = []
-#     for column in columns:
-#         field = column['column_name']
-#         if field in decimal_fields:
-#             ty = decimal_type
-#         elif field in date_fields:
-#             ty = date_type
-#         elif field in int_fields:
-#             ty = int_type
-#         else:
-#             ty =  txt_type
-#         fields.append(field+' '+ty)
-#         if field in primary_fields:
-#             fields.append(primary_type+'('+field+')')
-
-#     print(len(fields))
-#     return ', '.join(fields)
 
 def refine_data(fields_ty, data):
     for k,v in data.items():
@@ -192,14 +161,14 @@ if __name__ == '__main__':
     # load_data(cnx, 'amazon', 'product', filePath)
 
     sql_queries =[  "SELECT about_product FROM product WHERE rating > 4",
-                    "SELECT brand FROM products;",
+                    "SELECT brand FROM product;",
                     "SELECT target_audience, service_description FROM products;",
                     "SELECT size, width, foldability FROM products;",
                     "SELECT product_name, screen_size, screen_type FROM products;"
                  ]
     db_name ='amazon'
     cnx = connect()
-    for query in sql_queries[:1]:
+    for query in sql_queries[1:2]:
         print(f"Executing query: {query}")
         test_query(cnx, db_name,query)
     

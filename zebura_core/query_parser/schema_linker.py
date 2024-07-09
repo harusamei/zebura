@@ -15,9 +15,14 @@ import datetime
 # schema linking, for table, column
 class Sch_linking:
 
-    def __init__(self,scha_file):
+    def __init__(self,scha_file, scha_loader=None):
         self.similarity = similarity()
-        self.info_loader = Loader(scha_file)
+        if scha_loader is not None:
+            self.info_loader = scha_loader
+        elif scha_file is not None:
+            self.info_loader = Loader(scha_file)
+        else:
+            raise ValueError("No schema file or schema loader")
         logging.info("Schema linking init done")
 
     def link_table(self, term):
@@ -37,6 +42,8 @@ class Sch_linking:
         return like_item['name']
             
     def link_field(self, term, table_name=None):
+        if '*' in term:
+            return '*', '*'
         
         column_dict = {}
         if table_name is not None:
@@ -88,9 +95,4 @@ if __name__ == '__main__':
         'columns': ['COST','market time'],'from': 'sale_info'
         }
     print(slots)
-    result = sch_linking.refine(slots)
-    print(result)
-    result = sch_linking.link_numb('product', 'actual_price', '123.45')
-    print(result)
-    result = sch_linking.link_numb('product', 'user_name', '2024-2-1')
-    print(result)
+    

@@ -38,7 +38,7 @@ class Parser:
         # few shots from existed good cases
         # TODO: build amazon_gcases index
         ##################
-        gcases = self.find_good_cases(query,topK=topK)
+        gcases = [] #self.find_good_cases(query,topK=topK)
         for case in gcases:
             if case.get('qemb'):
                 del case['qemb']
@@ -72,9 +72,9 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['价格低于五十元的鼠标','查一下联想小新电脑的价格','帮我查一下小新的价格','What computer brands are available for me to choose from?','列出类别是电脑的产品名称','哪些产品属于笔记本类别？',
+    querys = ['Find the types of fans available in the database','电脑都是多少价格的','hello','查一下联想小新电脑的价格','帮我查一下小新的价格','What computer brands are available for me to choose from?','列出类别是电脑的产品名称','哪些产品属于笔记本类别？',
               '列出所有的产品类别','查一下价格大于1000的产品']
-    table_name = 'products'
+    table_name = 'product'
     parser = Parser()
     for query in querys:
         result = asyncio.run(parser.apply(query))
