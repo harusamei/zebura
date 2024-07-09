@@ -68,13 +68,11 @@ class ExeActivity:
         return "succ"
 
     def exeQuery(self, query):
-        answer= make_a_log("exeQuery")
+
+        print(f"ExeActivity.exeSQL()-> {query}")
+        answer= make_a_log("exeSQL")
         answer["format"] = "dict"
 
-        print(f"ExeActivity.exeQuery()-> {query}")
-        if query.lower().startswith("select"):
-            query = query.rstrip(";")
-            query = query + f" LIMIT {k_limit};"
         try:
             cursor = self.cnx.cursor()
             cursor.execute(f"USE {self.db_name}")
@@ -107,6 +105,8 @@ if __name__ == "__main__":
     sch_loader = Loader(os.path.join(cwd, name))
     exr = ExeActivity(sch_loader)
     exr.checkDB()
-    results = exr.exeQuery("SELECT * FROM products WHERE product_cate2 = '服务器' AND memory_capacity > 16;")
+    results = exr.exeSQL("SELECT * FROM product WHERE actual_price = 1000 AND brand = 'Pear';")
     exr.toMD_format(results['msg'])
     print(results)
+
+    
