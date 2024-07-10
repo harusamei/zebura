@@ -198,7 +198,7 @@ if __name__ == '__main__':
     """
     sql_querys = sql_querys.split("\n")[1:-1]
 
-    for sql in sql_querys[-3:-2]:
+    for sql in sql_querys:
         sql =sparser.formate(sql)
         slots = sparser.parse_sql(sql)
         if slots is not None:

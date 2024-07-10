@@ -22,7 +22,7 @@ class Normalizer:
         logging.debug("Normalizer init done")
 
     # main method of class, convert natural language to SQL
-    # C_ERR_TAGS = ['ERR: LLM','ERR: NOSQL','ERR: CURSOR']    # error tags
+    # C_ERR_TAGS = ['ERR_LLM','ERR_NOSQL','ERR_CURSOR']    # error tags
     async def apply(self,query:str,prompt:str,fewshots=None) -> dict:
 
         logging.debug(f"normalizer.apply()-> query:{query}, prompt:{prompt[:100]}")
@@ -31,9 +31,9 @@ class Normalizer:
         # 结果有三种情况， LLM无回应，no sql，提取SQL   
         resp = {"status":"failed","msg":result,"from":"convert_sql"}
         if 'ERR' in result:
-            resp["note"] = "ERR: LLM"
+            resp["note"] = "ERR_LLM"
         elif "nosql" in result.lower():
-            resp["note"] = "ERR: NOSQL"
+            resp["note"] = "ERR_NOSQL"
             result = re.sub(r'nosql\W*', '', result, flags=re.IGNORECASE)
             resp["hint"] = result
         else:

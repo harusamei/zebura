@@ -11,6 +11,7 @@ from settings import z_config
 from zebura_core.knowledges.schema_loader import Loader
 from zebura_core.LLM.llm_agent import LLMAgent
 from server.msg_maker import make_a_log
+from zebura_core.constants import D_SELECT_LIMIT as k_limit
 from zebura_core.LLM.prompt_loader import prompt_generator
 from zebura_core.activity.sql_checker import CheckSQL
 import pymysql
@@ -62,7 +63,6 @@ class GenActivity:
 
     # replace virtual columns
     def replace_virtual(self, sql):
-        
         slots = self.checker.sp.parse_sql(sql)
         virt_Info = self.checker.virt_Info
         subs = {'columns':[], 'conds':[]}
@@ -91,21 +91,22 @@ class GenActivity:
                 if virt_Info.get(col):
                     ori_col =virt_Info[col][0]
                     patn = virt_Info[col][1]
-                    val=val[1:-1]   # 去掉引号
+                    val = val.strip('\'"') # 去掉引号
                     new_val = patn.format(value=val)
+                    new_val=re.sub(r'%+','%',new_val)
                     subs['conds'].append((cond, f"{pfx}{ori_col} LIKE '{new_val}'"))
 
         for con_sub in subs['conds']:
             sql = sql.replace(con_sub[0],con_sub[1])
         for col_sub in subs['columns']:
             sql = sql.replace(col_sub[0],con_sub[1])
-
         return sql
     
     def refine_sql(self, sql):
 
-        if '*' in sql and 'LIMIT' not in sql.upper():
-            k_limit = 10
+        tsql = sql.lower()
+        # 加limit的情况
+        if 'limit' not in tsql and 'count' not in tsql:
             sql = sql.rstrip(";")
             sql = sql + f" LIMIT {k_limit};"
         return sql
@@ -152,7 +153,6 @@ class GenActivity:
             if not flag:
                 new_conds.append(cond)
         slots['conditions'] = new_conds
-        print(f"after slots:{slots}")
         return self.gen_sql(slots)
     
     # 主功能
@@ -161,10 +161,13 @@ class GenActivity:
         resp = make_a_log('gen_activity')
         resp['msg'] = sql
         all_checks = self.checker.check_sql(sql)
-        #print(f"before revise: all_checks:{all_checks}")
+        
         if all_checks['status'] == 'succ':
+            new_sql = self.replace_virtual(sql)
+            resp['msg'] =self.refine_sql(new_sql)
             return resp
-        elif all_checks['table'] is None:   # 无法解析，彻底失败
+        
+        if all_checks['table'] is None:   # error_parsesql，彻底失败
             resp['status'] = 'failed'
             resp['msg'] = all_checks['msg']
             return resp
@@ -176,15 +179,13 @@ class GenActivity:
 
         new_sql, hint = await self.revise(sql, all_checks)
         resp['hint'] = hint
-        if sql is None:
+        if new_sql is None:
             resp['status'] = 'failed'
+            resp['msg'] = "ERR_parsesql, wrong sql structure."
             return resp
         
         new_sql = self.replace_virtual(new_sql)
         resp['msg'] =self.refine_sql(new_sql)
-
-        print(f"gen_activity resp:{resp}")
-
         return resp
         
     
@@ -305,12 +306,13 @@ class GenActivity:
         for k,v in checks.items():
             if k == 'status' or v == True:
                 continue
-            if v[2] == 'VARCHAR':   # 无值，且term expansion 无结果
+            if v[1].lower() == 'nil':   # 无值，且term expansion 无结果
                 names[0].append(k)
-            elif v[2] == 'EXPN':    # expansion 有结果
+            elif v[2].lower() == 'expn':    # expansion 有结果
                 names[1].append((k,v[1]))
             else:                   # 日期数字格式错误
                 names[2].append(k)
+        
         if checks['status'] == 'failed':
             if len(names[0])>0:
                 vals = [x.split(',')[1] for x in names[0]]
@@ -398,6 +400,9 @@ class GenActivity:
     
     # 解析term_expansion from LLM
     def parse_expansion(self,llm_answer) -> dict:
+        if 'ERR' in llm_answer:
+            return None
+        
         tlist = llm_answer.split('\n')
         tem_dic ={}
         kword = '##'
@@ -435,16 +440,26 @@ class GenActivity:
                 word = word.strip('\'"')
                 ni_words[word] = [col,cond]
 
+        if len(ni_words) == 0:
+            conds_check['status'] == 'succ'
+            return conds_check
+        
         query = ','.join(ni_words.keys())
         prompt = self.prompter.tasks['term_expansion']
         result = await self.llm.ask_query(query,prompt)
         new_terms = self.parse_expansion(result)
-
+        if new_terms is None:
+            conds_check['status'] == 'failed'
+            return conds_check
+        
         table = all_check['table'].keys()
         tname = ' '.join(table).replace('status','')
         tname = tname.strip()
+        # 匹配忽略大小写
+        ni_words_lower = {key.lower(): value for key, value in ni_words.items()}
         for word,voc in new_terms.items():
-            tItem = ni_words.get(word,None)
+            word = word.lower()
+            tItem = ni_words_lower.get(word,None)
             if tItem is None:
                 logging.error(f"Error: {word} not in ni_words")
                 continue
@@ -452,15 +467,17 @@ class GenActivity:
             check = self.checker.check_expn(tname, col, voc)
             conds_check[cond] = check
 
-        print(f"refined conds_check:{conds_check}")
         return conds_check
                
 if __name__ == "__main__":
     gentor = GenActivity()
-    qalist = [('查一下价格大于1000的产品','SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";'),
+    qalist = [('请告诉我苹果产品的类别','SELECT DISTINCT category\nFROM product\nWHERE brand = "Apple";'),
+              ('请告诉我风扇的所有价格','SELECT actual_price, discounted_price FROM product WHERE category = "fan";'),
+              ('查一下价格大于1000的产品','SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";'),
               ('列出品牌是电脑的产品名称',"SELECT product_name\nFROM product\nWHERE brand LIKE '%apple%';")]
-    for q, a in qalist:
-        asyncio.run(gentor.gen_activity(q,a))
+    for q, a in qalist[1:2]:
+        resp =asyncio.run(gentor.gen_activity(q,a))
+        print(f"query:{q}\nresp:{resp['msg']}")
    
     # db_stru =gentor.gen_db_structures()
     # gentor.out_db_structures('amazon_struct.txt',db_stru)

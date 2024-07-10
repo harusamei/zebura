@@ -6,7 +6,6 @@ from settings import z_config
 import pymysql
 import logging
 from tabulate import tabulate
-from zebura_core.constants import D_SELECT_LIMIT as k_limit
 from server.msg_maker import make_a_log
 
 class ExeActivity:
@@ -26,7 +25,6 @@ class ExeActivity:
     def connect(type='mysql'):
 
         section = 'TrainingDB'
-
         host = z_config[section,'host']
         port = int(z_config[section,'port']) 
         user = z_config[section,'user']
@@ -55,21 +53,12 @@ class ExeActivity:
         if self.db_name not in databases:
             print(f"{self.db_name} not found, create it first")
             return "failed"
-        # check tables
-        tablenames = self.sch_loader.get_table_nameList()  # 获取表名
-        cursor.execute(f"USE {self.db_name}")
-        cursor.execute("SHOW TABLES")
-        tables = [table['Tables_in_' + self.db_name] for table in cursor.fetchall()]
-        # check if the tables are the same
-        if set(tablenames) != set(tables):
-            print(f"Tables in schema are { tablenames}, but tables in db are {tables}")
-            return "failed"
         cursor.close()
         return "succ"
 
-    def exeQuery(self, query):
+    def exeSQL(self, query):
 
-        print(f"ExeActivity.exeSQL()-> {query}")
+        print(f"ExeActivity.exeSQL()-> \n{query}")
         answer= make_a_log("exeSQL")
         answer["format"] = "dict"
 
@@ -81,7 +70,6 @@ class ExeActivity:
             cursor.close()
             if len(result) > 0:
                 answer["msg"] = result
-                answer['note'] = f"Only show the first {k_limit} results"
             else:
                 answer['status'] = "failed"
                 answer['note'] = "ERR: NORESULT"
@@ -108,5 +96,3 @@ if __name__ == "__main__":
     results = exr.exeSQL("SELECT * FROM product WHERE actual_price = 1000 AND brand = 'Pear';")
     exr.toMD_format(results['msg'])
     print(results)
-
-    

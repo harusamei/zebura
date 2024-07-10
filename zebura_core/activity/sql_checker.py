@@ -28,14 +28,13 @@ class CheckSQL:
     def check_sql(self,sql):
 
         slots = self.sp.parse_sql(sql)
-        print(slots)
-        
+
         all_checks ={ 'status': 'succ', 'msg':'correct SQL',
                       'table':{}, 'fields':{}, 'conds':{}
                     }
         if slots is None:       # 无法解析
             all_checks['status'] = 'failed'
-            all_checks['msg'] = 'SQL cannot be parsed, only SELECT-type is supported.'
+            all_checks['msg'] = 'ERR_parsesql, wrong sql structure.'
             all_checks['table'] = None
             return all_checks
        
@@ -137,9 +136,9 @@ class CheckSQL:
         all_checks['conds'] = list(set(all_checks['conds']))
         return all_checks
     
-    # True 存在， False 不存在
+    # True 存在， False 不存在， val 引号已经去掉
     def is_value_exist(self, table_name, col, val):
-        
+
         quy1 = "SELECT {col} FROM {table_name} WHERE {col} = '{val}' LIMIT 1"
         quy2 = "SELECT {col} FROM {table_name} WHERE {col} LIKE '%{val}%' LIMIT 1"
         quy3 = "SELECT {col} FROM {table_name} WHERE {col} LIKE '{val}' LIMIT 1"  # val 格式预先设置好
@@ -149,7 +148,6 @@ class CheckSQL:
         if col_Info is None:
             return False
         ty = col_Info.get('type').lower()
-        val = val.strip('\'"')
         # virtual 类型 "type": "VIRTUAL_IN(product_name.%{value}%)"
         if ty.split('(')[0] == 'virtual_in' and '{' in ty:
             val = val.replace('%','')
@@ -171,8 +169,10 @@ class CheckSQL:
             return True
         return False
 
+    # 字符类value， 可能需要模糊和查询扩展
     def check_value(self, table_name, col, val):
-        # 字符类value， 可能需要模糊和查询扩展              
+        
+        val = val.strip('\'"')  # 去掉原始SQL值的引号
         col_Info = self.db_Info[table_name].get(col, None)
         # 字段不存在
         if col_Info is None:
@@ -184,7 +184,6 @@ class CheckSQL:
             return self.check_format(col_Info, val)
         
         check = [False, 'NIL',ttype]
-        
         flag = self.is_value_exist(table_name, col, val)
         if flag:
             return True
@@ -193,7 +192,7 @@ class CheckSQL:
             val = f'%{val}%'
             flag = self.is_value_exist(table_name, col, val)
         if flag:
-            return True
+            check = [False, val, 'EXPN']
         
         return check
     

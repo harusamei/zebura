@@ -22,6 +22,7 @@ import re
 # 从 Chatbot request 开始，到 type变为assistant 结束
 
 D_RANDINT = random.randint(0,2)
+
 class Controller:
     llm = LLMAgent("CHATANYWHERE","gpt-3.5-turbo")
     parser = Parser()
@@ -52,7 +53,7 @@ class Controller:
 
         self.asw_refiner = Synthesizer()
         self.executor = ExeActivity(self.sch_loader)
-        # 一些套话
+        # 一些应急话术
         self.utterance = {}
         with open("server\\utterances.json","r") as f:
             self.utterance = json.load(f)
@@ -62,6 +63,7 @@ class Controller:
     def get_next(self,pipeline):
 
         lastLog = pipeline[-1]
+        print(lastLog['from'],lastLog['msg'])
         if lastLog['type'] == "reset" and lastLog['status'] == "succ":
             return lastLog['from']
         
@@ -95,9 +97,9 @@ class Controller:
         new_Log = make_a_log("sql_refine")
         query = pipeline[0]['msg']
         result = await self.act_maker.gen_activity(query, log['msg'])
-        print(f"sql_refine before: {log['msg']}\n after: {result}")
-        new_Log['status'] = result['status']
-        new_Log['msg'] = log['msg']
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
@@ -193,6 +195,7 @@ class Controller:
     def sql4db(self,pipeline):
         log = pipeline[-1]
         query = log['msg']
+        print(f"sql4db: {query}")
         new_Log = self.executor.exeSQL(query)
         new_Log['from'] = "sql4db"
         pipeline.append(new_Log)
@@ -215,9 +218,9 @@ class Controller:
             if match is not None:
                 errtype = match.group(1)
                 root_cause = f"step {log['from']} met error of {errtype}"
-                utts = self.utterance.get("en_error_"+errtype.lower(),'')
+                utts = self.utterance.get("error_"+errtype.lower(),'')
                 if utts !='' and log['hint'] == "":  # 如果没有hint，就用默认的
-                    log["hint"] = utts['msg'][D_RANDINT]
+                    log["hint"] = utts['msg']
         # 最后一次失败原因是整个pipeline最终原因
         resp['note'] = root_cause
         pipeline.append(resp)
@@ -244,7 +247,6 @@ class Controller:
 # 主要的处理逻辑, assign tasks to different workers
 async def apply(request):
 
-    D_RANDINT = random.randint(0,2)
     controller = Controller()
     pipeline = list()
     request['from'] = "user"
@@ -263,8 +265,8 @@ async def apply(request):
 
 async def main():
     
-    request = {'msg': '查一下风扇的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
-    request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '列出苹果手机的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
     print(resp)

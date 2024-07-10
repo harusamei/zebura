@@ -61,7 +61,7 @@ class LLMAgent(LLMBase):
             answer = self.postMessage(messages)
             return answer
         except Exception as e:
-            return f"ERR: LLM, {e.args[0]}"
+            return f"ERR_llm, {e.args[0]}"
 
 # Example usage  
 if __name__ == '__main__':

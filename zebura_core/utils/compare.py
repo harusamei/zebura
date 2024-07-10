@@ -45,6 +45,7 @@ class similarity:
                 avg_score += self.getMeteor(gen_sent, ref_sent)
 
         return avg_score/len(methods)
+    
     # 只使用2元字符相似
     def getUpperSimil(self, gen_sent, ref_sent,n_gram=3, beta=2): 
         gen_sent = gen_sent.lower()
