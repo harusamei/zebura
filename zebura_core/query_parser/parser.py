@@ -24,15 +24,14 @@ class Parser:
         self.prompter = prompt_generator()
         logging.debug("Parser init success")
         
-    # main function
     # table_name None, 为多表查询
-
+    # 主函数， 将query归一化为SQL
     async def apply(self, query, table_name=None) -> dict:
-        # 1. Normalize the query to sql format by LLM
-        if table_name is None:
-            print(f"parse.apply()-> all tables, query:{query}")
-        else:
-            print(f"parse.apply()-> table:{table_name}, query:{query}")     
+
+        # if table_name is None:
+        #     print(f"parse.apply()-> all tables, query:{query}")
+        # else:
+        #     print(f"parse.apply()-> table:{table_name}, query:{query}")     
 
         resp = make_a_log("parse")
         # few shots from existed good cases
@@ -45,7 +44,7 @@ class Parser:
         #得到 system prompt, fewshots prompt
         prompt = self.prompter.gen_sql_prompt_fewshots(gcases, table_name)
      
-        logging.info(f"parse.apply()-> generate prompt and call Normalizer for {table_name} and {query}")
+        logging.info(f"parse.apply()-> table_name and query is {table_name} and {query}")
         # query to sql
         answ = await self.norm.apply(query, prompt['system'],prompt['fewshots'])
         
@@ -72,10 +71,13 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['Find the types of fans available in the database','电脑都是多少价格的','hello','查一下联想小新电脑的价格','帮我查一下小新的价格','What computer brands are available for me to choose from?','列出类别是电脑的产品名称','哪些产品属于笔记本类别？',
-              '列出所有的产品类别','查一下价格大于1000的产品']
+    querys = ['目前有哪些电子产品的折扣价格低于500元？','评分在4.5以上的产品有哪些？找出其中最高的不超过5个',
+              '哪些产品的折扣最大？能推荐几款吗？','我想知道这款产品（ID为B09RFB2SJQ）的详细信息，包括名称、价格、折扣和评分。',
+              '我想看看这款产品（ID为B09RFB2SJQ）的用户评论。', '用户RAMKISAN之前写的评论都在哪儿可以找到？',
+              '手动搅拌机这款产品的评分有多少个？平均评分是多少？','电子产品分类下，评分最高的几款产品有哪些？'
+              ]
     table_name = 'product'
     parser = Parser()
-    for query in querys:
+    for query in querys[0:1]:
         result = asyncio.run(parser.apply(query))
         print(f"query:{query}, result:{result}")

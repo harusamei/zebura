@@ -1,4 +1,5 @@
 # 与chatbot交互的接口, 内部是一个总控制器，负责调度各个模块最终完成DB查询，返回结果
+############################################
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
@@ -16,16 +17,18 @@ from zebura_core.activity.gen_activity import GenActivity
 from zebura_core.LLM.llm_agent import LLMAgent
 from msg_maker import (make_a_log,make_a_req)
 import json
-import random
 import re
 # 一个传递request的pipeline
 # 从 Chatbot request 开始，到 type变为assistant 结束
 
-D_RANDINT = random.randint(0,2)
-
 class Controller:
     llm = LLMAgent("CHATANYWHERE","gpt-3.5-turbo")
     parser = Parser()
+    # 一些应急话术
+    utterance = {}
+    with open("server\\utterances.json","r") as f:
+        utterance = json.load(f)
+
     st_matrix = {
             "(new,user)"        : "nl2sql",
             "(hold,user)"       : "nl2sql",
@@ -47,23 +50,21 @@ class Controller:
         self.llm = Controller.llm
 
         self.parser = Controller.parser
-        self.act_maker = GenActivity()
         self.sch_loader = Controller.parser.norm.sch_loader
         self.prompter = Controller.parser.prompter      # prompt generator
+        self.utterance = Controller.utterance
 
+        self.act_maker = GenActivity()
         self.asw_refiner = Synthesizer()
         self.executor = ExeActivity(self.sch_loader)
-        # 一些应急话术
-        self.utterance = {}
-        with open("server\\utterances.json","r") as f:
-            self.utterance = json.load(f)
-        
         logging.info(f"Controller init success")
 
     def get_next(self,pipeline):
 
         lastLog = pipeline[-1]
-        print(lastLog['from'],lastLog['msg'])
+        print(f"------\n{lastLog['from']}\n{lastLog['msg']}")
+
+        # 强制跳转
         if lastLog['type'] == "reset" and lastLog['status'] == "succ":
             return lastLog['from']
         
@@ -82,9 +83,10 @@ class Controller:
     async def nl2sql(self, pipeline):
 
         log = pipeline[-1]
-        content = log['msg']
-        result = await self.parser.apply(content)
         new_Log = make_a_log("nl2sql")
+
+        query = log['msg']
+        result = await self.parser.apply(query)
         for k in ['msg','status','note','others','hint']:
             new_Log[k] = result[k]
         
@@ -95,6 +97,7 @@ class Controller:
     async def sql_refine(self,pipeline):
         log = pipeline[-1]
         new_Log = make_a_log("sql_refine")
+
         query = pipeline[0]['msg']
         result = await self.act_maker.gen_activity(query, log['msg'])
         for k in ['msg','status','note','others','hint']:
@@ -103,6 +106,7 @@ class Controller:
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
+
         history=[]
         log = pipeline[0]
         new_Log = make_a_log("rewrite")
@@ -125,7 +129,7 @@ class Controller:
         query = log['msg']
         tmpl = self.prompter.gen_rewrite_prompt()
         prompt = tmpl.format(history_context=history_context,query=query)
-        result = await self.askLLM(prompt,"")
+        result = await self.llm.ask_query(prompt,"")
         print('rewrite:',result)
         if "ERR" in result:
             new_Log['status'] = "failed"
@@ -194,10 +198,14 @@ class Controller:
     # 查库
     def sql4db(self,pipeline):
         log = pipeline[-1]
-        query = log['msg']
-        print(f"sql4db: {query}")
-        new_Log = self.executor.exeSQL(query)
-        new_Log['from'] = "sql4db"
+        new_Log = make_a_log("sql4db")
+        sql = log['msg']
+        print(f"sql4db: {sql}")
+
+        result = self.executor.exeSQL(sql)
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         pipeline.append(new_Log)
 
     #对整个pipeline信息进行整理，分为msg主信息，note， hint
@@ -214,7 +222,7 @@ class Controller:
 
         root_cause = ""
         for log in pipeline[1:]:    
-            match = re.search(r"ERR: (\w+)",log['note'])
+            match = re.search(r"ERR_(\w+)",log['note'])
             if match is not None:
                 errtype = match.group(1)
                 root_cause = f"step {log['from']} met error of {errtype}"
@@ -224,7 +232,6 @@ class Controller:
         # 最后一次失败原因是整个pipeline最终原因
         resp['note'] = root_cause
         pipeline.append(resp)
-
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
@@ -239,12 +246,7 @@ class Controller:
            new_Log['status'] = "failed"
         pipeline.append(new_Log)
 
-    async def askLLM(self,query,prompt):
-        result = await self.llm.ask_query(query,prompt) 
-        return result
-    
-
-# 主要的处理逻辑, assign tasks to different workers
+# 主函数, assign tasks to different workers
 async def apply(request):
 
     controller = Controller()
@@ -265,15 +267,15 @@ async def apply(request):
 
 async def main():
     
-    request = {'msg': '列出苹果手机的价格', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '电子产品分类下，评分最高的几款产品有哪些？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
     print(resp)
     context.append(resp)
     request1 = {'msg': '查类型 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
-    resp = await apply(request1)
-    print(resp)
+    # resp = await apply(request1)
+    # print(resp)
 
 if __name__ == "__main__":
       
