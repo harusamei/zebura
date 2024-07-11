@@ -199,7 +199,6 @@ class CheckSQL:
     
     # 数字和日期只检查格式
     def check_format(self, col_Info, val) -> tuple: 
-        # TODO, date 格式未处理
         numeric = ['int', 'float', 'double', 'decimal', 'numeric', 'real', 'bigint', 'smallint', 'tinyint']
         date = ['date', 'datetime', 'timestamp', 'time', 'year']
         

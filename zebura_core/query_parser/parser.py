@@ -78,6 +78,6 @@ if __name__ == '__main__':
               ]
     table_name = 'product'
     parser = Parser()
-    for query in querys[0:1]:
+    for query in querys:
         result = asyncio.run(parser.apply(query))
-        print(f"query:{query}, result:{result}")
+        print(f"query:{query}\n{result['msg']}")

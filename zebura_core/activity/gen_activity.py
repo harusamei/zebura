@@ -14,6 +14,8 @@ from server.msg_maker import make_a_log
 from zebura_core.constants import D_SELECT_LIMIT as k_limit
 from zebura_core.LLM.prompt_loader import prompt_generator
 from zebura_core.activity.sql_checker import CheckSQL
+import sqlparse
+
 import pymysql
 import logging
 import re
@@ -99,18 +101,27 @@ class GenActivity:
         for con_sub in subs['conds']:
             sql = sql.replace(con_sub[0],con_sub[1])
         for col_sub in subs['columns']:
-            sql = sql.replace(col_sub[0],con_sub[1])
+            sql = sql.replace(col_sub[0],col_sub[1])
+            
         return sql
     
     def refine_sql(self, sql):
-
         tsql = sql.lower()
         # 加limit的情况
         if 'limit' not in tsql and 'count' not in tsql:
             sql = sql.rstrip(";")
             sql = sql + f" LIMIT {k_limit};"
+        # column 去重, 未考虑distince情况，不充分
+        matched = re.search(r'SELECT\s+(.*)\s*FROM', sql,re.DOTALL)
+        if matched:
+            ori_select = matched.group(1)
+            tlist = ori_select.split(',')
+            tlist = list(set([x.strip() for x in tlist]))
+            new_select = ','.join(tlist)
+            new_select.strip(',')
+            sql = sql.replace(ori_select,new_select+'\n')
+            sql = sqlparse.format(sql,reindent=True, keyword_case='upper')
         return sql
-    
    
     # 主功能, 生成最终用于查询的SQL
     async def gen_activity(self, query, sql):
@@ -374,7 +385,7 @@ class GenActivity:
                 temstr = re.sub(r'-.*:','',temstr).strip()
                 tem_dic[kword]+= temstr+'\n'
         del tem_dic['##']
-        
+
         new_terms = {}
         for k,v in tem_dic.items():
             v = v.replace('OR','\n')

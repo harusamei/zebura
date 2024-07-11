@@ -157,14 +157,7 @@ class ParseSQL:
         slots['conditions'] = self.get_conditions(tokens)
 
         return slots
-    
-    @staticmethod
-    def formate(sql):
-        tStr = sqlparse.format(sql, reindent=True, keyword_case='upper')
-        tStr = re.sub(r'\n|\t',' ', tStr)
-        tStr = re.sub(' +', ' ', tStr)
-        return tStr
-    
+        
     def make_a_slots(self):
         return {
             'columns': {'all_cols':{},'distinct':False},
@@ -199,7 +192,6 @@ if __name__ == '__main__':
     sql_querys = sql_querys.split("\n")[1:-1]
 
     for sql in sql_querys:
-        sql =sparser.formate(sql)
         slots = sparser.parse_sql(sql)
         if slots is not None:
             print(sql)

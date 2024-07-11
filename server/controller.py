@@ -264,10 +264,9 @@ async def apply(request):
     controller.interpret(pipeline)
     return await controller.genAnswer(pipeline)
     
-
 async def main():
     
-    request = {'msg': '电子产品分类下，评分最高的几款产品有哪些？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '哪些产品的折扣最大？能推荐几款吗？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
