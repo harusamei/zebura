@@ -1,4 +1,5 @@
 # check SQL 错误，包括表名，列名，条件值
+#######################################
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())

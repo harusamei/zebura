@@ -41,7 +41,7 @@ class ExeActivity:
             )
             return cnx
         else:
-            raise ValueError(f"Error: {type} not supported")
+            raise ValueError(f"ERR_cursor: {type} not supported")
         
 
     def checkDB(self) ->str:  # failed, succ
@@ -56,26 +56,24 @@ class ExeActivity:
         cursor.close()
         return "succ"
 
-    def exeSQL(self, query):
+    def exeSQL(self, sql):
 
-        print(f"ExeActivity.exeSQL()-> \n{query}")
         answer= make_a_log("exeSQL")
         answer["format"] = "dict"
-
         try:
             cursor = self.cnx.cursor()
             cursor.execute(f"USE {self.db_name}")
-            cursor.execute(query)
+            cursor.execute(sql)
             result = cursor.fetchall()
             cursor.close()
             if len(result) > 0:
                 answer["msg"] = result
             else:
                 answer['status'] = "failed"
-                answer['note'] = "ERR: NORESULT"
+                answer['note'] = "ERR_noresult"
         except Exception as e:
             print(f"Error: {e}")
-            answer["note"] = f"ERR: CURSOR, {e}"
+            answer["note"] = f"ERR_cursor, {e}"
             answer["status"] = "failed"
             
         return answer

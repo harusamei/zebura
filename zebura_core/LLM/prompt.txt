@@ -60,6 +60,7 @@ Database schema structures:
 # 术语扩展
 Given the following keywords, generate a set of vocabulary expansions for each keyword including synonyms, related terms, conceptual expansion and translation (If the original word is in Chinese, translate it into English; if it is in English, translate it into Chinese). 
 Ensure to provide a diverse set of expansions to enrich the vocabulary.
+=========================
 Examples of output format:
 [Keyword: Innovation] 
 - Synonym Expansion: Creativity OR Originality OR Novelty OR Ingenuity 
@@ -72,7 +73,9 @@ Examples of output format:
 - Related Terms Expansion: 笔记本电脑 (Laptop) OR 台式电脑 (Desktop Computer) OR 平板电脑 (Tablet) OR 个人电脑 (Personal Computer)
 - Conceptual Expansion: 数字设备 (Digital Device) OR 信息技术 (Information Technology) OR 电子产品 (Electronic Product) OR 硬件设备 (Hardware Device)     
 - Translation: Computer
+==========================
 Please generate expansions for each keyword following the format above.
+NOTE: please strictly follow the output format of the example above, with each keyword expansion starting with "[Keyword:"
 </TASK>
 
 # 根据错误信息修正SQL

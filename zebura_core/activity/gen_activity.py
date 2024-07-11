@@ -32,7 +32,7 @@ def conn_srv(host, port, user, pwd, type='mysql'):
             )
             return cnx
         else:
-            logging.error(f"Error: {type} not supported")
+            logging.error(f"ERR_cursor, {type} not supported")
             return None
     except Exception as e:
         logging.error(f"connect_sql() error: {e}")
@@ -111,51 +111,8 @@ class GenActivity:
             sql = sql + f" LIMIT {k_limit};"
         return sql
     
-    # 清除virtual_info, 不完整，没有处理join, between
-    def refine_query(self, sql):
-
-        slots = self.checker.sp.parse_sql(sql)
-        virt_Info = self.checker.virt_Info      
-        new_all_cols = {}
-        for col_name, v in slots['columns']['all_cols'].items():
-            if virt_Info.get(col_name):
-                ori_col = virt_Info[col_name][0]
-                new_all_cols[ori_col] = v
-            else:
-                new_all_cols[col_name] = v
-        slots['columns']['all_cols'] = new_all_cols
-
-        new_table = {}
-        for key,val in slots['table'].items():
-            if virt_Info.get(str(val)):
-                ori_col = virt_Info[val][0]
-                new_table[key] = ori_col
-            else:
-                new_table[key] = val
-        slots['table'] = new_table
-
-        new_conds = []
-        for cond in slots['conditions']:
-            flag = False
-            cond = cond.strip()
-            matched = re.search(r'(\S+)\s+(\S+)\s+(\S+)', cond)
-            if matched:
-                col = matched.group(1)
-                val = matched.group(3)
-                if virt_Info.get(col):
-                    ori_col =virt_Info[col][0]
-                    patn = virt_Info[col][1]
-                    val=val[1:-1]   # 去掉引号
-                    new_val = patn.format(value=val)
-                    new_conds.append(f"{ori_col} LIKE '{new_val}'")
-                    flag = True
-               
-            if not flag:
-                new_conds.append(cond)
-        slots['conditions'] = new_conds
-        return self.gen_sql(slots)
-    
-    # 主功能
+   
+    # 主功能, 生成最终用于查询的SQL
     async def gen_activity(self, query, sql):
         # 生成SQL2DB的1个或多个SQL, 构成一个activity
         resp = make_a_log('gen_activity')
@@ -261,7 +218,7 @@ class GenActivity:
                 f.write("\n")
         print(f"DB structures are saved to {filename}")
 
-    # 生成check发现的错误信息
+    # 生成check功能发现的错误信息
     # conds_check:{'status': 'failed', "category,'电脑'": (True, 'Computer', 'EXPN')}
     # conds_check:{'status': 'failed', "price, abc": (False, 'NIL','DATE')}, False, 'NIL','NUMERIC', （False, 'NIL','VARCHAR'）
     # table_check:{'status': 'failed', 'product': (False, 'products')}
@@ -340,7 +297,7 @@ class GenActivity:
             if len(v) == 0:
                 continue
             hints.extend(v)
-        print("checkMsgs:"+'\n'.join(hints))
+        logging.info("checkMsgs in revise:"+'\n'.join(hints))
         
         # revise by LLM
         tmpl = self.prompter.tasks['sql_revise']
@@ -366,7 +323,7 @@ class GenActivity:
             
         return new_sql, hint
                 
-    # 由slots生成SQL
+    # 由slots生成SQL,不完善 
     def gen_sql(self,slots):
         if slots is None:
             return None
@@ -398,14 +355,16 @@ class GenActivity:
         return tmpl.format(str_select=str_select, str_from=str_from, str_where=str_where)
 
     
-    # 解析term_expansion from LLM
+    # 解析term_expansion from LLM's answer
     def parse_expansion(self,llm_answer) -> dict:
         if 'ERR' in llm_answer:
             return None
         
         tlist = llm_answer.split('\n')
         tem_dic ={}
+        # LLM 存在格式问题，## 代表非对应到keyword的部分
         kword = '##'
+        tem_dic[kword] = ''
         for temstr in tlist:
             if '[Keyword:' in temstr:
                 kword = temstr.split(':')[1]
@@ -414,6 +373,8 @@ class GenActivity:
             else:
                 temstr = re.sub(r'-.*:','',temstr).strip()
                 tem_dic[kword]+= temstr+'\n'
+        del tem_dic['##']
+        
         new_terms = {}
         for k,v in tem_dic.items():
             v = v.replace('OR','\n')
