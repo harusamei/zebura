@@ -1,14 +1,24 @@
-# Welcome to Chainlit! 🚀🤖
+### 🌟 Welcome to Talq Assistant! This product allows you to interact directly with your sales data, just like having your personal sales assistant. Easily inquire about sales details without navigating through cumbersome computer menus.
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+### 📊 The current dataset includes 1465 products from Amazon, with key information as follows:
+            📦 Product Information
+    🆔 Product ID          ⭐ Rating
+    📝 Product Name        📊 Rating Count
+    🏷️ Category            📋 Description
+    💰 Discounted Price    👤 User ID
+    💲 Actual Price        🙋‍♂️ Username
+    💸 Discount Percentage 📝 Reviewer ID
+    📰 Review Title        🗒️ Review Content
+    🖼️ Image Link          🔗 Product Link
 
-## Useful Links 🔗
+### 🔍 Ask Little T:
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+        Consider the following queries:
+    1.How many products are there in the Home & Kitchen category?
+    2.List the top 3 most expensive product categories.
+    3.List all the most expensive products belonging to the Home & Kitchen category.
+    4.Please find the unit price of the electric vegetable slicer set.
+    5.Please find the discount percentage for the I Series 4K Ultra HD Android Smart LED TV.
+    6.List products with a rating higher than 4.5.
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
-
-## Welcome screen
-
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+### 📈 Talq Assistant, making your sales data queries easier than ever!

@@ -10,12 +10,12 @@ sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
 from zebura_core.query_parser.extractor import Extractor
-from normalizer import Normalizer
-from schema_linker import Sch_linking
+from zebura_core.query_parser.normalizer import Normalizer
+from zebura_core.query_parser.schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
 from zebura_core.constants import D_TOP_GOODCASES as topK
-from constants import D_TOP_GOODCASES as topK
+
 from server.msg_maker import make_a_log
 
 class Parser:
@@ -112,7 +112,7 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别']
+    # querys = ['列出类别是电脑的产品名称','哪些产品属于笔记本类别？','列出所有的产品类别']
     querys =['帮我查一下小新的价格','查一下联想小新电脑的价格','查一下价格大于1000的产品']
     table_name = 'products'
     parser = Parser()
