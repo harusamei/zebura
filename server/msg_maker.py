@@ -14,9 +14,9 @@
 def make_a_log(funcName):
         return {
             'msg': '',          # 当前步骤产生的主要信息
-            'note': '',         # 记录出错类型
+            'note': '',         # 记录出错类型, 格式 ERR_TAGS , details
             'status': 'succ',
-            'from': funcName,    # 当前完成的模块
+            'from': funcName,    # 当前模块
             'type': 'transaction',
             'format': 'text',
             'others': {},        # 当前步骤产生的次要信息
@@ -25,12 +25,12 @@ def make_a_log(funcName):
 
 def make_a_req(content:str):
     return {
-        "msg": content,
+        "msg": content,         # 给用户的主信息
         "context": [],
         "type": "user",
         "format": "text",
         "status": "new",
-        "note": "",
-        'hint': '',
+        "note": "",             # 补充，或出错类型
+        'hint': '',              # 当前步骤产生的提示信息
         'step':''
     }

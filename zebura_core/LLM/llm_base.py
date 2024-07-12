@@ -10,7 +10,7 @@ import openai
 # agentName： OPENAI, CHATANYWHERE
 class LLMBase:
 
-    def __init__(self,agentName:str,model="gpt-3.5-turbo", temperature=0):
+    def __init__(self,agentName:str,model="gpt-3.5-turbo-ca", temperature=0):
 
         self.agentName = agentName.upper()
         self.temperature = temperature
@@ -39,7 +39,7 @@ class LLMBase:
         else:
             raise ValueError("No available LLM agents, please check the agentName")
         try:
-            print(f"connect GPT through {agentName}\n Message:"+self.postMessage(messages))
+            print(f"connect GPT through {agentName}\n Message for connection test:"+self.postMessage(messages))
         except Exception as e:
             raise ValueError("LLM agent is not available",e)
 

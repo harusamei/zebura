@@ -1,4 +1,5 @@
 # 与chatbot交互的接口, 内部是一个总控制器，负责调度各个模块最终完成DB查询，返回结果
+############################################
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
@@ -11,29 +12,36 @@ import inspect
 from zebura_core.query_parser.parser import Parser
 from zebura_core.answer_refiner.synthesizer import Synthesizer
 from zebura_core.activity.exe_activity import ExeActivity
+from zebura_core.activity.gen_activity import GenActivity
+
 from zebura_core.LLM.llm_agent import LLMAgent
 from msg_maker import (make_a_log,make_a_req)
 import json
-import random
 import re
 # 一个传递request的pipeline
 # 从 Chatbot request 开始，到 type变为assistant 结束
 
-D_RANDINT = random.randint(0,2)
 class Controller:
     llm = LLMAgent("CHATANYWHERE","gpt-3.5-turbo")
     parser = Parser()
+    # 一些应急话术
+    utterance = {}
+    with open("server\\utterances.json","r") as f:
+        utterance = json.load(f)
+
     st_matrix = {
             "(new,user)"        : "nl2sql",
             "(hold,user)"       : "nl2sql",
-            "(succ,nl2sql)"     : "sql4db",
-            "(failed,nl2sql)"   : "transit", # reset action
-            "(failed,transit)"  : "end",    # send to user
+            "(succ,nl2sql)"     : "sql_refine",
+            "(succ,sql_refine)"   : "sql4db",
+            "(failed,sql_refine)" : "end",      # send to user
+            "(failed,nl2sql)"   : "transit",    # reset action
+            "(failed,transit)"  : "end",        # send to user
             "(succ,sql4db)"     : "polish",
             "(failed,sql4db)"   : "end",
             "(*,polish)"        : "end",
             "(succ,rewrite)"    : "nl2sql",        
-            "(failed,rewrite)"  : "end",    # send to user
+            "(failed,rewrite)"  : "end",        # send to user
             "(*,*)"             : "end"
     }
     def __init__(self):
@@ -44,19 +52,19 @@ class Controller:
         self.parser = Controller.parser
         self.sch_loader = Controller.parser.norm.sch_loader
         self.prompter = Controller.parser.prompter      # prompt generator
+        self.utterance = Controller.utterance
 
+        self.act_maker = GenActivity()
         self.asw_refiner = Synthesizer()
-        self.executor = ExeActivity('mysql',self.sch_loader)
-        # 一些套话
-        self.utterance = {}
-        with open("server\\utterances.json","r") as f:
-            self.utterance = json.load(f)
-        
+        self.executor = ExeActivity(self.sch_loader)
         logging.info(f"Controller init success")
 
     def get_next(self,pipeline):
 
         lastLog = pipeline[-1]
+        print(f"------\n{lastLog['from']}\n{lastLog['msg']}")
+
+        # 强制跳转
         if lastLog['type'] == "reset" and lastLog['status'] == "succ":
             return lastLog['from']
         
@@ -75,14 +83,26 @@ class Controller:
     async def nl2sql(self, pipeline):
 
         log = pipeline[-1]
-        content = log['msg']
-        result = await self.parser.apply(content)
         new_Log = make_a_log("nl2sql")
-        new_Log['msg'] = result['msg']
-        new_Log['status'] = result["status"]
+
+        query = log['msg']
+        result = await self.parser.apply(query)
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         if result["status"] == "succ":
             new_Log['format'] = 'sql'
-        new_Log['others'] = result
+        pipeline.append(new_Log)
+
+    async def sql_refine(self,pipeline):
+        log = pipeline[-1]
+        new_Log = make_a_log("sql_refine")
+
+        query = pipeline[0]['msg']
+        result = await self.act_maker.gen_activity(query, log['msg'])
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         pipeline.append(new_Log)
 
     async def rewrite(self,pipeline):
@@ -99,21 +119,24 @@ class Controller:
     
         context = log['context']
         for one_req in context[-3:]:
-            msg = f"{one_req['type']}: {one_req['msg']}"
+            msg = f"{one_req['type']}: {one_req.get('msg')}"
+            index = msg.find("Root Cause")
+            if index != -1:
+                msg = msg[:index]
             history.append(msg)
         
         history_context= "\n".join(history)
         query = log['msg']
-        template = self.prompter.gen_default_prompt("rewrite")
-        prompt = template.format(history_context=history_context,query=query)
-        result = await self.askLLM(query, prompt)
+        tmpl = self.prompter.gen_rewrite_prompt()
+        prompt = tmpl.format(history_context=history_context,query=query)
+        result = await self.llm.ask_query(prompt,"")
+        print('rewrite:',result)
         if "ERR" in result:
             new_Log['status'] = "failed"
             new_Log['note'] = result
         else:
             new_Log['msg'] = result
         pipeline.append(new_Log)
-
 
     def transit(self,pipeline):
         
@@ -136,57 +159,79 @@ class Controller:
             
     async def genAnswer(self,pipeline):
         
-        answer = ""
-        notes = []
-        hints =[]
-        resp = make_a_req(answer)
-        resp['status'] = 'failed'
-        for log in pipeline[1:]:
-            if log['from'] == "polish":
-                resp['msg'] = log['msg']
-                resp['status'] = 'succ'
-                continue
-            notes.append(f"{log['from']}: {log['status']}, {log['note']}")
-            if len(log['hint'])>0:
-                hints.append(f"{log['from']}: {log.get('hint')}")
-            
+        tmpl_succ = "{polish_msg}\nNote:{db2sql_note}\n\n---Detailed Reasoning Steps---\n{stepInfo}"
+        tmpl_failed ="no results matching your query.\n{hint}\nRoot Cause:{e_tag}\n\n---Detailed Reasoning Steps---\n{stepInfo} "
         
-        resp['note'] = "\n".join(notes)
-        resp['hint'] = "\n".join(hints)
+        resp = pipeline.pop()
         resp['type'] = "assistant"
-        
-        if resp['status'] == "failed":
-            resp['status'] = "failed"
-            prompt = "用户用自然语言查询数据库， agent将其转换为sql语句，然后执行查询，获得了返回结果。\
-                    下面是用户的查询，查询结果和agent执行中间过程的记录。\
-                    请对这些信息做总结，给出一个回答。包括查询结果， 执行成功与否，执行失败的原因和建议。"
-            query =f"answer: {resp['msg']}, status: {resp['status']}, note: {resp['note']}, hint: {resp.get('hint','')}"
-            result = await self.askLLM(query, prompt)
-            resp['msg'] = result
+        status = resp['status']   
+        if status =='succ':
+            tmpl = tmpl_succ
+            steps = ['nl2sql', 'rewrite']
+        else:
+            tmpl =tmpl_failed
+            steps =[ 'nl2sql', 'rewrite', 'sql4db']
+            e_tag = resp['note']
+
+        polish_msg = db2sql_note = stepInfo =""
+        hint = ""
+        for log in pipeline[1:]:           
+            if log['from'] in steps:
+                stepInfo += f"{log['from']}:{log['status']}\n" # , {log['msg']}
+                hint = log.get('hint')+'\n'     # 最后一个hint
+            
+            if log['from'] == "polish":
+                polish_msg = log['msg']
+            if log['from'] == "sql4db":
+                db2sql_note = log['note']
+
+        if status == "succ":
+            resp['msg'] = tmpl.format(polish_msg=polish_msg,db2sql_note=db2sql_note,stepInfo=stepInfo)
+            resp['note'] = db2sql_note
+        else:
+            resp['msg'] = tmpl.format(hint =hint, e_tag=e_tag,stepInfo=stepInfo)
+            
+        resp['msg'] = re.sub(r'\n+', '\n', resp['msg'])
+        resp['hint'] = re.sub(r'\n+', '\n', hint)
         return resp
              
     # 查库
     def sql4db(self,pipeline):
         log = pipeline[-1]
-        query = log['msg']
-        new_Log = self.executor.exeQuery(query)
-        new_Log['from'] = "sql4db"
+        new_Log = make_a_log("sql4db")
+        sql = log['msg']
+        print(f"sql4db: {sql}")
+
+        result = self.executor.exeSQL(sql)
+        for k in ['msg','status','note','others','hint']:
+            new_Log[k] = result[k]
+        
         pipeline.append(new_Log)
 
-    #上一步执行不成功，给出提示
+    #对整个pipeline信息进行整理，分为msg主信息，note， hint
     def interpret(self,pipeline):
-
+        resp = make_a_req("waiting reply")
+        final_status = "failed"
         for log in pipeline[1:]:
             if log['type'] == 'reset':
-                log['from'] = 'transit' # 占用恢复
-            
-            match = re.search(r"ERR: (\w+)",log['note'])
+                log['from'] = 'transit'         # 恢复之前状态机占用
+            if log['from'] == "polish":
+                final_status = log['status']    # 只有走到polish才算成功
+                break
+        resp['status'] = final_status
+
+        root_cause = ""
+        for log in pipeline[1:]:    
+            match = re.search(r"ERR_(\w+)",log['note'])
             if match is not None:
                 errtype = match.group(1)
-                hint = self.utterance.get("en_error_"+errtype.lower(),'')
-                if hint !='':
-                    log["hint"] = hint['msg'][D_RANDINT]
-        
+                root_cause = f"step {log['from']} met error of {errtype}"
+                utts = self.utterance.get("error_"+errtype.lower(),'')
+                if utts !='' and log['hint'] == "":  # 如果没有hint，就用默认的
+                    log["hint"] = utts['msg']
+        # 最后一次失败原因是整个pipeline最终原因
+        resp['note'] = root_cause
+        pipeline.append(resp)
 
     # 美化sql结果，生成答案
     def polish(self, pipeline):
@@ -201,16 +246,9 @@ class Controller:
            new_Log['status'] = "failed"
         pipeline.append(new_Log)
 
-    async def askLLM(self,query,prompt):
-        result = await self.llm.ask_query(query,prompt) 
-        return result
-    
-
-# 主要的处理逻辑, assign tasks to different workers
+# 主函数, assign tasks to different workers
 async def apply(request):
 
-    print(request)
-    D_RANDINT = random.randint(0,2)
     controller = Controller()
     pipeline = list()
     request['from'] = "user"
@@ -218,7 +256,6 @@ async def apply(request):
     nextStep = controller.get_next(pipeline)
 
     while nextStep != "end":
-        print(nextStep)
         if inspect.iscoroutinefunction(getattr(controller,nextStep)):
             await getattr(controller,nextStep)(pipeline)
         else:
@@ -227,16 +264,17 @@ async def apply(request):
     controller.interpret(pipeline)
     return await controller.genAnswer(pipeline)
     
-
 async def main():
-    request = {'msg': '查询颜色是黑色的小新电脑', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    
+    request = {'msg': '哪些产品的折扣最大？能推荐几款吗？', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
-    print(resp['msg']+f"\n\n{resp['note']}")
+    print(resp)
     context.append(resp)
-    request1 = {'msg': '查小新电脑 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
-    resp = await apply(request1)
-    print(resp['msg']+f"\n\n{resp['note']}")
+    request1 = {'msg': '查类型 ', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    # resp = await apply(request1)
+    # print(resp)
 
 if __name__ == "__main__":
       

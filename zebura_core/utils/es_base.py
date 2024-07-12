@@ -48,6 +48,9 @@ class ES_BASE:
     def get_field_type(self, index_name, field_name):
         
         properties = self.get_all_fields(index_name)
+        if properties is None:
+            return None
+        
         if field_name in properties:
             return properties[field_name]['type']
         else:

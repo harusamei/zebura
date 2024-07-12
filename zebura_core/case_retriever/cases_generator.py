@@ -16,7 +16,7 @@ class case_generator:
     # 生成golden cases
     async def gen_cases(self,table_name=None) -> dict:
 
-        dbSchema = self.prompter.gen_dbSchema(table_name,style='lite')
+        dbSchema = self.prompter.get_dbSchema(table_name,style='lite')
         prompt = self.prompter.gen_default_prompt('db2nl')
         results = await self.llm.ask_query(dbSchema, prompt)
 
@@ -24,7 +24,7 @@ class case_generator:
     
     async def gen_sql(self,table_name=None) -> dict:
 
-        dbSchema = self.prompter.gen_dbSchema(table_name,style='lite')
+        dbSchema = self.prompter.get_dbSchema(table_name,style='lite')
         prompt = self.prompter.gen_default_prompt('db2sql')
         results = await self.llm.ask_query(dbSchema, prompt)
 
