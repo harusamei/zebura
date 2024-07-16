@@ -6,6 +6,7 @@ import logging
 from settings import z_config
 from zebura_core.utils.es_searcher import ESearcher
 from zebura_core.knowledges.schema_loader import Loader
+from utils.compare import similarity
 
 dtk = 5     # default top k for search
 
@@ -26,6 +27,8 @@ class CaseStudy:
             table = self.loader.get_table_nameList()[0]
             self.columns = self.loader.get_all_columns(table)
 
+            self.compare = similarity()
+
             logging.debug("CaseStudy init success")
             
             
@@ -42,7 +45,7 @@ class CaseStudy:
         # ES为了保证所有的得分为正，实际使用（1 + 余弦相似度）/ 2，_score [0，1]。得分越接近1，表示两个向量越相似  
         def find_similar_vector(self, query, topk=dtk):
             index = self.gcase_index
-            results = self.es.search(index, "qembedding", query, topk)
+            results = self.es.search(index, "qemb", query, topk)
             return results
         
         """
@@ -83,7 +86,10 @@ class CaseStudy:
                     rank_list[i] = [hit['_id'] for hit in resps[i]['hits']['hits']]
                 else:
                     rank_list[i] = []
+
             sorted_ids = self.rrf_weighted(rank_list)
+            sorted_ids = sorted_ids[:topk]
+
             # print("sorted_ids:",sorted_ids)
             docs = {}
             for i in range(3):
@@ -91,19 +97,24 @@ class CaseStudy:
                     continue
                 for hit in resps[i]['hits']['hits']:
                     docs[hit['_id']] = hit['_source']
+                    #docs[hit['_id']]['score'] = hit['_score']
+                    # ES sparse vector 的score不能规范化为[0,1], 另存在与dense vector的score不可比较
+                    # 为了方便比较，这里使用chrf统一相似度
+                    score = self.compare.getChrf(query, hit['_source']['query'])
+                    docs[hit['_id']]['score'] = score
             
             results = []
             for i, id in enumerate(sorted_ids):
-                results.append({'doc':docs[id[0]], 'rank':i+1, 'score':id[1]})
+                results.append({'doc':docs[id[0]], 'rank':i+1,
+                                'score':docs[id[0]]['score']})
             
             return results
         
-
 # Example usage
 if __name__ == '__main__':
 
     cs = CaseStudy()
-    query = 'what the difference between desktop and laptop?'
+    query = '哪些用户撰写了最多的评价？'
     sql = 'select * from product where product_name = "联想小新电脑"'
     results = cs.assemble_find(query)
     

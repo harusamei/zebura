@@ -16,7 +16,7 @@ class case_generator:
     # 生成golden cases
     async def gen_cases(self,table_name=None) -> dict:
 
-        dbSchema = self.prompter.get_dbSchema(table_name,style='lite')
+        dbSchema = self.prompter.get_dbSchema(table_name)
         prompt = self.prompter.gen_default_prompt('db2nl')
         results = await self.llm.ask_query(dbSchema, prompt)
 
@@ -24,7 +24,7 @@ class case_generator:
     
     async def gen_sql(self,table_name=None) -> dict:
 
-        dbSchema = self.prompter.get_dbSchema(table_name,style='lite')
+        dbSchema = self.prompter.get_dbSchema(table_name)
         prompt = self.prompter.gen_default_prompt('db2sql')
         results = await self.llm.ask_query(dbSchema, prompt)
 
@@ -33,6 +33,6 @@ class case_generator:
 # Example usage
 if __name__ == '__main__':   
     gen = case_generator()
-    table_name = 'products'
-    results = asyncio.run(gen.gen_sql())
+    table_name = 'product'
+    results = asyncio.run(gen.gen_cases())
     print(results)

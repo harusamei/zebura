@@ -1,44 +1,19 @@
-﻿query,qemb,sql,gt,activity,category,explain,next_query,updated_date
-Ambrane Fast Charging商品折扣后价格是多少？,列出所有电子产品分类下的产品,SELECT discounted_price FROM products WHERE product_name = 'Ambrane Fast Charging%',,"function: query_word
-field:product_cate1
-kword:电子产品
-response: product_cate2",select all,列出该分类下的所有品牌,,2024/5/14
-可以展示一下商品名称为'7SEVEN® Compatible for Mi tv Remote Control '的用户评价吗？,列出所有电子产品分类下的产品,"SELECT review_title, review_content FROM reviews WHERE product_name = '7SEVEN Remote Control ';",,"function: query_word
-field:product_cate1
-kword:电子产品
-response: product_cate2",select all,列出该分类下的所有品牌,,2024/5/14
-商品'ABC'有多少条评分？,鼠标属于哪个分类,SELECT COUNT(*) AS rating_count FROM ratings WHERE product_name = 'ABC';,,"table:product
-doFunc: searchValueInField
-kwargs:{field: product_name, value: '鼠标'}
-showFunc::outputField
-kwargs:{field:category}
-",select columns,*属于哪个分类,,
-用户ID为456的用户是谁？,有哪些产品是计算机,SELECT user_name FROM users WHERE user_id = 456;,,"function: query_word
-field:product_name
-kword:远程数据恢复
-response: product_cate3",select all,"哪些产品是*
-哪些产品属于*",,
-'Electronics'类别的产品平均评分是多少？,远程数据恢复属于哪个分类,SELECT AVG(rating) AS average_rating FROM products WHERE category = 'Electronics';,,"function: query_word
-field:product_name
-kword:远程数据恢复
-response: product_cate1",select columns,,,
-展示一下产品ID为123的商品详情。,台式机与笔记本有什么区别,SELECT * FROM products WHERE product_id = 123;,,"function: query_word
-field:product_name
-kword:远程数据恢复
-response: product_cate8",select diff,,,
-查询由用户'Alice'撰写的评价内容。,有什么与鼠标有关的产品,"SELECT review_title, review_content FROM reviews WHERE user_name = 'Alice';",,"function: query_multi_fields
-field:*
-kword:""鼠标""
-response: process_result",related to,与*相关的docs,,
-列出所有属于'Clothing'类别的商品。,想买一台笔记本，价格在5000块左右，请问怎么选择,SELECT * FROM products WHERE category = 'Clothing';,,,,,,
-哪些是评分最高的产品？,有哪些新上市的产品,"SELECT product_name, rating FROM products ORDER BY rating DESC LIMIT 10;",,"function: query_word
-field:product_name
-kword:远程数据恢复
-response: product_cate5",new release,与上市相关的docs,,
-商品ID为789的产品的图片链接是什么？,请按品牌对产品分组，并给出每种品牌下产品类别的数量,SELECT img_link FROM products WHERE product_id = 789;,,,,,,
-有多少种不同的产品类别？,,SELECT COUNT(DISTINCT category) AS num_categories FROM products;,,,,,,
-每种类别有多少个产品？,,"SELECT category, COUNT(*) AS num_products FROM products GROUP BY category;",,,,,,
-平均折扣率是多少？,,SELECT AVG(discount_percentage) AS average_discount FROM products;,,,,,,
-总共有多少条用户评价？,,SELECT COUNT(*) AS total_reviews FROM reviews;,,,,,,
-哪些用户撰写了最多的评价？,,"SELECT user_name, COUNT(*) AS num_reviews FROM reviews GROUP BY user_name ORDER BY num_reviews DESC LIMIT 5;",,,,,,
-哪些产品没有收到任何评价？,,SELECT product_name FROM products LEFT JOIN reviews ON products.product_id = reviews.product_id WHERE reviews.review_id IS NULL;,,,,,,
+﻿no,query,qemb,sql,action,action_input,category,updated_date,next_msg,topic,comment
+,给我商品ID为“B0789LZTCJ”的产品的图片链接,,SELECT img_link FROM product WHERE product_id = 'B0789LZTCJ' ;,,,sql,,列出相同类别的其它产品,搜索,
+,有多少种不同的产品类别？,,SELECT COUNT(DISTINCT category) AS category_count FROM product;,,,sql,,电子产品的平均价格是多少,统计分析,
+,每种类别有多少个产品？,,"SELECT COUNT(product_id) AS product_count, category FROM product GROUP BY category;",,,sql,,哪种类别的折扣率最高,统计分析,
+,平均折扣率是多少？,,SELECT AVG(discount_percentage) AS average_discount_rate FROM product;,,,sql,,,统计分析,
+,总共有多少条用户评价？,,SELECT COUNT(review_id) AS total_review_count FROM product;,,,sql,,,统计分析,
+,哪些用户撰写了最多的评价？,,"SELECT COUNT(review_id) AS review_count, user_name, user_id FROM product GROUP BY user_id, user_name ORDER BY review_count DESC LIMIT 1;",,,sql,,,统计分析,
+,哪些产品没有收到任何评价？,,SELECT product_name FROM product WHERE rating_count = 0;,,,sql,,,特例,
+,目前有哪些电子产品的折扣价格低于500元？,,"SELECT discounted_price, product_name FROM product WHERE discounted_price < 500 AND category LIKE '%electronic%';",,,sql,,,推荐,
+,评分在4.5以上的产品有哪些？找出其中最高的不超过5个,,SELECT * FROM product WHERE rating >= 4.5 ORDER BY rating DESC LIMIT 5;,,,sql,,,推荐,
+,哪些产品的折扣最大？能推荐几款吗？,,"SELECT MAX(discount_percentage) AS max_discount, product_name FROM product GROUP BY product_name, product_name ORDER BY max_discount DESC LIMIT 3;",,,sql,,,了解详情,
+,我想知道这款产品（ID为B09RFB2SJQ）的详细信息，包括名称、价格、折扣和评分。,,"SELECT rating, actual_price, discounted_price, product_name FROM product WHERE product_id = 'B09RFB2SJQ';",,,sql,,,了解详情,
+,我想看看这款产品（ID为B09RFB2SJQ）的用户评论。,,"SELECT review_title, review_content FROM product WHERE product_id = 'B09RFB2SJQ';",,,sql,,,了解详情,
+,用户RAMKISAN之前写的评论都在哪儿可以找到？,,SELECT * FROM product WHERE user_name LIKE '%RAMKISAN%' AND review_content IS NOT NULL;,,,sql,,,搜索,
+,风扇产品的评分有多少个？平均评分是多少？,,"SELECT COUNT(rating) AS rating_count, AVG(rating) AS average_rating FROM product WHERE category LIKE '%fan%';",,,sql,,,统计分析,
+,电子产品分类下，评分最高的几款产品有哪些？,,"SELECT rating, product_name FROM product WHERE category LIKE '%electronics%' ORDER BY rating DESC LIMIT 5;",,,sql,,,推荐,
+,有哪些产品介绍或评论中有提到“Compact”的？,,"SELECT about_product, review_content, product_name FROM product WHERE about_product LIKE '%Compact%' OR review_content LIKE '%Compact%' LIMIT 10;",,,sql,,,搜索,
+,能推荐几款有图片展示的热门产品吗？,,"SELECT img_link, product_name FROM product WHERE img_link IS NOT NULL ORDER BY rating DESC LIMIT 5;",,,sql,,,推荐,
+,哪种类别的平均折扣率最高,,"SELECT category, AVG(discount_percentage) AS avg_discount_rate FROM product GROUP BY category ORDER BY avg_discount_rate DESC LIMIT 1;",,,,,,统计分析,
