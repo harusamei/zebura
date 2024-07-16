@@ -73,68 +73,16 @@ class prompt_generator:
     def gen_rewrite_prompt(self) -> str:
         return self.tasks["rewrite"]
     
-    # style = full, zh, lite
-    def gen_sql_prompt(self,gcases=None,table_name=None,style='full') -> str:
-
-        role = self.roles["sql_assistant"]
-        if gcases is None:
-            task_name = "nl2sql_zero"
-        else:
-            task_name = "nl2sql"
-
-        template = self.tasks[task_name]
-        dbSchema = self.get_dbSchema(table_name,style=style)
-
-        if gcases is None:
-            prompt= template.format(dbSchema=dbSchema)
-        else:
-            pos_fewShots = self.gen_fewShots(task_name,gcases)
-            #neg_fewShots = self.gen_negShots()
-            fewShots = pos_fewShots #+ neg_fewShots
-            prompt= template.format(fewShots=fewShots,dbSchema=dbSchema)
-        #print("prompt: ",role +"\n"+ prompt)
-        return role +"\n"+ prompt
     # full, lite
-    def gen_sql_prompt_fewshots(self,gcases:list,table_name=None) -> dict:
-        tmpl = self.tasks["nl2sql_classic"]
-        fewshots= self.gen_context(gcases)
-        dbSchema = self.get_dbSchema(table_name)
-
-        return {"system":tmpl.format(dbSchema=dbSchema),"fewshots":fewshots}
-    
-    # gcases: ES的返回结果 golden cases
-    # fields = ["no", "query", "qemb", "sql", "gt", "activity","explain","category", "updated_date"] 
-    # Input: "Find all users who registered in 2021."
-    # Output:
-    # sql
-    # SELECT * FROM users WHERE registration_year = 2021;
-    def gen_fewShots(self, gcases:list) -> str:
-        answ = 'sql'
-        tlist=[]
+    def gen_nl2sql_prompt(self,gcases:list=[]) -> dict:
+        tmpl = self.tasks["nl2sql"]
+        dbSchema = self.get_dbSchema()
+        #生成user/assistant对
+        fewshots =[]
         for case in gcases:
-            s = f"Input:{case['query']}\nOutput:\nsql\n{case[answ]}\n"
-            tlist.append(s)
-        return "\n".join(tlist)
-    
-    # 生成user/assistant对
-    # user: "Show me the sales data for March."
-    # assistant: NOSQL (if table and column names are not provided)
-    def gen_context(self, gcases:list) -> list:
+            fewshots.append({'user':case['query'],'assistant':case['sql']})
 
-        answ = 'sql'
-        tlist =[]
-        tDict ={}
-        for case in gcases:
-            tDict['user'] = case['query']
-            tDict['assistant'] = case[answ]
-            tlist.append(tDict)
-        return tlist
-    
-    def gen_negShots(self) -> str:
-        ncase = (   "Input: show me the big data for March.\n"
-                    "Output: NOSQL, please give more information for database)\n"
-                )
-        return ncase
+        return tmpl.format(dbSchema=dbSchema),fewshots
     
     def get_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
@@ -169,7 +117,7 @@ if __name__ == '__main__':
     llm = LLMAgent()
     pg = prompt_generator()
     # print(pg.get_dbSchema())
-    # print(pg.tasks["nl2sql_classic"])
+    # print(pg.tasks["nl2sql"])
     # prompt = pg.tasks['term_expansion']
     # keywords = "product, price, 笔记本, 联想小新, lenovo, computer"
     # result = asyncio.run(llm.ask_query(keywords,prompt))

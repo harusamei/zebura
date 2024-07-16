@@ -332,7 +332,7 @@ class GenActivity:
             new_sql = None
             msg = "SQL revise failed, please check the error messages."
             
-        return new_sql, hint
+        return new_sql, msg
                 
     # 由slots生成SQL,不完善 
     def gen_sql(self,slots):

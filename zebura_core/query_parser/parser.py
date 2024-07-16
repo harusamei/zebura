@@ -10,7 +10,6 @@ sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
 from zebura_core.query_parser.normalizer import Normalizer
-from zebura_core.query_parser.schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
 from zebura_core.constants import D_TOP_GOODCASES as topK
@@ -41,7 +40,7 @@ class Parser:
             if case.get('qemb'):
                 del case['qemb']
         #得到 system prompt, fewshots prompt
-        prompt,fewshots = self.prompter.gen_sql_prompt_fewshots(gcases)
+        prompt,fewshots = self.prompter.gen_nl2sql_prompt(gcases)
      
         logging.info(f"parse.apply()-> table_name and query is {table_name} and {query}")
         # query to sql
@@ -77,13 +76,16 @@ class Parser:
 if __name__ == '__main__':
     import asyncio
 
-    querys = ['目前有哪些电子产品的折扣价格低于500元？','评分在4.5以上的产品有哪些？找出其中最高的不超过5个',
+    querys = ['家居与厨房类别中有多少种产品','列出最贵的3个种类的产品。',
+              '列出所有属于家居与厨房类别的最贵商品。','帮我查一下电动切菜机套装的单价。',
+              '帮我查一下I 系列 4K 超高清安卓智能 LED 电视的折扣率。','列出评分高于4.5的产品。',
+              '目前有哪些电子产品的折扣价格低于500元？','评分在4.5以上的产品有哪些？找出其中最高的不超过5个',
               '哪些产品的折扣最大？能推荐几款吗？','我想知道这款产品（ID为B09RFB2SJQ）的详细信息，包括名称、价格、折扣和评分。',
               '我想看看这款产品（ID为B09RFB2SJQ）的用户评论。', '用户RAMKISAN之前写的评论都在哪儿可以找到？',
               '手动搅拌机这款产品的评分有多少个？平均评分是多少？','电子产品分类下，评分最高的几款产品有哪些？'
               ]
     table_name = 'product'
     parser = Parser()
-    for query in querys[-2:]:
+    for query in querys:
         result = asyncio.run(parser.apply(query))
         print(f"query:{query}\n{result['msg']}")

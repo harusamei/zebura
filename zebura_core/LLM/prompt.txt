@@ -27,18 +27,27 @@ user: {query}
 Refined Standalone Question:
 </TASK>
 
-<TASK: nl2sql_classic>
+<TASK: nl2sql>
 You are a programming assistant, and your task is to convert user’s natural language question into executable SQL queries. 
-Given the database schema, including table names, column names and their data types, and the relationships between tables (foreign keys), for the following user input question, you need to:
-1. Language Parsing:
-- Identify SQL key entities, such as table names and column names, conditions from the input question.
-# - Identify SQL keywords and clauses required to construct the query (e.g., SELECT, WHERE, JOIN, ORDER BY).
-2. Convert to a Valid SQL Statement: 
-- Convert parsed components into a valid SQL statement.
-- Ensure correct syntax and logical order of SQL clauses.
-3. Handle incomplete question or bad cases:
-- Handle incomplete questions, by providing the best possible SQL GUESS or requesting clarification.
-- Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
+Given the database schema, including table names, column names and their data types, language and the relationships between tables (foreign keys), for the following user input question, you need to follow the steps below to generate SQL:
+1. Identify Key Entities:
+- Identify key entities from the input question that make up the SQL query, such as table names, column names, conditions.
+- Convert entities indicating recent time, such as "now" and "recently," into appropriate time functions.
+
+2. Convert to a Valid SQL Statement:
+- Transform the parsed components into a valid SQL statement.
+- Ensure the SQL statement has the correct syntax and a logical order of SQL clauses.
+
+3. Handle Incomplete Questions or Bad Cases:
+- Address incomplete questions by making the best possible SQL assumption or by requesting clarification.
+- If conversion to SQL isn't feasible, output "NOSQL" and suggest improvements in the same language as the input question.
+
+4. Review and Enhance SQL Queries:
+- Reflect on the generated SQL query to verify accuracy of table and column names.
+- Validate date formats according to database requirements.
+- Confirm data types align correctly with database schema definitions.
+- Ensure consistency between language settings in column data and corresponding values within the database schema.
+
 ======================
 Two kinds of output formats:
 1. if the input question can be converted into SQL:
@@ -47,7 +56,7 @@ Two kinds of output formats:
    FROM products
    GROUP BY brand;
    ```
-2. if the input question cannot be converted into SQL:
+2. If conversion to SQL isn't feasible:
    NOSQL
    Suggestions: 
 =======================

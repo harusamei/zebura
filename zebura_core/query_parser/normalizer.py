@@ -41,11 +41,19 @@ class Normalizer:
             resp["from"] = "extract_sql"
         return resp
  
-    async def ask_agent(self, querys, sys_prompt,fewshots=None):
+    async def ask_agent(self, querys, sys_prompt,fewshots=[]):
+        
+        shotInfo = "EXAMPLES:\n"
+        if fewshots is None or len(fewshots)==0:
+            shotInfo = ""
+        else:
+            for shot in fewshots:
+                shotInfo = shotInfo +f"Question: {shot['user']}\n```sql\n{shot['assistant']}\n```\n"
+        
         if isinstance(querys,str):
-            results = await self.llm.ask_query(querys, sys_prompt,fewshots)
+            results = await self.llm.ask_query(querys, sys_prompt,shotInfo)
         elif isinstance(querys,list):
-            results = await self.llm.ask_query_list(querys, sys_prompt)
+            results = await self.llm.ask_query_list(querys, sys_prompt,shotInfo)
             if len(results) != len(querys):
                 print("ERR: queries and results do not match")
         else:
@@ -97,8 +105,6 @@ class Normalizer:
                 hard_ids.append(i)
 
         print(f" fail sql ratio: {len(hard_ids)/len(queries)}")
-        hard_queries = [queries[i] for i in hard_ids]
-
         return results
 
 # Example usage
@@ -111,8 +117,8 @@ if __name__ == '__main__':
     query ="A: SELECT * FROM products WHERE goods_status = 'Newly released';\nQ: 有什么与鼠标有关的产品\nA: SELECT * FROM products WHERE product_name LIKE '%鼠标%';"
     print(normalizer.extract_sql(query))
     gcases =[]
-    promptInfo = prompter.gen_sql_prompt_fewshots(gcases)
-    prompt_en = promptInfo['system']
+    sys_prompt, fewshots = prompter.gen_nl2sql_prompt(gcases)
+    prompt_en = sys_prompt
 
     cp = pcsv()
     rows = cp.read_csv('tests/sql_test.csv')

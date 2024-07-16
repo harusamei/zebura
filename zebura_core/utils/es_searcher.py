@@ -45,7 +45,7 @@ class ESearcher(ES_BASE):
         }
         # Execute the query
         return self.try_search(index, query)
-        
+
     def search_term(self,index, field, word, size=D_TOP_K):
         query = {
             "size": size,

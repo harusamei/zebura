@@ -19,8 +19,8 @@ class Scanner:
     def __init__(self):
         self.pcsv = pcsv()
         self.llm = LLMAgent()
-        self.table_keys = ["table_name", "desc", "desc_zh", "name_zh", "alias_zh", "alias", "columns"]
-        self.column_keys = ["column_name", "name_zh", "alias_zh", "alias","type", "length", "desc", "desc_zh"]
+        # self.table_keys = ["table_name", "desc", "desc_zh", "name_zh", "alias_zh", "alias", "columns"]
+        # self.column_keys = ["column_name", "name_zh", "alias_zh", "alias","type", "length", "desc", "desc_zh"]
         self.tableInfo = {}
         logging.debug("Scanner init success")
         
@@ -173,6 +173,7 @@ class Scanner:
             schema["tables"][0]["columns"].append({"column_name": field, "type": types[i]})
         
         return schema
+    
 
     @staticmethod
     def filter_empty(dict):

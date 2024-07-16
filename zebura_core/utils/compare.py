@@ -121,8 +121,8 @@ class similarity:
 # examples usage
 if __name__ == '__main__':
     sim = similarity()
-    temList = ['Price Tag']
-    gent = "Category"
+    temList = ['给我商品ID为“abcde”的产品的图片链接']
+    gent = "给我商品ID为“B0789LZTCJ”的产品的图片链接"
     for ref in temList:
         print(gent,ref)
         print(sim.getRouge(gent, ref))
