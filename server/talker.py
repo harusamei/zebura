@@ -7,11 +7,11 @@ import chainlit as cl
 import chainlit.data as cl_data
 from chainlit.types import ThreadDict
 from chainlit.data.sql_alchemy import SQLAlchemyDataLayer
-from talker_controller import Controller
+from msg_maker import make_a_req
+from controller import apply
 
 secret = subprocess.check_output(["chainlit", "create-secret"], text=True)
 os.environ["CHAINLIT_AUTH_SECRET"] = secret
-controller=Controller()
 user_name = 'postgres'
 pass_word = '123456'
 host = 'localhost'
@@ -38,22 +38,23 @@ def auth_callback(username: str):
 async def on_chat_resume(thread: ThreadDict):
     print("The user resumed a previous chat session!")
 
-
+@cl.on_chat_start
+def on_chat_start():
+    print(f"A new chat session has started! {cl.user_session.get('id')}")
+    cl.user_session.set("context", [])
 
 @cl.on_message
-async def main(message:cl.Message):
-    context=cl.user_session.get("context")
-    print("----获取内容----",context)
-    query={
-        "content":message.content,
-        "context":context,
-        "type":"user",#user/assistant/transition
-        "format":"text/md/sql...",#显示相关格式
-        "status":"new/processing/finished/failed",#任务状态
-    }
-    answer=asyncio.run(controller.apply(query))
+@cl.on_message
+async def main(message: cl.Message):
+    context = cl.user_session.get("context")
+    if context is None:
+        context=[]
+    request = make_a_req(message.content)
+    if len(context) > 1:
+        request['status'] = "hold"
+    resp = asyncio.run(apply(request))
+    answer = f"**ANSWER**:\n{resp['msg']} \n\n**NOTE**:\n{resp['note']} \n\n**STEP**:\n'暂无相关字段，后续添加'"
     await cl.Message(content=answer).send()
-
 
 if __name__ == "__main__":
     from chainlit.cli import run_chainlit

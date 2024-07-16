@@ -1,14 +1,26 @@
-# Welcome to Chainlit! 🚀🤖
+### 🚀 Talq小助手は、あなたの販売データと直接コミュニケーションが取れるスマートアシスタントです。まさにあなたの個人的な販売アシスタントです～ もう一つ一つコンピュータでメニューをたどってデータを確認する手間はありません！ 💻✨
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+### 📊 現在のデータセットには、Amazonの1465種類の製品が含まれており、主な情報は以下の通りです：
+            📦 製品情報
+    🆔 製品ID           ⭐ 評価
+    📝 製品名            📊 評価数
+    🏷️ カテゴリ          📋 製品紹介
+    💰 割引価格          👤 ユーザーID
+    💲 実際の価格        🙋 ユーザー名
+    💸 割引率           📝 評価者ID
+    📰 レビュータイトル   🗒️ レビューコンテンツ
+    🖼 画像リンク         🔗 製品リンク
 
-## Useful Links 🔗
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
+### 🔍 Talqに尋ねてみましょう：
 
-## Welcome screen
+       参考質問は以下の通りです：
+    1. 家庭とキッチンカテゴリーには何種類の製品がありますか？ 🏡🍴
+    2. 最も高価な3つのカテゴリーの製品をリストアップしてください。 💎💎💎
+    3. 家庭とキッチンカテゴリーに属するすべての最高価格商品をリストアップしてください。 🏡💎
+    4. 電動カッターセットの単価を調べてください。 🍲🔪
+    5. Iシリーズ 4K超高精細AndroidスマートLEDテレビの割引率を調べてください。 📺📉
+    6. 評価が4.5以上の製品をリストアップしてください。 ⭐⭐⭐⭐⭐
 
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+### 📈 Talq 小助手、あなたの販売データのクエリをより簡単にします！

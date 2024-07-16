@@ -24,8 +24,7 @@ async def main(message: cl.Message):
 
     resp = asyncio.run(apply(request))
     context.append(resp)
-
-    answer = f"ANSWER:\n{resp['msg']}"
+    answer = f"**ANSWER**:\n{resp['msg']} \n\n**NOTE**:\n{resp['note']} \n\n**STEP**:\n'暂无相关字段结果，后续添加'"
     cl.user_session.set("context", context)
     await cl.Message(content=answer).send()
 

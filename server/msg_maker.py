@@ -31,5 +31,6 @@ def make_a_req(content:str):
         "format": "text",
         "status": "new",
         "note": "",             # 补充，或出错类型
-        'hint': ''              # 提示信息
+        'hint': '',              # 当前步骤产生的提示信息
+        'step':''
     }

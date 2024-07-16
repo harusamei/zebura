@@ -9,7 +9,8 @@ import sys
 sys.path.insert(0, os.getcwd())
 from settings import z_config
 import logging
-from normalizer import Normalizer
+from zebura_core.query_parser.normalizer import Normalizer
+from zebura_core.query_parser.schema_linker import Sch_linking
 from zebura_core.case_retriever.study_cases import CaseStudy
 from zebura_core.LLM.prompt_loader import prompt_generator
 from zebura_core.constants import D_TOP_GOODCASES as topK
@@ -23,7 +24,7 @@ class Parser:
         self.gc = CaseStudy()
         self.prompter = prompt_generator()
         logging.debug("Parser init success")
-        
+
     # table_name None, 为多表查询
     # 主函数， 将query归一化为SQL
     async def apply(self, query, table_name=None) -> dict:
@@ -31,7 +32,7 @@ class Parser:
         # if table_name is None:
         #     print(f"parse.apply()-> all tables, query:{query}")
         # else:
-        #     print(f"parse.apply()-> table:{table_name}, query:{query}")     
+        #     print(f"parse.apply()-> table:{table_name}, query:{query}")
 
         resp = make_a_log("parse")
         # few shots from existed good cases
@@ -53,7 +54,7 @@ class Parser:
         if answ['status'] == "failed":
             resp['hint'] = answ.get('hint','')
         return resp
-   
+
     def find_good_cases(self,query,sql=None,topK=topK):
         # 从ES中获得候选 topK*1.5
         # {'doc':docs[id[0]], 'rank':i+1, 'score':id[1]}
@@ -71,7 +72,7 @@ class Parser:
             new_results.append(res['doc'])
         
         return new_results
-    
+
 # Example usage
 if __name__ == '__main__':
     import asyncio
