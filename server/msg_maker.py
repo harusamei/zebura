@@ -22,14 +22,14 @@ def make_a_log(funcName):
             'others': {},        # 当前步骤产生的次要信息
             'hint': ''           # 当前步骤产生的提示信息
         }
-
+# 用户请求和系统回复的结构定义
 def make_a_req(content:str):
     return {
-        "msg": content,         # 给用户的主信息
+        "msg": content,         # 用户query/assistant回复
         "context": [],
         "type": "user",
         "format": "text",
         "status": "new",
         "note": "",             # 补充，或出错类型
-        'hint': ''              # 当前步骤产生的提示信息
+        'hint': ''              # 提示信息
     }

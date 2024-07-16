@@ -35,18 +35,16 @@ class Parser:
 
         resp = make_a_log("parse")
         # few shots from existed good cases
-        # TODO: build amazon_gcases index
-        ##################
-        gcases = [] #self.find_good_cases(query,topK=topK)
+        gcases = self.find_good_cases(query,topK=topK)
         for case in gcases:
             if case.get('qemb'):
                 del case['qemb']
         #得到 system prompt, fewshots prompt
-        prompt = self.prompter.gen_sql_prompt_fewshots(gcases, table_name)
+        prompt,fewshots = self.prompter.gen_sql_prompt_fewshots(gcases)
      
         logging.info(f"parse.apply()-> table_name and query is {table_name} and {query}")
         # query to sql
-        answ = await self.norm.apply(query, prompt['system'],prompt['fewshots'])
+        answ = await self.norm.apply(query, prompt, fewshots)
         
         resp['msg'] = answ['msg']
         resp['status'] = answ['status']
@@ -60,9 +58,16 @@ class Parser:
         # 从ES中获得候选 topK*1.5
         # {'doc':docs[id[0]], 'rank':i+1, 'score':id[1]}
         results = self.gc.assemble_find(query,sql,int(topK*1.5))
-        # TODO 用score 过滤？rerank
+        threshold = 0.6
+        indx = -1
+        # > threshold之前的DOC，认为都满足
+        for i, res in enumerate(results):
+            if res['score'] > threshold:
+                indx = i
+        
+        indx = min(indx,topK-1)
         new_results = []
-        for res in results[:topK]:
+        for res in results[:indx+1]:
             new_results.append(res['doc'])
         
         return new_results
@@ -78,6 +83,6 @@ if __name__ == '__main__':
               ]
     table_name = 'product'
     parser = Parser()
-    for query in querys:
+    for query in querys[-2:]:
         result = asyncio.run(parser.apply(query))
         print(f"query:{query}\n{result['msg']}")
