@@ -104,8 +104,9 @@ class ESOps(ES_BASE):
             return True
         else:
             return False
-    # 查找相同doc, comp_fields字段的值相等则认为是同一文档: 
-    # 输出所以找到的docs
+        
+    # 查找相同doc, comp_fields， 字段列表， 列表中所有字段的值相等则认为是doc已经存在: 
+    # 输出所有找到的docs
     def exist_docs(self, index, doc, comp_fields) -> dict:
         # exists = self.es.exists(index=index_name, id=doc_id, filter_path=['_source'])
         if self.is_index_exist(index) == False:

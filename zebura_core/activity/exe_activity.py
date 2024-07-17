@@ -1,4 +1,4 @@
-# 执行活动
+# 查询用户数据库，执行SQL语句
 import sys
 import os
 sys.path.insert(0, os.getcwd().lower())
@@ -7,6 +7,7 @@ import pymysql
 import logging
 from tabulate import tabulate
 from server.msg_maker import make_a_log
+
 class ExeActivity:
     # db_type: 数据库类型，sch_loader: 项目的schema
     def __init__(self, sch_loader):
@@ -25,7 +26,7 @@ class ExeActivity:
 
         section = 'TrainingDB'
         host = z_config[section,'host']
-        port = int(z_config[section,'port'])
+        port = int(z_config[section,'port']) 
         user = z_config[section,'user']
         pwd  = z_config[section,'pwd']
 
@@ -41,11 +42,12 @@ class ExeActivity:
             return cnx
         else:
             raise ValueError(f"ERR_cursor: {type} not supported")
+        
 
-    def checkDB(self) -> str:  # failed, succ
+    def checkDB(self) ->str:  # failed, succ
         cursor = self.cnx.cursor()
         cursor.execute(f"SHOW DATABASES")
-
+        
         databases = [db['Database'] for db in cursor.fetchall()]
         # check if the database exists
         if self.db_name not in databases:
@@ -56,7 +58,7 @@ class ExeActivity:
 
     def exeSQL(self, sql):
 
-        answer = make_a_log("exeSQL")
+        answer= make_a_log("exeSQL")
         answer["format"] = "dict"
         try:
             cursor = self.cnx.cursor()
@@ -73,7 +75,7 @@ class ExeActivity:
             print(f"Error: {e}")
             answer["note"] = f"ERR_cursor, {e}"
             answer["status"] = "failed"
-
+            
         return answer
     
     @staticmethod
@@ -83,7 +85,7 @@ class ExeActivity:
     
 
 if __name__ == "__main__":
-    from zebura_core.knowledges.schema_loader import Loader
+    from knowledges.schema_loader import Loader
     cwd = os.getcwd()
     name = z_config['Training','db_schema']  # 'training\ikura\ikura_meta.json'
     sch_loader = Loader(os.path.join(cwd, name))

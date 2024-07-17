@@ -16,7 +16,7 @@ def connect():
         host='localhost',		# 主机名（或IP地址）
         port=3306,				# 端口号，默认为3306
         user='root',			# 用户名
-        password='123456',	# 密码
+        password='zebura',	# 密码
         charset='utf8mb4'  		# 设置字符编码
     )
     return cnx
@@ -44,7 +44,7 @@ def create_table(cnx, db_name, table_name, tb_struct,t_comment=''):
 
 # 生成构建DB的表结构，根据schema
 def gen_struct(table_name):
-
+    
     table_info = sch_loader.get_table_info(table_name)
     columns = table_info.get('columns')
     fields = []
@@ -95,7 +95,7 @@ def load_data(cnx, db_name, table_name, csv_path):
     fields_ty = {}
     for column in columns_info:
         fields_ty[column[0]] =column[1]
-
+   
     csv_reader  = pcsv()
     csv_path = os.path.join(os.getcwd(), 'dbaccess',csv_path)
     data = csv_reader.read_csv(csv_path)
@@ -105,13 +105,13 @@ def load_data(cnx, db_name, table_name, csv_path):
     vals = vals[:-2]
     #insert_query = f"INSERT INTO {table_name} (column1, column2, actual_price, discounted_price) VALUES (%s, %s, %s, %s)"
     insert_query = f"INSERT IGNORE INTO {table_name} ({fields}) VALUES ({vals})"
-
+    
     for i, row in enumerate(data):
         row = refine_data(fields_ty, row)
         values = tuple(row.values())
         print(i, values[0])
         insert_item(cursor, insert_query, values)
-
+        
     cnx.commit()
     cursor.close()
     return cnx
@@ -142,7 +142,7 @@ def test_query(cnx, db_name, query):
 def usecase():
     
     cnx = connect()
-    filePath = os.path.join(os.getcwd() , '../dbaccess/mysql/amazon_meta.json')
+    filePath = os.path.join(os.getcwd() , 'dbaccess/mysql/amazon_meta.json')
     load_schema(filePath)
     db_name = sch_loader.project
     create_db(cnx, db_name)
@@ -154,20 +154,21 @@ def usecase():
 
 # Example usage
 if __name__ == '__main__':
-    # cnx = connect()
-    # usecase()
 
-    # filePath = os.path.join(os.getcwd() , 'E:/zebura/dbaccess/mysql/amazon.csv')
+    #usecase()
+    cnx = connect()
+    # filePath = os.path.join(os.getcwd() , 'dbaccess/mysql/amazon.csv')
     # load_data(cnx, 'amazon', 'product', filePath)
-    #
+
     sql_queries =[  "SELECT about_product FROM product WHERE rating > 4",
-                    # "SELECT brand FROM product;",
-                    # "SELECT target_audience, service_description FROM products;",
-                    # "SELECT size, width, foldability FROM products;",
-                    # "SELECT product_name, screen_size, screen_type FROM products;"
+                    "SELECT brand FROM product;",
+                    "SELECT target_audience, service_description FROM products;",
+                    "SELECT size, width, foldability FROM products;",
+                    "SELECT product_name, screen_size, screen_type FROM products;"
                  ]
     db_name ='amazon'
     cnx = connect()
-    for query in sql_queries[:]:
+    for query in sql_queries[1:2]:
         print(f"Executing query: {query}")
         test_query(cnx, db_name,query)
+    

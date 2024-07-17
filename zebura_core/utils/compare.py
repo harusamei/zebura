@@ -45,17 +45,18 @@ class similarity:
                 avg_score += self.getMeteor(gen_sent, ref_sent)
 
         return avg_score/len(methods)
-
+    
+    # 只使用2元字符相似
     def getUpperSimil(self, gen_sent, ref_sent,n_gram=3, beta=2): 
         gen_sent = gen_sent.lower()
         ref_sent = ref_sent.lower() 
 
         score = 0
-        rouge = self.getRouge(gen_sent, ref_sent)[0]
-        score = max(score, rouge['rouge-1']['f'])
+        # rouge = self.getRouge(gen_sent, ref_sent)[0]
+        # score = max(score, rouge['rouge-1']['f'])
         chrf = self.getChrf(gen_sent, ref_sent, n_gram, beta)
         score = max(score, chrf)
-        score = max(score, self.getMeteor(gen_sent, ref_sent))
+        #score = max(score, self.getMeteor(gen_sent, ref_sent))
         return score
 
 
@@ -120,8 +121,8 @@ class similarity:
 # examples usage
 if __name__ == '__main__':
     sim = similarity()
-    temList = ['Price Tag']
-    gent = "Category"
+    temList = ['给我商品ID为“abcde”的产品的图片链接']
+    gent = "给我商品ID为“B0789LZTCJ”的产品的图片链接"
     for ref in temList:
         print(gent,ref)
         print(sim.getRouge(gent, ref))

@@ -29,11 +29,9 @@ def run_concurrent_processes(instance, items):
     return [1,2,3]
 
 if __name__ == "__main__":
-    instance = MyClass("example data")
-    items_to_process = ["item1", "item2", "item3"]
 
-    # 并发执行类的方法
-    results = run_concurrent_processes(instance, items_to_process)
-
-    for result in results:
-        print(result)
+    a = None
+    if a:
+        print("a is True")
+    else:
+        print("a is False")
