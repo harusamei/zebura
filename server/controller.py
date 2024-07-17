@@ -117,11 +117,9 @@ class Controller:
             return
     
         context = log['context']
-        for one_req in context[-3:]:
+        # 保留最近6轮的请求
+        for one_req in context[-6:]:
             msg = f"{one_req['type']}: {one_req.get('msg')}"
-            index = msg.find("Root Cause")
-            if index != -1:
-                msg = msg[:index]
             history.append(msg)
         
         history_context= "\n".join(history)
@@ -129,6 +127,12 @@ class Controller:
         tmpl = self.prompter.gen_rewrite_prompt()
         # TODO, prompt 写得有问题
         prompt = tmpl.format(history_context=history_context,query=query)
+
+        outFile = 'output.txt'
+        with open(outFile, 'a', encoding='utf-8') as f:
+            f.write(prompt)
+            f.write("\n----------------------------end\n")
+        
         result = await self.llm.ask_query(prompt,"")
         if "ERR" in result:
             new_Log['status'] = "failed"
@@ -143,14 +147,9 @@ class Controller:
         new_log['status'] = "failed"
         new_log['type']="reset"
 
-        rewritted = False
-        for log in pipeline:
-            if log['from'] == "rewrite":
-                rewritted = True
-                break
-        log = pipeline[0]
+        fromList =[log['from'] for log in pipeline]
         # 多轮且没有重写过
-        if rewritted is False and log['status'] == "hold":
+        if 'rewrite' not in fromList and pipeline[0]['status'] == "hold":
             new_log['from'] = "rewrite"  
             new_log['status'] = "succ"  
                     
@@ -160,6 +159,12 @@ class Controller:
          
         resp = pipeline.pop()
         resp['msg'] = f"{resp['msg']}\n\nNote:\n\n{resp['note']}"
+
+        # outFile = 'output.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     f.write(resp['msg'])
+        #     f.write("\n----------------------------end\n")
+
         return resp
     
              
@@ -191,7 +196,7 @@ class Controller:
         steps_info = ['Reasoning Steps:']
         for log in pipeline[1:]:
             if log['from'] in more:
-                steps_info.append(f"{log['from']}:{log['status']}\n{log['msg']}\n----\n")
+                steps_info.append(f"{log['from']}:{log['status']}\n{log['msg']}\n")
             else:
                 steps_info.append(f"{log['from']}:{log['status']}")
         # 只有走到polish才算成功

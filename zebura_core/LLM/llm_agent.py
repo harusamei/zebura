@@ -67,32 +67,6 @@ class LLMAgent(LLMBase):
             return f"ERR_llm, {e.args[0]}"
         
 
-    # # fewshots 单独时， shots是一个list，包含{user,assistant}
-    # async def ask_query(self,query:str, prompt:str,shots=None)->str:
-    #     logging.info(f"LLMAgent:ask_query() -> query: {query[:100]}, shots: {shots}")
-
-    #     if query is None or len(query) == 0:
-    #         return ""
-    #     messages = [{"role": "system", "content": prompt}]
-    #     if shots is not None:   # few shots 与 system prompt 分开
-    #         for shot in shots:
-    #             messages.append({"role": "user", "content": shot['user']})
-    #             messages.append({"role": "assistant", "content": shot['assistant']})
-    #     messages.append({"role": "user", "content": query}) 
-    #     #输出prompt 和 query check
-    #     cur_loglevel = logging.getLogger().getEffectiveLevel()
-    #     if cur_loglevel <=20:
-    #         outFile = 'message.txt'
-    #         with open(outFile, 'a', encoding='utf-8') as f:
-    #             for message in messages:
-    #                 f.write(f"{message['role']}: {message['content']}\n")
-    #             f.write("----------------------------end\n")
-    #     try:
-    #         answer = self.postMessage(messages)
-    #         return answer
-    #     except Exception as e:
-    #         return f"ERR_llm, {e.args[0]}"
-
 # Example usage  
 if __name__ == '__main__':
     from zebura_core.LLM.prompt_loader import prompt_generator

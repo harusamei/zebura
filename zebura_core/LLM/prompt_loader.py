@@ -73,7 +73,6 @@ class prompt_generator:
     def gen_rewrite_prompt(self) -> str:
         return self.tasks["rewrite"]
     
-    # full, lite
     def gen_nl2sql_prompt(self,gcases:list=[]) -> dict:
         tmpl = self.tasks["nl2sql"]
         dbSchema = self.get_dbSchema()
