@@ -38,10 +38,11 @@ class LLMBase:
                 }
         else:
             raise ValueError("No available LLM agents, please check the agentName")
-        try:
-            print(f"connect GPT through {agentName}\n Message for connection test:"+self.postMessage(messages))
-        except Exception as e:
-            raise ValueError("LLM agent is not available",e)
+        # try:
+        #     print(f"connect GPT through {agentName}\n Message for connection test:"+self.postMessage(messages))
+        # except Exception as e:
+        #     raise ValueError("LLM agent is not available",e)
+        print(f"connect GPT through {agentName}")
 
     # 不同的agent有不同的处理方式
     # 在OpenAI的GPT-3聊天模型中，`messages` 是一个列表，用于表示一系列的对话消息。

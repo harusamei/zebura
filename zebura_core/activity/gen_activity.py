@@ -81,7 +81,7 @@ class GenActivity:
         
         for cond in slots['conditions']:
             cond = cond.strip()
-            matched = re.search(r'(\S+)\s+(\S+)\s+(\S+)', cond)
+            matched = re.search(r'(\S+)\s+(\S+)\s+([\'"])(.+)\3', cond)
             if matched:
                 if '.' in matched.group(1):
                     pfx,col = matched.group(1).split('.')
@@ -89,7 +89,7 @@ class GenActivity:
                 else:
                     pfx =''
                     col = matched.group(1)
-                val = matched.group(3)
+                val = matched.group(4)
                 if virt_Info.get(col):
                     ori_col =virt_Info[col][0]
                     patn = virt_Info[col][1]
@@ -108,7 +108,7 @@ class GenActivity:
     def refine_sql(self, sql):
         tsql = sql.lower()
         # 加limit的情况
-        if 'limit' not in tsql and 'count' not in tsql:
+        if 'limit' not in tsql and 'count(' not in tsql:
             sql = sql.rstrip(";")
             sql = sql + f" LIMIT {k_limit};"
         # column 去重, 未考虑distince情况，不充分
@@ -123,7 +123,7 @@ class GenActivity:
             sql = sqlparse.format(sql,reindent=True, keyword_case='upper')
         return sql
    
-    # 主功能, 生成最终用于查询的SQL
+    # 主功能, 生成最终用于查询的executable SQL
     async def gen_activity(self, query, sql):
         # 生成SQL2DB的1个或多个SQL, 构成一个activity
         resp = make_a_log('gen_activity')

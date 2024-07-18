@@ -32,9 +32,9 @@ class Controller:
     st_matrix = {
             "(new,user)"        : "nl2sql",
             "(hold,user)"       : "nl2sql",
-            "(succ,nl2sql)"     : "sql_refine",
-            "(succ,sql_refine)"   : "sql4db",
-            "(failed,sql_refine)" : "end",      # send to user
+            "(succ,nl2sql)"     : "sql2exec",
+            "(succ,sql2exec)"   : "sql4db",
+            "(failed,sql2exec)" : "end",      # send to user
             "(failed,nl2sql)"   : "transit",    # reset action
             "(failed,transit)"  : "end",        # send to user
             "(succ,sql4db)"     : "polish",
@@ -79,6 +79,7 @@ class Controller:
             count += 1
         return self.matrix[curSt]
     
+    # 从NL生成初始SQL
     async def nl2sql(self, pipeline):
 
         log = pipeline[-1]
@@ -93,9 +94,10 @@ class Controller:
             new_Log['format'] = 'sql'
         pipeline.append(new_Log)
 
-    async def sql_refine(self,pipeline):
+    # 生成 executable sql
+    async def sql2exec(self,pipeline):
         log = pipeline[-1]
-        new_Log = make_a_log("sql_refine")
+        new_Log = make_a_log("sql2exec")
 
         query = pipeline[0]['msg']
         result = await self.act_maker.gen_activity(query, log['msg'])
@@ -128,10 +130,12 @@ class Controller:
         # TODO, prompt 写得有问题
         prompt = tmpl.format(history_context=history_context,query=query)
 
-        outFile = 'output.txt'
-        with open(outFile, 'a', encoding='utf-8') as f:
-            f.write(prompt)
-            f.write("\n----------------------------end\n")
+        # cur_loglevel = logging.getLogger().getEffectiveLevel()
+        # if cur_loglevel <=20:
+        #     outFile = 'debug_message.txt'
+        #     with open(outFile, 'a', encoding='utf-8') as f:
+        #         f.write(prompt)
+        #         f.write("\n----------------------------end\n")
         
         result = await self.llm.ask_query(prompt,"")
         if "ERR" in result:
@@ -167,8 +171,7 @@ class Controller:
 
         return resp
     
-             
-    # 查库
+    # 用excutable SQL 查库
     def sql4db(self,pipeline):
         log = pipeline[-1]
         new_Log = make_a_log("sql4db")
@@ -192,7 +195,7 @@ class Controller:
                 log['from'] = 'transit'         # 恢复之前状态机转移时的占用
 
         steps =[pipeline['from'] for pipeline in pipeline]
-        more =['nl2sql','rewrite','sql_refine']
+        more =['nl2sql','rewrite','sql2exec']
         steps_info = ['Reasoning Steps:']
         for log in pipeline[1:]:
             if log['from'] in more:
@@ -223,10 +226,10 @@ class Controller:
            new_Log['status'] = "failed"
         pipeline.append(new_Log)
 
+controller = Controller()
 # 主函数, assign tasks to different workers
 async def apply(request):
 
-    controller = Controller()
     pipeline = list()
     request['from'] = "user"
     pipeline.append(request)
@@ -243,7 +246,7 @@ async def apply(request):
     
 async def main():
     
-    request = {'msg': '列出所有属于家居与厨房类别的最贵商品。', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': 'Samsung Galaxy手机平均多少钱', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
