@@ -75,6 +75,7 @@ class Parser:
 # Example usage
 if __name__ == '__main__':
     import asyncio
+    import time
 
     querys = ['家居与厨房类别中有多少种产品','列出最贵的3个种类的产品。',
               '列出所有属于家居与厨房类别的最贵商品。','帮我查一下电动切菜机套装的单价。',
@@ -86,6 +87,9 @@ if __name__ == '__main__':
               ]
     table_name = 'product'
     parser = Parser()
+    start = time.time() 
+    
     for query in querys:
         result = asyncio.run(parser.apply(query))
         print(f"query:{query}\n{result['msg']}")
+    print(f"Time taken: {time.time()-start} seconds")

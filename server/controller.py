@@ -15,7 +15,7 @@ from zebura_core.activity.exe_activity import ExeActivity
 from zebura_core.activity.gen_activity import GenActivity
 
 from zebura_core.LLM.llm_agent import LLMAgent
-from msg_maker import (make_a_log,make_a_req)
+from server.msg_maker import (make_a_log,make_a_req)
 import json
 import re
 # 一个传递request的pipeline
