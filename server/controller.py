@@ -246,14 +246,14 @@ async def apply(request):
     
 async def main():
     
-    request = {'msg': 'Samsung Galaxy手机平均多少钱', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
+    request = {'msg': '帮我查一下智能手表的单价', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     #request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
     resp = await apply(request)
     print(resp['msg'])
     print(resp['note'])
     context.append(resp)
-    request1 = {'msg': '帮我查一下电动切菜机套装的单价。', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
+    request1 = {'msg': '帮我查一下电脑的单价', 'context': context, 'type': 'user', 'format': 'text', 'status': 'hold'}
     resp = await apply(request1)
     print(resp)
 

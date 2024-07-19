@@ -77,7 +77,8 @@ if __name__ == '__main__':
     import asyncio
     import time
 
-    querys = ['家居与厨房类别中有多少种产品','列出最贵的3个种类的产品。',
+    querys = ['查一下价格在500元左右的Sumsang手机','查一下价格在5000元左右的联想笔记本',
+              '家居与厨房类别中有多少种产品','列出最贵的3个种类的产品。',
               '列出所有属于家居与厨房类别的最贵商品。','帮我查一下电动切菜机套装的单价。',
               '帮我查一下I 系列 4K 超高清安卓智能 LED 电视的折扣率。','列出评分高于4.5的产品。',
               '目前有哪些电子产品的折扣价格低于500元？','评分在4.5以上的产品有哪些？找出其中最高的不超过5个',
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     parser = Parser()
     start = time.time() 
     
-    for query in querys:
+    for query in querys[0:2]:
         result = asyncio.run(parser.apply(query))
         print(f"query:{query}\n{result['msg']}")
     print(f"Time taken: {time.time()-start} seconds")
