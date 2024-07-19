@@ -1,3 +1,7 @@
+################
+# 包装为 FastAPI 服务
+# 用 urvicorn fastapi_run:app --reload，  reload 选项可以让服务器在代码修改后自动重启
+#######################
 from fastapi import FastAPI
 from server.controller import apply
 
