@@ -46,16 +46,16 @@ def on_chat_start():
 @cl.on_message
 async def main(message: cl.Message):
     context = cl.user_session.get("context")
+    if context is None:
+        context=[]
     request = make_a_req(message.content)
-    request['context'] = context    
     if len(context) > 1:
         request['status'] = "hold"
-
     resp = asyncio.run(apply(request))
-    context.append(request)
-    context.append(resp)
-    answer = f"**ANSWER**:\n{resp['msg']}"
-    cl.user_session.set("context", context)
+    start_index = resp['msg'].find('Note:')
+    if start_index != -1:
+        resp['msg'] = resp['msg'][:start_index]
+    answer = f"**ANSWER**:\n{resp['msg']} \n\n**NOTE**:\n{resp['note']} \n\n**STEP**:\n{resp['step']}"
     await cl.Message(content=answer).send()
 
 if __name__ == "__main__":

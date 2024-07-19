@@ -14,23 +14,23 @@
 def make_a_log(funcName):
         return {
             'msg': '',          # 当前步骤产生的主要信息
-            'note': '',         # 记录出错类型, 格式 ERR_TAGS , details
+            'note': '',         # 记录出错类型
             'status': 'succ',
-            'from': funcName,    # 当前模块
+            'from': funcName,    # 当前完成的模块
             'type': 'transaction',
             'format': 'text',
             'others': {},        # 当前步骤产生的次要信息
             'hint': ''           # 当前步骤产生的提示信息
         }
-# 用户请求和系统回复的结构定义
+
 def make_a_req(content:str):
     return {
-        "msg": content,         # 用户query/assistant回复
+        "msg": content,
         "context": [],
         "type": "user",
         "format": "text",
         "status": "new",
-        "note": "",             # 补充，或出错类型
-        'hint': '',              # 当前步骤产生的提示信息
+        "note": "",
+        'hint': '',
         'step':''
     }

@@ -1,24 +1,27 @@
-### 🌟 Welcome to Talq Assistant! This product allows you to interact directly with your sales data, just like having your personal sales assistant. Easily inquire about sales details without navigating through cumbersome computer menus.
+# Talq: Communicate with Data Using Natural Language
 
-### 📊 The current dataset includes 1465 products from Amazon, with key information as follows:
-            📦 Product Information
-    🆔 Product ID          ⭐ Rating
-    📝 Product Name        📊 Rating Count
-    🏷️ Category            📋 Description
-    💰 Discounted Price    👤 User ID
-    💲 Actual Price        🙋‍♂️ Username
-    💸 Discount Percentage 📝 Reviewer ID
-    📰 Review Title        🗒️ Review Content
-    🖼️ Image Link          🔗 Product Link
+**Talq** is a tool for effortlessly querying and analyzing your data using natural language!
 
-### 🔍 Ask Little T:
+##  Demo Dataset
 
-        Consider the following queries:
-    1.How many products are there in the Home & Kitchen category?
-    2.List the top 3 most expensive product categories.
-    3.List all the most expensive products belonging to the Home & Kitchen category.
-    4.Please find the unit price of the electric vegetable slicer set.
-    5.Please find the discount percentage for the I Series 4K Ultra HD Android Smart LED TV.
-    6.List products with a rating higher than 4.5.
+Below is a demo dataset containing information about 1465 products:
+#### Products Table
 
-### 📈 Talq Assistant, making your sales data queries easier than ever!
+| Field Name | Field Name | Field Name | Field Name |
+|------------|------------|------------|------------|
+| Product ID | ⭐ Rating | 🏷️ Category | 📋 Description |
+| 📝 Product Name	 | 📊 Rating Count | 💰 Discount Price | 👤User ID |
+| 💲Actual Price | 🙋‍♂️  Username | 💸 Discount Percentage | 📝 Reviewer ID |
+| 📰 Review Title | 🗒️ Review Content | 🖼️ Image Link | 🔗 Product Link |
+
+### 📈 With Talq assistant, complex sales queries and analyses are just a chat away. Give it a try!
+
+### 🔍 Feel free to ask Talq:
+
+   1. How many different product categories are there?
+   2. Which category has the highest average discount rate?
+   3. What electronic products currently have discount prices below 500 yuan?
+   4. Which products have ratings above 4.5? List the top 5 highest rated.
+   5. How many fans products have ratings, and what is their average rating?
+   6. I'd like to see user reviews for the product with ID B09RFB2SJQ.
+

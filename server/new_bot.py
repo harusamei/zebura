@@ -1,6 +1,3 @@
-# created by Mengyao
-# 用于测试核心代码的界面
-######################################################
 import chainlit as cl
 import asyncio
 from controller import apply
@@ -16,14 +13,15 @@ def on_chat_start():
 async def main(message: cl.Message):
     context = cl.user_session.get("context")
     request = make_a_req(message.content)
+    context.append(request)
+
     request['context'] = context    
     if len(context) > 1:
         request['status'] = "hold"
 
     resp = asyncio.run(apply(request))
-    context.append(request)
     context.append(resp)
-    answer = f"**ANSWER**:\n{resp['msg']}"
+    answer = f"**ANSWER**:\n{resp['msg']} \n\n**NOTE**:\n{resp['note']} \n\n**STEP**:\n'暂无相关字段结果，后续添加'"
     cl.user_session.set("context", context)
     await cl.Message(content=answer).send()
 

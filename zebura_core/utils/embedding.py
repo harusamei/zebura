@@ -7,9 +7,9 @@ class Embedding:
     # dmeta, bge
     def __init__(self, model_name='dmeta'):
         if model_name == 'dmeta':
-            model_name = 'C:/something/transformer/DMetaSoul-embedding'  # 这里是你的模型路径
+            model_name = './transformer/DMetaSoul-embedding'  # 这里是你的模型路径
         else:
-            model_name = 'C:/something/transformer/bge-base-zh-v1.5'
+            model_name = './transformer/bge-base-zh-v1.5'
         self.model = SentenceTransformer(model_name)
 
     def get_embedding(self, texts):
