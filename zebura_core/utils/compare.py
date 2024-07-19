@@ -4,36 +4,37 @@ from nltk.translate import meteor
 import re
 import difflib
 
+
 class diffence:
 
     def __init__(self):
         self.differ = difflib.Differ()
 
     @staticmethod
-    def getLCS(s1, s2):   #longest common subsequence
+    def getLCS(s1, s2):  # longest common subsequence
 
         match = difflib.SequenceMatcher(None, s1, s2).find_longest_match(0, len(s1), 0, len(s2))
         return s1[match.a: match.a + match.size]
+
     @staticmethod
     def getClosedMatch(gent, candidates):
-
         return difflib.get_close_matches(gent, candidates)
-    
+
     # '-'开头的行表示在s1中存在但在s2中不存在的元素，
     # '+'开头的行表示在s2中存在但在s1中不存在的元素，
     # ' '开头的行表示在两个序列中都存在的元素
-    def find_difference(self,s1, s2):
-        
+    def find_difference(self, s1, s2):
         diff = self.differ.compare(s1, s2)
         return '\n'.join(diff)
+
 
 class similarity:
 
     def __init__(self):
         self.rouge = Rouge()
 
-    def getSimilarity(self, gen_sent, ref_sent, methods=['rouge','chrf','meteor'], n_gram=2, beta=2):
-        
+    def getSimilarity(self, gen_sent, ref_sent, methods=['rouge', 'chrf', 'meteor'], n_gram=2, beta=2):
+
         avg_score = 0
         for method in methods:
             if method == 'rouge':
@@ -44,20 +45,20 @@ class similarity:
             elif method == 'meteor':
                 avg_score += self.getMeteor(gen_sent, ref_sent)
 
-        return avg_score/len(methods)
+        return avg_score / len(methods)
 
-    def getUpperSimil(self, gen_sent, ref_sent,n_gram=3, beta=2): 
+    # 只使用2元字符相似
+    def getUpperSimil(self, gen_sent, ref_sent, n_gram=3, beta=2):
         gen_sent = gen_sent.lower()
-        ref_sent = ref_sent.lower() 
+        ref_sent = ref_sent.lower()
 
         score = 0
-        rouge = self.getRouge(gen_sent, ref_sent)[0]
-        score = max(score, rouge['rouge-1']['f'])
+        # rouge = self.getRouge(gen_sent, ref_sent)[0]
+        # score = max(score, rouge['rouge-1']['f'])
         chrf = self.getChrf(gen_sent, ref_sent, n_gram, beta)
         score = max(score, chrf)
-        score = max(score, self.getMeteor(gen_sent, ref_sent))
+        # score = max(score, self.getMeteor(gen_sent, ref_sent))
         return score
-
 
     def getRouge(self, gen_sent, ref_sent):
         """
@@ -70,7 +71,7 @@ class similarity:
         """
         gen_sent = self.dealData(gen_sent)
         ref_sent = self.dealData(ref_sent)
-        return self.rouge.get_scores(gen_sent,ref_sent)
+        return self.rouge.get_scores(gen_sent, ref_sent)
 
     def getChrf(self, gen_sent, ref_sent, n_gram=2, beta=2):
         """
@@ -81,20 +82,20 @@ class similarity:
         gen_sent = self.dealData(gen_sent)
         ref_sent = self.dealData(ref_sent)
         precision, recall, fscore, tp = chrf_precision_recall_fscore_support(
-                ref_sent, gen_sent, n=n_gram, epsilon=0., beta=beta
-            )
+            ref_sent, gen_sent, n=n_gram, epsilon=0., beta=beta
+        )
         return fscore
-    
-    def getMeteor(self,gen_sent, ref_sent, alpha=0.9, beta=3.0,
-                gamma=0.5):  # gamma=0可使两个一样的句子得分为1
+
+    def getMeteor(self, gen_sent, ref_sent, alpha=0.9, beta=3.0,
+                  gamma=0.5):  # gamma=0可使两个一样的句子得分为1
         '''
         计算meteor分数
         对于两个一样的句子，默认情况下gamma!=0，Meteor得分接近但不为1
-        '''  
+        '''
         gen_sent = self.dealData(gen_sent)
         ref_sent = self.dealData(ref_sent)
-        return meteor([ref_sent.split()],gen_sent.split(),alpha=alpha, beta=beta, gamma=gamma)
-    
+        return meteor([ref_sent.split()], gen_sent.split(), alpha=alpha, beta=beta, gamma=gamma)
+
     @staticmethod
     def dealData(sent):  # 简单切分
         lang = 'en'
@@ -105,11 +106,11 @@ class similarity:
             sent = " ".join(sent)
         if lang == 'en':
             sent = re.sub(r"([a-z])([A-Z])", r"\1 \2", sent)
-            sent = sent.replace('_',' ')
-            sent = re.sub(' +', ' ',sent)
+            sent = sent.replace('_', ' ')
+            sent = re.sub(' +', ' ', sent)
             sent = sent.lower()
         return sent
-    
+
     @staticmethod
     def getLang(sent):
         lang = 'en'
@@ -117,13 +118,14 @@ class similarity:
             lang = 'zh'
         return lang
 
+
 # examples usage
 if __name__ == '__main__':
     sim = similarity()
-    temList = ['Price Tag']
-    gent = "Category"
+    temList = ['给我商品ID为“abcde”的产品的图片链接']
+    gent = "给我商品ID为“B0789LZTCJ”的产品的图片链接"
     for ref in temList:
-        print(gent,ref)
+        print(gent, ref)
         print(sim.getRouge(gent, ref))
         print(sim.getChrf(gent, ref))
         print(sim.getMeteor(gent, ref))

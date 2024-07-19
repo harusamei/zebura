@@ -5,108 +5,108 @@
                 "userButton": {
                     "menu": {
                         "settings": "设置",
-                        "settingsKey": "S",
+                        "settingsKey": "",
                         "APIKeys": "API Keys",
-                        "logout": "Logout"
+                        "logout": "退出登录"
                     }
                 }
             }
         },
         "molecules": {
             "newChatButton": {
-                "newChat": "New Chat"
+                "newChat": "新建对话"
             },
             "tasklist": {
                 "TaskList": {
-                    "title": "\ud83d\uddd2\ufe0f Task List",
-                    "loading": "Loading...",
-                    "error": "An error occured"
+                    "title": "任务列表",
+                    "loading": "加载中...",
+                    "error": "发生错误"
                 }
             },
             "attachments": {
-                "cancelUpload": "Cancel upload",
-                "removeAttachment": "Remove attachment"
+                "cancelUpload": "取消上传",
+                "removeAttachment": "删除上传附件"
             },
             "newChatDialog": {
-                "createNewChat": "Create new chat?",
-                "clearChat": "This will clear the current messages and start a new chat.",
-                "cancel": "Cancel",
-                "confirm": "Confirm"
+                "createNewChat": "创建新聊天?",
+                "clearChat": "删除当前对话窗口并创建新聊天",
+                "cancel": "取消",
+                "confirm": "确认"
             },
             "settingsModal": {
-                "settings": "Settings",
-                "expandMessages": "Expand Messages",
-                "hideChainOfThought": "Hide Chain of Thought",
-                "darkMode": "Dark Mode"
+                "settings": "设置",
+                "expandMessages": "展开信息",
+                "hideChainOfThought": "取消推理",
+                "darkMode": "夜间模式"
             },
             "detailsButton": {
-                "using": "Using",
-                "running": "Running",
-                "took_one": "Took {{count}} step",
-                "took_other": "Took {{count}} steps"
+                "using": "使用中",
+                "running": "正在运行",
+                "took_one": "运行 {{count}} 步",
+                "took_other": "已运行 {{count}} 步"
             },
             "auth": {
                 "authLogin": {
-                    "title": "Login to access the app.",
+                    "title": "登录",
                     "form": {
-                        "email": "Email address",
-                        "password": "Password",
-                        "noAccount": "Don't have an account?",
-                        "alreadyHaveAccount": "Already have an account?",
-                        "signup": "Sign Up",
-                        "signin": "Sign In",
-                        "or": "OR",
-                        "continue": "Continue",
-                        "forgotPassword": "Forgot password?",
-                        "passwordMustContain": "Your password must contain:",
-                        "emailRequired": "email is a required field",
-                        "passwordRequired": "password is a required field"
+                        "email": "用户名",
+                        "password": "密码",
+                        "noAccount": "没有账号?",
+                        "alreadyHaveAccount": "已有账号?",
+                        "signup": "注册",
+                        "signin": "登录",
+                        "or": "或",
+                        "continue": "继续",
+                        "forgotPassword": "忘记密码?",
+                        "passwordMustContain": "密码必须包含:",
+                        "emailRequired": "用户名必填",
+                        "passwordRequired": "密码必填"
                     },
                     "error": {
-                        "default": "Unable to sign in.",
-                        "signin": "Try signing in with a different account.",
-                        "oauthsignin": "Try signing in with a different account.",
-                        "redirect_uri_mismatch": "The redirect URI is not matching the oauth app configuration.",
-                        "oauthcallbackerror": "Try signing in with a different account.",
-                        "oauthcreateaccount": "Try signing in with a different account.",
-                        "emailcreateaccount": "Try signing in with a different account.",
-                        "callback": "Try signing in with a different account.",
-                        "oauthaccountnotlinked": "To confirm your identity, sign in with the same account you used originally.",
-                        "emailsignin": "The e-mail could not be sent.",
-                        "emailverify": "Please verify your email, a new email has been sent.",
-                        "credentialssignin": "Sign in failed. Check the details you provided are correct.",
-                        "sessionrequired": "Please sign in to access this page."
+                        "default": "无法登录",
+                        "signin": "请尝试用另一个账号登录",
+                        "oauthsignin": "请尝试用另一个账号登录",
+                        "redirect_uri_mismatch": "跳转链接与应用程序配置不匹配",
+                        "oauthcallbackerror": "请尝试用另一个账号登录",
+                        "oauthcreateaccount": "请尝试用另一个账号登录",
+                        "emailcreateaccount": "请尝试用另一个账号登录",
+                        "callback": "请尝试用另一个账号登录",
+                        "oauthaccountnotlinked": "为了确认您的身份，请您使用最初的帐户登录。",
+                        "emailsignin": "无法发送电子邮件。",
+                        "emailverify": "新的电子邮件已发送，请前往验证。",
+                        "credentialssignin": "登录失败，请检查您提供的详细信息是否正确。",
+                        "sessionrequired": "请登录进入"
                     }
                 },
                 "authVerifyEmail": {
-                    "almostThere": "You're almost there! We've sent an email to ",
-                    "verifyEmailLink": "Please click on the link in that email to complete your signup.",
-                    "didNotReceive": "Can't find the email?",
-                    "resendEmail": "Resend email",
-                    "goBack": "Go Back",
-                    "emailSent": "Email sent successfully.",
-                    "verifyEmail": "Verify your email address"
+                    "almostThere": "已经发送电子邮件给",
+                    "verifyEmailLink": "请点击邮件中的链接完成注册",
+                    "didNotReceive": "未找到邮件？",
+                    "resendEmail": "重新发送",
+                    "goBack": "返回",
+                    "emailSent": "邮件发送成功",
+                    "verifyEmail": "确认您的电子邮件地址"
                 },
                 "providerButton": {
-                    "continue": "Continue with {{provider}}",
-                    "signup": "Sign up with {{provider}}"
+                    "continue": "继续使用 {{provider}}",
+                    "signup": "用 {{provider}} 注册"
                 },
                 "authResetPassword": {
-                    "newPasswordRequired": "New password is a required field",
-                    "passwordsMustMatch": "Passwords must match",
-                    "confirmPasswordRequired": "Confirm password is a required field",
-                    "newPassword": "New password",
-                    "confirmPassword": "Confirm password",
-                    "resetPassword": "Reset Password"
+                    "newPasswordRequired": "新密码必填",
+                    "passwordsMustMatch": "密码必须匹配",
+                    "confirmPasswordRequired": "确认密码必填",
+                    "newPassword": "新密码",
+                    "confirmPassword": "确认密码",
+                    "resetPassword": "重置密码"
                 },
                 "authForgotPassword": {
-                    "email": "Email address",
-                    "emailRequired": "email is a required field",
-                    "emailSent": "Please check the email address {{email}} for instructions to reset your password.",
-                    "enterEmail": "Enter your email address and we will send you instructions to reset your password.",
-                    "resendEmail": "Resend email",
-                    "continue": "Continue",
-                    "goBack": "Go Back"
+                    "email": "邮箱地址",
+                    "emailRequired": "邮箱地址必填",
+                    "emailSent": "请检查电子邮件地址{{ email }}是否获得重置密码的邮件",
+                    "enterEmail": "输入您的电子邮件地址，我们将重新发送邮件以重置您的密码。",
+                    "resendEmail": "重新发送邮件",
+                    "continue": "继续",
+                    "goBack": "返回"
                 }
             }
         },
@@ -114,118 +114,118 @@
             "chat": {
                 "history": {
                     "index": {
-                        "showHistory": "Show history",
-                        "lastInputs": "Last Inputs",
-                        "noInputs": "Such empty...",
-                        "loading": "Loading..."
+                        "showHistory": "历史记录",
+                        "lastInputs": "历史输入",
+                        "noInputs": "空空如也...",
+                        "loading": "加载中..."
                     }
                 },
                 "inputBox": {
                     "input": {
-                        "placeholder": "Type your message here..."
+                        "placeholder": "在此处输入您想了解的内容......"
                     },
                     "speechButton": {
-                        "start": "Start recording",
-                        "stop": "Stop recording"
+                        "start": "开始输出",
+                        "stop": "停止输出"
                     },
                     "SubmitButton": {
-                        "sendMessage": "Send message",
-                        "stopTask": "Stop Task"
+                        "sendMessage": "发送",
+                        "stopTask": "停止输出"
                     },
                     "UploadButton": {
-                        "attachFiles": "Attach files"
+                        "attachFiles": "上传文件"
                     },
                     "waterMark": {
-                        "text": "Built with"
+                        "text": "最终解释权归"
                     }
                 },
                 "Messages": {
                     "index": {
-                        "running": "Running",
-                        "executedSuccessfully": "executed successfully",
-                        "failed": "failed",
-                        "feedbackUpdated": "Feedback updated",
-                        "updating": "Updating"
+                        "running": "运行中",
+                        "executedSuccessfully": "执行成功",
+                        "failed": "失败",
+                        "feedbackUpdated": "更新反馈",
+                        "updating": "更新"
                     }
                 },
                 "dropScreen": {
-                    "dropYourFilesHere": "Drop your files here"
+                    "dropYourFilesHere": "拖动文件至此处"
                 },
                 "index": {
-                    "failedToUpload": "Failed to upload",
-                    "cancelledUploadOf": "Cancelled upload of",
-                    "couldNotReachServer": "Could not reach the server",
-                    "continuingChat": "Continuing previous chat"
+                    "failedToUpload": "上传失败",
+                    "cancelledUploadOf": "取消上传",
+                    "couldNotReachServer": "继续上次聊天",
+                    "continuingChat": "继续当前聊天"
                 },
                 "settings": {
-                    "settingsPanel": "Settings panel",
-                    "reset": "Reset",
-                    "cancel": "Cancel",
-                    "confirm": "Confirm"
+                    "settingsPanel": "设置面板",
+                    "reset": "重置",
+                    "cancel": "取消",
+                    "confirm": "确认"
                 }
             },
             "threadHistory": {
                 "sidebar": {
                     "filters": {
                         "FeedbackSelect": {
-                            "feedbackAll": "Feedback: All",
-                            "feedbackPositive": "Feedback: Positive",
-                            "feedbackNegative": "Feedback: Negative"
+                            "feedbackAll": "全部",
+                            "feedbackPositive": "有帮助",
+                            "feedbackNegative": "没帮助"
                         },
                         "SearchBar": {
-                            "search": "Search"
+                            "search": "搜索"
                         }
                     },
                     "DeleteThreadButton": {
-                        "confirmMessage": "This will delete the thread as well as it's messages and elements.",
-                        "cancel": "Cancel",
-                        "confirm": "Confirm",
-                        "deletingChat": "Deleting chat",
-                        "chatDeleted": "Chat deleted"
+                        "confirmMessage": "删除当前聊天框",
+                        "cancel": "取消",
+                        "confirm": "确认",
+                        "deletingChat": "删除聊天",
+                        "chatDeleted": "聊天已删除"
                     },
                     "index": {
-                        "pastChats": "Past Chats"
+                        "pastChats": "历史记录"
                     },
                     "ThreadList": {
-                        "empty": "Empty...",
-                        "today": "Today",
-                        "yesterday": "Yesterday",
-                        "previous7days": "Previous 7 days",
-                        "previous30days": "Previous 30 days"
+                        "empty": "空空如也...",
+                        "today": "今日",
+                        "yesterday": "昨天",
+                        "previous7days": "上一周",
+                        "previous30days": "上月"
                     },
                     "TriggerButton": {
-                        "closeSidebar": "Close sidebar",
-                        "openSidebar": "Open sidebar"
+                        "closeSidebar": "关闭侧边栏",
+                        "openSidebar": "打开侧边栏"
                     }
                 },
                 "Thread": {
-                    "backToChat": "Go back to chat",
-                    "chatCreatedOn": "This chat was created on"
+                    "backToChat": "前往新聊天框",
+                    "chatCreatedOn": "当前聊天框创建于"
                 }
             },
             "header": {
-                "chat": "Chat",
-                "readme": "Readme"
+                "chat": "聊天框",
+                "readme": "首页"
             }
         }
     },
     "hooks": {
         "useLLMProviders": {
-            "failedToFetchProviders": "Failed to fetch providers:"
+            "failedToFetchProviders": "未能获取当前账号平台:"
         }
     },
     "pages": {
         "Design": {},
         "Env": {
-            "savedSuccessfully": "Saved successfully",
-            "requiredApiKeys": "Required API Keys",
-            "requiredApiKeysInfo": "To use this app, the following API keys are required. The keys are stored on your device's local storage."
+            "savedSuccessfully": "保存成功",
+            "requiredApiKeys": "API密钥必填",
+            "requiredApiKeysInfo": "使用TALQ,需要API密钥"
         },
         "Page": {
-            "notPartOfProject": "You are not part of this project."
+            "notPartOfProject": "不在当前页面中"
         },
         "ResumeButton": {
-            "resumeChat": "Resume Chat"
+            "resumeChat": "继续聊天"
         }
     }
 }

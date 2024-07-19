@@ -20,7 +20,7 @@ class ES_BASE:
             pwd = z_config['Eleasticsearch', 'pwd']
             self.es = Elasticsearch(
                 "https://"+host+":"+str(port),
-                ca_certs="D:/zebura/certs/http_ca.crt",
+                ca_certs="./zebura/certs/http_ca.crt",
                 basic_auth=(user, pwd)
             )
         else:
@@ -86,5 +86,6 @@ class ES_BASE:
 if __name__ == '__main__':
 
     es = ES_BASE()
+    print(es.get_all_indices())
     index_name ="leproducts"
     es.is_fields_exist(index_name, ['brand','price','desc_uk'])
