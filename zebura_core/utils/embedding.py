@@ -1,16 +1,25 @@
 from sentence_transformers import SentenceTransformer
 import time
+import os
+import sys
+sys.path.insert(0, os.getcwd())
+from settings import z_config
+
 class Embedding:
     # 这个是北京数元灵科技有限公司开源的语义向量模型，在中文 STS上当时榜单TOP1
     # 首次使用通过默认model_name安装在C:\Users\<Your Username>\.cache
     # 智源的BGE模型在https://www.modelscope.cn 有，不需要翻墙
     # dmeta, bge
-    def __init__(self, model_name='dmeta'):
-        if model_name == 'dmeta':
-            model_name = './transformer/DMetaSoul-embedding'  # 这里是你的模型路径
-        else:
-            model_name = './transformer/bge-base-zh-v1.5'
-        self.model = SentenceTransformer(model_name)
+    def __init__(self):
+
+        cwd = os.getcwd()
+        embPath = z_config['Embedding','EmbPath']
+        embPath = os.path.join(cwd, embPath)
+        # if model_name == 'dmeta':
+        #     model_name = './transformer/DMetaSoul-embedding'  # 这里是你的模型路径
+        # else:
+        #     model_name = './transformer/bge-base-zh-v1.5'
+        self.model = SentenceTransformer(embPath)
 
     def get_embedding(self, texts):
         embs = self.model.encode(texts, normalize_embeddings=True)
