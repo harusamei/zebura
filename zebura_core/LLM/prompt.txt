@@ -1,5 +1,6 @@
 # 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
 # ignore #开头的行
+# !NOTE: taskname, output格式如有修改，需同步修改ans_extractor.py
 
 <TASK: rewrite>
 # 将多轮对话，重写为一条查询语句
@@ -27,7 +28,7 @@ user: {query}
 Refined Standalone Question:
 </TASK>
 
-<TASK: nl2sql_classic>
+<TASK: nl2sql>
 You are a programming assistant, and your task is to convert user’s natural language questions into executable SQL queries. 
 Given the database schema structures, including table names, column names and their data types, and the relationships between tables (foreign keys), for the following user input question, you need to:
 1. Language Parsing:
@@ -39,7 +40,7 @@ Given the database schema structures, including table names, column names and th
 3. Handle edge cases or bad cases:
 - Handle edge cases, such as ambiguous or incomplete questions, by providing the best possible SQL guess or requesting clarification.
 - Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
-
+======================
 Example of two kinds of output formats:
 1. if the input question can be converted into SQL:
    ```sql
@@ -49,11 +50,11 @@ Example of two kinds of output formats:
    ```
 2. if the input question cannot be converted into SQL:
    NOSQL
-   Suggestions: Please provide more specific details for the query.
-
+   Suggestions: XXX
+======================
 Database schema structures:
 {dbSchema}
-
+======================
 </TASK>
 
 <TASK: term_expansion>

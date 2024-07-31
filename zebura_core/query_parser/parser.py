@@ -42,7 +42,7 @@ class Parser:
             if case.get('qemb'):
                 del case['qemb']
         # 得到 system prompt, fewshots prompt
-        prompt, fewshots = self.prompter.gen_nl2sql_prompt(gcases)
+        prompt, fewshots = self.prompter.gen_prompt('nl2sql',gcases)
 
         logging.info(f"parse.apply()-> table_name and query is {table_name} and {query}")
         # query to sql

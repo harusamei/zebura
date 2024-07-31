@@ -14,6 +14,7 @@ from zebura_core.LLM.llm_agent import LLMAgent
 from server.msg_maker import make_a_log
 from zebura_core.constants import D_SELECT_LIMIT as k_limit
 from zebura_core.LLM.prompt_loader import prompt_generator
+from zebura_core.LLM.ans_extractor import AnsExtractor
 from zebura_core.activity.sql_checker import CheckSQL
 import sqlparse
 
@@ -62,6 +63,8 @@ class GenActivity:
 
         self.checker = CheckSQL(self.cnx, self.db_name, self.sch_loader)
         self.prompter = prompt_generator()
+        self.ans_extr = AnsExtractor()
+
         self.db_struct = self.prompter.get_dbSchema()
         self.llm = LLMAgent()
         logging.info("GenActivity init done")
@@ -322,19 +325,16 @@ class GenActivity:
         query = tmpl.format(dbSchema=db_struct, ori_sql=orisql, err_msgs=errmsg)
         result = await self.llm.ask_query(query, '')
 
-        patn = "```sql\n(.*?)\n```"
-        matches = re.findall(patn, result, re.DOTALL | re.IGNORECASE)
-        new_sql = None
-        msg = ''
-        if matches:
-            new_sql = matches[0]
+        parsed = self.ans_extr.output_extr('sql_revise',result)
+        new_sql = parsed['msg']
+        msg = new_sql
+        if parsed['status'] == 'succ':
             for hint in hints:
                 if 'Value Issues' in hint:
                     msg += hint + '\n'
         else:
             new_sql = None
-            msg = "SQL revise failed, please check the error messages."
-
+            msg = "ERR: revise failed. "+ msg
         return new_sql, msg
 
     # 由slots生成SQL,不完善
@@ -368,37 +368,6 @@ class GenActivity:
             str_where += f"{cond} "
         return tmpl.format(str_select=str_select, str_from=str_from, str_where=str_where)
 
-    # 解析term_expansion from LLM's answer
-    def parse_expansion(self, llm_answer) -> dict:
-        if 'ERR' in llm_answer:
-            return None
-
-        tlist = llm_answer.split('\n')
-        tem_dic = {}
-        # LLM 存在格式问题，## 代表非对应到keyword的部分
-        kword = '##'
-        tem_dic[kword] = ''
-        for temstr in tlist:
-            if '[Keyword:' in temstr:
-                kword = temstr.split(':')[1]
-                kword = re.sub(r'\s*]\s*', '', kword).strip()
-                tem_dic[kword] = ''
-            else:
-                temstr = re.sub(r'-.*:', '', temstr).strip()
-                tem_dic[kword] += temstr + '\n'
-        del tem_dic['##']
-
-        new_terms = {}
-        for k, v in tem_dic.items():
-            v = v.replace('OR', '\n')
-            v = v.replace('(', '\n')
-            v = v.replace(')', '\n')
-            v = re.sub('[ ]+', ' ', v)
-            v = re.sub(r'(\s*\n\s*)+', '\n', v)
-            v = v.strip()
-            new_terms[k] = list(set(v.split('\n')))
-        return new_terms
-
     # term expansion to refine the equations in Where
     async def refine_conds(self, all_check):
         conds_check = all_check['conds']
@@ -421,11 +390,13 @@ class GenActivity:
         query = ','.join(ni_words.keys())
         prompt = self.prompter.tasks['term_expansion']
         result = await self.llm.ask_query(query, prompt)
-        new_terms = self.parse_expansion(result)
-        if new_terms is None:
+        parsed = self.ans_extr.output_extr('term_expansion', result)
+        
+        if parsed['status'] == 'failed':
             conds_check['status'] == 'failed'
             return conds_check
-
+        
+        new_terms = parsed['msg']
         table = all_check['table'].keys()
         tname = ' '.join(table).replace('status', '')
         tname = tname.strip()
@@ -450,7 +421,7 @@ if __name__ == "__main__":
               ('请告诉我风扇的所有价格', 'SELECT actual_price, discounted_price FROM product WHERE category = "fan";'),
               ('查一下价格大于1000的产品', 'SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";'),
               ('列出品牌是电脑的产品名称', "SELECT product_name\nFROM product\nWHERE brand LIKE '%apple%';")]
-    for q, a in qalist[1:2]:
+    for q, a in qalist:
         resp = asyncio.run(gentor.gen_activity(q, a))
         print(f"query:{q}\nresp:{resp['msg']}")
 

@@ -1,39 +1,42 @@
+# 典型prompt, 分为三层， roles最基本对应自我认知， tasks 对应指令， details 对应细节， shots对应实例
 # 读取 prompt.txt中的指令模板，构建prompt
+############################################
 import os
 import sys
-
 sys.path.insert(0, os.getcwd())
 import re
 from settings import z_config
 import logging
 from zebura_core.knowledges.schema_loader import Loader
 
-
-# 典型prompt, 分为三层， roles最基本对应自我认知， tasks 对应指令， details 对应细节， shots对应实例
 # prompt 模板通过文件导入，默认文件为当前目录下prompt.txt
 class prompt_generator:
+    _is_initialized = False
 
     def __init__(self, prompt_file=None):
 
-        self.roles = {}
-        self.tasks = {}
-        self.db_structs = ""
-        self.set_defaults()
+        if not prompt_generator._is_initialized:
+            prompt_generator._is_initialized = True
+            self.tasks = {}
+            self.db_structs = ""
 
-        cwd = os.getcwd()
-        name = z_config['Training', 'db_schema']  # 'training\ikura\ikura_meta.json'
-        self.sch_loader = Loader(os.path.join(cwd, name))
-        name = z_config['Training', 'db_struct']  # 'training\ikura\ikura_db_structures.txt'
-        self.load_dbstruct(os.path.join(cwd, name))  # 读取数据库结构
+            cwd = os.getcwd()
+            name = z_config['Training', 'db_schema']  # 'training\ikura\ikura_meta.json'
+            self.sch_loader = Loader(os.path.join(cwd, name))
+            name = z_config['Training', 'db_struct']  # 'training\ikura\ikura_db_structures.txt'
+            self.load_dbstruct(os.path.join(cwd, name))  # 读取数据库结构
 
-        if prompt_file is None:
-            base = os.getcwd()
-            prompt_file = os.path.join(base, "zebura_core/LLM/prompt.txt")  # 自带模板文件
+            if prompt_file is None:
+                base = os.getcwd()
+                prompt_file = os.path.join(base, "zebura_core/LLM/prompt.txt")  # 自带模板文件
 
-        if self.load_prompt(prompt_file):
-            logging.debug("prompt_generator init success")
-        else:
-            logging.debug("no prompt file, generate prompt by default templates")
+            if self.load_prompt(prompt_file):
+                logging.debug("prompt_generator init success")
+            else:
+                logging.debug("no prompt file, only generate default prompt")
+
+            prompt_generator.tasks = self.tasks
+            prompt_generator.db_structs = self.db_structs
 
     def load_dbstruct(self, db_struct_file):
         if not os.path.exists(db_struct_file):
@@ -64,20 +67,17 @@ class prompt_generator:
                 else:
                     content += line
         return True
+    
+    # 获得/合成prompt
+    # "rewrite","nl2sql","sql_revise","term_expansion","db2nl","db2sql"
+    def gen_prompt(self,taskname, gcases=None):
+        if 'nl2sql' in taskname.lower():
+            return self.gen_nl2sql(taskname.lower(),gcases)
+        return self.tasks.get(taskname, f"please do {taskname}")
 
-    def gen_default_prompt(self, task_name: str) -> str:
-        if task_name.lower() not in self.tasks.keys():
-            return ""
-        if task_name.lower() == "nl2sql":
-            return self.roles['sql_assistant'] + '\n' + self.tasks[task_name]
-        else:
-            return self.roles['doc_assistant'] + '\n' + self.tasks[task_name]
+    def gen_nl2sql(self, taskname, gcases: list = []) -> dict:
 
-    def gen_rewrite_prompt(self) -> str:
-        return self.tasks["rewrite"]
-
-    def gen_nl2sql_prompt(self, gcases: list = []) -> dict:
-        tmpl = self.tasks["nl2sql"]
+        tmpl = self.tasks[taskname]
         dbSchema = self.get_dbSchema()
         # 生成user/assistant对
         fewshots = []
@@ -89,31 +89,6 @@ class prompt_generator:
     def get_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
         return self.db_structs
-
-    def set_defaults(self):
-        self.roles["sql_assistant"] = (
-            "You are a SQL conversion assistant. "
-            "Your task is to convert natural language statements into SQL queries. "
-        )
-        self.roles[
-            "doc_assistant"] = "You are a document assistant responsible for helping users create, edit, and format various types of documents."
-        self.roles["code_reviewer"] = "You are a code reviewer, responsible for fixing bugs in the SQL queries."
-
-        # default instructions
-        self.tasks[
-            "rewrite"] = "Please rewrite the following sentence to clearly express the query intent and remove irrelevant information. If you cannot rewrite it, please output the original sentence."
-        self.tasks["nl2sql"] = "Complete SQL query only and with no explaination"
-        self.tasks["summary"] = "Please generate a summary of the following document content, no more than 100 words"
-        self.tasks["create_sql"] = "Create SQL queries for the given tables and columns."
-        self.tasks["sql2nl"] = "Create a question based on the given SQL statement."
-        self.tasks["create_query"] = "Create a query based on the given table and column names."
-        self.tasks[
-            "complex_nl2sql"] = "Use the intermediate representation and the database schema to generate the SQL queries for each of the questions"
-        self.tasks[
-            "correct_sql"] = "For the given question, use the provided tables, columns to fix the given SQL query for any issues. If there are any problems, fix them. If there are no issues, return SQL query as is."
-        self.tasks[
-            "term_definition"] = "Please provide definition for given term related to database table column names. "
-        self.tasks["term_alias"] = "Please provide the alias of the given term."
 
 
 # Example usage

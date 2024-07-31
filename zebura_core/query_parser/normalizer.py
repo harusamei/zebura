@@ -12,6 +12,7 @@ import logging
 from zebura_core.LLM.llm_agent import LLMAgent
 from zebura_core.knowledges.schema_loader import Loader
 from zebura_core.LLM.prompt_loader import prompt_generator
+from zebura_core.LLM.ans_extractor import AnsExtractor
 
 
 class Normalizer:
@@ -20,6 +21,7 @@ class Normalizer:
         # context for the LLM
         self.llm = LLMAgent()
         self.sch_loader = Loader(z_config['Training', 'db_schema'])
+        self.ans_extr = AnsExtractor()
 
         logging.debug("Normalizer init done")
 
@@ -39,7 +41,10 @@ class Normalizer:
             result = re.sub(r'nosql\W*', '', result, flags=re.IGNORECASE)
             resp["hint"] = result
         else:
-            resp = self.extract_sql(result)
+            #resp = self.extract_sql(result)
+            parsed = self.ans_extr.output_extr("nl2sql", result)
+            resp["status"] = parsed['status']
+            resp["msg"] = parsed['msg']
             resp["from"] = "extract_sql"
         return resp
 
@@ -63,30 +68,6 @@ class Normalizer:
             return None
         return results
 
-    # 提取SQL代码, 提取sql 全部小写
-    def extract_sql(self, result: str) -> dict:
-        # Extract the SQL code from the LLM result
-        logging.info(f"extract sql from LLM result: {result}")
-        if not isinstance(result, str):
-            print("ERR: result is not string")
-            return {"status": "failed", "msg": "ERR: [wrong format]"}
-
-        if result.lower().startswith("```sql"):
-            code_pa = "```sql\n(.*?)\n```"  # 标准code输出
-        elif 'select' in result.lower():
-            result = re.sub('\n|\t', ' ', result)
-            result = re.sub(' +', ' ', result)
-            code_pa = "(select.*?from[^;]+;)"  # 不一定有where
-        else:
-            print("ERR: no sql found in result")
-            return {"status": "failed", "msg": "ERR: NOSQL"}
-        matches = re.findall(code_pa, result, re.DOTALL | re.IGNORECASE)
-        if len(matches) == 0:
-            print("ERR: no sql found in result")
-            return {"status": "failed", "msg": "ERR: NOSQL"}
-        else:
-            return {"status": "succ", "msg": matches[0]}
-
     # LLM 只负责转换，不对结果进行处理
     async def convert_sql(self, queries, sys_prompt, fewshots=None):
         # Ask the GPT agent to convert the query to SQL
@@ -94,7 +75,6 @@ class Normalizer:
 
         return results
 
-    #
     async def bulk_sql(self, queries, prompt_en=""):
         if queries is None or len(queries) == 0:
             return None, None, None
@@ -110,7 +90,7 @@ class Normalizer:
         return results
 
 
-# Example usage
+# testing unit
 if __name__ == '__main__':
     from zebura_core.utils.csv_processor import pcsv
     import time
@@ -118,9 +98,9 @@ if __name__ == '__main__':
     normalizer = Normalizer()
     prompter = prompt_generator()
     query = "A: SELECT * FROM products WHERE goods_status = 'Newly released';\nQ: 有什么与鼠标有关的产品\nA: SELECT * FROM products WHERE product_name LIKE '%鼠标%';"
-    print(normalizer.extract_sql(query))
+    print(normalizer.ans_extr.output_extr('nl2sql',query))
     gcases = []
-    sys_prompt, fewshots = prompter.gen_nl2sql_prompt(gcases)
+    sys_prompt, fewshots = prompter.gen_prompt('nl2sql',gcases)
     prompt_en = sys_prompt
 
     cp = pcsv()

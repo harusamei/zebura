@@ -32,25 +32,9 @@ class Controller:
     with open("server\\utterances.json", "r") as f:
         utterance = json.load(f)
 
-    st_matrix = {
-        "(new,user)": "nl2sql",
-        "(hold,user)": "nl2sql",
-        "(succ,nl2sql)": "sql_refine",
-        "(succ,sql_refine)": "sql4db",
-        "(failed,sql_refine)": "end",  # send to user
-        "(failed,nl2sql)": "transit",  # reset action
-        "(failed,transit)": "end",  # send to user
-        "(succ,sql4db)": "polish",
-        "(failed,sql4db)": "end",
-        "(*,polish)": "end",
-        "(succ,rewrite)": "nl2sql",
-        "(failed,rewrite)": "end",  # send to user
-        "(*,*)": "end"
-    }
 
     def __init__(self):
 
-        self.matrix = Controller.st_matrix
         self.llm = Controller.llm
 
         self.parser = Controller.parser
@@ -61,6 +45,22 @@ class Controller:
         self.act_maker = GenActivity()
         self.asw_refiner = Synthesizer()
         self.executor = ExeActivity(self.sch_loader)
+
+        self.matrix = {
+            "(new,user)": self.nl2sql,
+            "(hold,user)": self.nl2sql,
+            "(succ,nl2sql)": self.sql_refine,
+            "(succ,sql_refine)": self.sql4db,
+            "(failed,sql_refine)": self.end,  # send to user
+            "(failed,nl2sql)": self.transit,  # reset action
+            "(failed,transit)": self.end,  # send to user
+            "(succ,sql4db)": self.polish,
+            "(failed,sql4db)": self.end,
+            "(*,polish)": self.end,
+            "(succ,rewrite)": self.nl2sql,
+            "(failed,rewrite)": self.end,  # send to user
+            "(*,*)": self.end
+        }
         logging.info(f"Controller init success")
 
     def get_next(self, pipeline):
@@ -226,6 +226,8 @@ class Controller:
             new_Log['status'] = "failed"
         pipeline.append(new_Log)
 
+    def end(self):
+        return "end"
 
 # 主函数, assign tasks to different workers
 async def apply(request):
@@ -235,11 +237,11 @@ async def apply(request):
     pipeline.append(request)
     nextStep = controller.get_next(pipeline)
 
-    while nextStep != "end":
-        if inspect.iscoroutinefunction(getattr(controller, nextStep)):
-            await getattr(controller, nextStep)(pipeline)
+    while nextStep != controller.end:
+        if inspect.iscoroutinefunction(nextStep):
+            await nextStep(pipeline)
         else:
-            getattr(controller, nextStep)(pipeline)
+            nextStep(pipeline)
         nextStep = controller.get_next(pipeline)
     controller.interpret(pipeline)
     return await controller.genAnswer(pipeline)

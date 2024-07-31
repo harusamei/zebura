@@ -32,13 +32,12 @@ class ES_BASE:
                 raise ValueError("Connection failed")
             
             self.es_version = f"es version: {self.es.info()['version']['number']}"
-
-            ES_BASE.es = self.es
-            ES_BASE.es_version = self.es_version
-              
             logging.debug("ES_BASE init success")
             logging.info(self.es_version)
 
+            ES_BASE.es = self.es
+            ES_BASE.es_version = self.es_version
+                       
     @property
     def get_all_indices(self):
         return self.es.cat.indices(format='json')
