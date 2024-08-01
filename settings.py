@@ -28,8 +28,7 @@ class Settings:
                 if dir[0] != '.' and dir[0] != '_':    
                     sys.path.insert(0, os.path.join(root, dir))
         # remove duplicates
-        sys.path= list(dict.fromkeys(path.lower() for path in sys.path))
-
+        sys.path= list(set(path.lower() for path in sys.path))
         # logging level
         log_level = self.config.get('Logging', 'level')
         logging.basicConfig(level=log_level, format='%(levelname)s - %(message)s')

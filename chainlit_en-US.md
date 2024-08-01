@@ -1,14 +1,27 @@
-# Welcome to Chainlit! 🚀🤖
+# Talq: Communicate with Data Using Natural Language
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+**Talq** is a tool for effortlessly querying and analyzing your data using natural language!
 
-## Useful Links 🔗
+##  Demo Dataset
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+Below is a demo dataset containing information about 1465 products:
+#### Products Table
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
+| Field Name | Field Name | Field Name | Field Name |
+|------------|------------|------------|------------|
+| Product ID | ⭐ Rating | 🏷️ Category | 📋 Description |
+| 📝 Product Name	 | 📊 Rating Count | 💰 Discount Price | 👤User ID |
+| 💲Actual Price | 🙋‍♂️  Username | 💸 Discount Percentage | 📝 Reviewer ID |
+| 📰 Review Title | 🗒️ Review Content | 🖼️ Image Link | 🔗 Product Link |
 
-## Welcome screen
+### 📈 With Talq assistant, complex sales queries and analyses are just a chat away. Give it a try!
 
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+### 🔍 Feel free to ask Talq:
+
+   1. How many different product categories are there?
+   2. Which category has the highest average discount rate?
+   3. What electronic products currently have discount prices below 500 yuan?
+   4. Which products have ratings above 4.5? List the top 5 highest rated.
+   5. How many fans products have ratings, and what is their average rating?
+   6. I'd like to see user reviews for the product with ID B09RFB2SJQ.
+

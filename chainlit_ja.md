@@ -1,14 +1,27 @@
-# Welcome to Chainlit! 🚀🤖
+# Talq: 自然言語を使ってデータとコミュニケーションする
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+**Talq** は自然言語でデータを簡単にクエリし、分析するツールです！
 
-## Useful Links 🔗
+##  デモデータセット
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+以下は1465種類の製品に関する情報を含むデモデータセットです：
+#### 製品テーブル
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
+| フィールド名 | フィールド名 | フィールド名 | フィールド名 |
+|------------|------------|-----------|------------|
+| 製品ID | ⭐ 評価 | 🏷️ カテゴリ | 📋 説明 |
+| 📝 製品名	 | 📊 評価数 | 💰 割引価格 | 👤ユーザーID |
+| 💲実際の価格 | 🙋‍♂️  ユーザー名 | 💸 割引率 | 📝レビュー者ID |
+| 📰  レビュータイトル | 🗒️ レビューコンテンツ | 🖼️ 画像リンク | 🔗 製品リンク |
 
-## Welcome screen
+### 📈 Talqアシスタントを使用すれば、複雑な販売クエリや分析が簡単に行えます。ぜひお試しください！
 
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+### 🔍 Talqに質問してみてください：
+
+    1.異なる製品カテゴリは何種類ありますか？
+    2.平均割引率が最も高いカテゴリはどれですか？
+    3.現在、500元以下で割引されている電子製品はどれですか？
+    4.評価が4.5以上の製品はどれですか？上位5つの高評価製品をリストしてください。
+    5.扇風機製品にはどれだけの評価があり、その平均評価は何ですか？
+    6.製品IDがB09RFB2SJQの製品のユーザーレビューを見たいです。
+

@@ -9,29 +9,35 @@ import logging
 from elasticsearch import Elasticsearch
 
 class ES_BASE:
-
+    _is_initialized = False
     def __init__(self):
         
-        host = z_config['Eleasticsearch','host']
-        port = int(z_config['Eleasticsearch','port'])
-        auth =z_config['Eleasticsearch', 'auth']
-        if auth == 'True':
-            user = z_config['Eleasticsearch', 'user']
-            pwd = z_config['Eleasticsearch', 'pwd']
-            self.es = Elasticsearch(
-                "https://"+host+":"+str(port),
-                ca_certs="D:/zebura/certs/http_ca.crt",
-                basic_auth=(user, pwd)
-            )
-        else:
-            self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
-        if not self.es.ping():
-            raise ValueError("Connection failed")
-        
-        self.es_version = f"es version: {self.es.info()['version']['number']}"   
-        logging.debug("ES_BASE init success")
-        logging.info(self.es_version)
+        if not ES_BASE._is_initialized:
+            ES_BASE._is_initialized = True
 
+            host = z_config['Eleasticsearch','host']
+            port = int(z_config['Eleasticsearch','port'])
+            auth =z_config['Eleasticsearch', 'auth']
+            if auth == 'True':
+                user = z_config['Eleasticsearch', 'user']
+                pwd = z_config['Eleasticsearch', 'pwd']
+                self.es = Elasticsearch(
+                    "https://"+host+":"+str(port),
+                    ca_certs="D:/zebura/certs/http_ca.crt",
+                    basic_auth=(user, pwd)
+                )
+            else:
+                self.es = Elasticsearch(hosts=[{'host': host, 'port': port,'scheme': 'http'}])
+            if not self.es.ping():
+                raise ValueError("Connection failed")
+            
+            self.es_version = f"es version: {self.es.info()['version']['number']}"
+            logging.debug("ES_BASE init success")
+            logging.info(self.es_version)
+
+            ES_BASE.es = self.es
+            ES_BASE.es_version = self.es_version
+                       
     @property
     def get_all_indices(self):
         return self.es.cat.indices(format='json')
@@ -48,6 +54,9 @@ class ES_BASE:
     def get_field_type(self, index_name, field_name):
         
         properties = self.get_all_fields(index_name)
+        if properties is None:
+            return None
+        
         if field_name in properties:
             return properties[field_name]['type']
         else:

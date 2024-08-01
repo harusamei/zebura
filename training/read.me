@@ -11,6 +11,10 @@ training目录用于存放项目的原始数据和schema
   - <project_code>_gcases.json：golden cases的schema
   - <project_code>_meta.json： 数据表的schema
 
+- 关于metadata.xlsx 文件的一些说明
+  - 文件必须包含project sheet, 表格样式固定（强制约定）
+  - 每个数据表一个sheet说明，数据表的column可以与原始数据库中的表不一致，可增加类似 "VIRTUAL_IN(product_name.%{value}%)"的字段，用于对原始数据项进行抽取
+
 - <project_code>_gcases.json：只有一个table， 且table名==golden cases 数据库名（强制）
 
 - json中字段的含义

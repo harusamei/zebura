@@ -31,5 +31,6 @@ def make_a_req(content:str):
         "format": "text",
         "status": "new",
         "note": "",
-        'hint': ''
+        'hint': '',
+        'step':''
     }
