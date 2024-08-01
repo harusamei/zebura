@@ -56,7 +56,7 @@ class LLMAgent(LLMBase):
         # 输出prompt 和 query check
         cur_loglevel = logging.getLogger().getEffectiveLevel()
         if cur_loglevel <= 20:
-            outFile = 'message.txt'
+            outFile = 'output.txt'
             with open(outFile, 'a', encoding='utf-8') as f:
                 for message in messages:
                     f.write(f"{message['role']}: {message['content']}\n")

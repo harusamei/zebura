@@ -37,6 +37,7 @@ class AnsExtractor:
         return result
     
     def parse_expansion1(self, llm_answer) -> dict:
+        print(llm_answer)
         result = self.result
         if 'ERR' in llm_answer:
             result['status'] = 'failed'
@@ -46,6 +47,8 @@ class AnsExtractor:
         data = self.parse_table(llm_answer)
         new_terms = {}
         for row in data[1:]:
+            if 'Term Expansions' in ' '.join(row):
+                continue
             tList = list(set(row[1].split(',')))
             tList = [t.strip() for t in tList]
             new_terms[row[0]] = tList
@@ -150,14 +153,15 @@ class AnsExtractor:
     def parse_table(table):
         # 去掉表格的边框和分隔线
         lines = table.strip().split('\n')
-        lines = [line for line in lines if not re.match(r'^\|.*[-]+', line)]
+        lines = [line for line in lines if not re.match(r'^\|.*[-]{3,}', line)]
         
         # 解析每一行
         data = []
         for line in lines:
             # 去掉行首和行尾的竖线，并按竖线分割
             row = [cell.strip() for cell in line.strip('|').split('|')]
-            data.append(row)
+            if len(row)>1: 
+                data.append(row)
         
         return data
     

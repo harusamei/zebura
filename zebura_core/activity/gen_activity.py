@@ -127,6 +127,19 @@ class GenActivity:
             new_select.strip(',')
             sql = sql.replace(ori_select, new_select + '\n')
             sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
+        
+        # select 部分添加condition 中的字段
+        slots = self.checker.sp.parse_sql(sql)
+        for cond in slots['conditions']:
+            matched = re.search(r'(\S+)\s+(\S+)\s+(\S+)', cond)
+            if matched:
+                col = matched.group(1)
+                if col not in slots['columns']['all_cols']:
+                    sql = sql.replace('SELECT', f"SELECT {col},")
+        # select 添加字段，* 则多余
+        pattern = r'SELECT\s+([^;]*?),\s*\*'
+        replacement = r'SELECT \1'
+        sql = re.sub(pattern, replacement, sql, flags=re.IGNORECASE)
         return sql
 
     # 主功能, 生成最终用于查询的SQL
@@ -272,32 +285,31 @@ class GenActivity:
                         join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
 
         # conds msg
-        conds_tmpl_1 = "Value Issues: value {vals} was not found. value should be {lang}."
+        conds_tmpl_1 = "Condition Issues: value {val} was not found in the '{col}'. try to replace the similar column in database schema or similar value in {lang}"
         conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}',and value should be {lang}."
         conds_tmpl_3 = "Format Errors: value {vals} are incorrect format."
         checks = all_checks['conds']
-        names = [[], [], []]
+        issues = [[], []]
         for k, v in checks.items():
             if k == 'status' or v == True:
                 continue
+            # 顺序为 [val,col, new_val,lang]
             if v[1].lower() == 'nil':  # 无值，且term expansion 无结果
-                names[0].append(k)
+                issues[0].append((k.split(',')[1],k.split(',')[0],v[3]))
             elif v[2].lower() == 'expn':  # expansion 有结果
-                names[1].append((k, v[1]))
+                issues[0].append((k.split(',')[1],k.split(',')[0],v[1],v[3]))
             else:  # 日期数字格式错误
-                names[2].append(k)
-            lang = v[3]
+                issues[1].append(k)
+
         if checks['status'] == 'failed':
-            if len(names[0]) > 0:
-                vals = [x.split(',')[1] for x in names[0]]
-                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals),lang=lang))
-            if len(names[1]) > 0:
-                for k, new_val in names[1]:
-                    val = k.split(',')[1]
-                    col = k.split(',')[0]
-                    checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val,lang=lang))
-            if len(names[2]) > 0:
-                vals = [x.split(',')[1] for x in names[2]]
+            if len(issues[0]) > 0:
+                for x in issues[0]:
+                    if len(x) > 3:
+                        checkMsgs['conds'].append(conds_tmpl_2.format(val=x[0], col=x[1], new_val=x[2],lang=x[3]))
+                    else:
+                        checkMsgs['conds'].append(conds_tmpl_1.format(val=x[0], col=x[1], lang=x[2]))
+            if len(issues[1]) > 0:
+                vals = [x.split(',')[1] for x in issues[2]]
                 checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals)))
 
         return checkMsgs
@@ -324,8 +336,14 @@ class GenActivity:
 
         query = tmpl.format(dbSchema=db_struct, ori_sql=orisql, err_msgs=errmsg)
         result = await self.llm.ask_query(query, '')
-
         parsed = self.ans_extr.output_extr('sql_revise',result)
+
+        # outFile = 'output.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     f.write(query)
+        #     f.write(result)
+        #     f.write("\n----------------------------end\n")
+
         new_sql = parsed['msg']
         msg = new_sql
         if parsed['status'] == 'succ':
@@ -428,5 +446,5 @@ if __name__ == "__main__":
         resp = asyncio.run(gentor.gen_activity(q, a))
         print(f"query:{q}\nresp:{resp['msg']}")
 
-    db_stru =gentor.gen_db_structures()
-    gentor.out_db_structures('amazon_struct.txt',db_stru)
+    # db_stru =gentor.gen_db_structures()
+    # gentor.out_db_structures('amazon_struct.txt',db_stru)

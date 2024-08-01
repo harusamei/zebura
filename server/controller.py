@@ -249,7 +249,7 @@ async def apply(request):
 
 
 async def main():
-    request = {'msg': '帮我查一下电动切菜机套装的单价。', 'context': [], 'type': 'user', 'format': 'text',
+    request = {'msg': '请查一下联想笔记本的价格', 'context': [], 'type': 'user', 'format': 'text',
                'status': 'new'}
     # request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
