@@ -69,7 +69,8 @@ class Controller:
 
         # 强制跳转
         if lastLog['type'] == "reset" and lastLog['status'] == "succ":
-            return lastLog['from']
+            method = getattr(self, lastLog['from'])
+            return method
 
         curSt = f'({lastLog["status"]},{lastLog["from"]})'
         count = 1
@@ -128,7 +129,7 @@ class Controller:
 
         history_context = "\n".join(history)
         query = log['msg']
-        tmpl = self.prompter.gen_rewrite_prompt()
+        tmpl = self.prompter.gen_prompt('rewrite')
         # TODO, prompt 写得有问题
         prompt = tmpl.format(history_context=history_context, query=query)
 
@@ -248,7 +249,7 @@ async def apply(request):
 
 
 async def main():
-    request = {'msg': '列出所有属于家居与厨房类别的最贵商品。', 'context': [], 'type': 'user', 'format': 'text',
+    request = {'msg': '帮我查一下电动切菜机套装的单价。', 'context': [], 'type': 'user', 'format': 'text',
                'status': 'new'}
     # request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
@@ -256,7 +257,7 @@ async def main():
     print(resp['msg'])
     print(resp['note'])
     context.append(resp)
-    request1 = {'msg': '帮我查一下电动切菜机套装的单价。', 'context': context, 'type': 'user', 'format': 'text',
+    request1 = {'msg': '列出所有属于家居与厨房类别的最贵商品。', 'context': context, 'type': 'user', 'format': 'text',
                 'status': 'hold'}
     resp = await apply(request1)
     print(resp)

@@ -272,8 +272,8 @@ class GenActivity:
                         join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
 
         # conds msg
-        conds_tmpl_1 = "Value Issues: value {vals} was not found."
-        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}'."
+        conds_tmpl_1 = "Value Issues: value {vals} was not found. value should be {lang}."
+        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}',and value should be {lang}."
         conds_tmpl_3 = "Format Errors: value {vals} are incorrect format."
         checks = all_checks['conds']
         names = [[], [], []]
@@ -286,16 +286,16 @@ class GenActivity:
                 names[1].append((k, v[1]))
             else:  # 日期数字格式错误
                 names[2].append(k)
-
+            lang = v[3]
         if checks['status'] == 'failed':
             if len(names[0]) > 0:
                 vals = [x.split(',')[1] for x in names[0]]
-                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals)))
+                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals),lang=lang))
             if len(names[1]) > 0:
                 for k, new_val in names[1]:
                     val = k.split(',')[1]
                     col = k.split(',')[0]
-                    checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val))
+                    checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val,lang=lang))
             if len(names[2]) > 0:
                 vals = [x.split(',')[1] for x in names[2]]
                 checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals)))
@@ -381,13 +381,15 @@ class GenActivity:
             if v[2] in ['varchar', 'virtual_in', 'text']:
                 col, word = cond.split(',')
                 word = word.strip('\'"')
-                ni_words[word] = [col, cond]
+                ni_words[word] = [col, cond, v[3]]
 
         if len(ni_words) == 0:
             conds_check['status'] == 'succ'
             return conds_check
-
-        query = ','.join(ni_words.keys())
+        
+        kterms =[[key, val[0], val[2]] for key,val in ni_words.items()]
+        kterms.insert(0, ['Keyword', 'Category','Output Language'])
+        query = self.prompter.gen_tabulate(kterms)
         prompt = self.prompter.tasks['term_expansion']
         result = await self.llm.ask_query(query, prompt)
         parsed = self.ans_extr.output_extr('term_expansion', result)
@@ -408,17 +410,18 @@ class GenActivity:
             if tItem is None:
                 logging.error(f"Error: {word} not in ni_words")
                 continue
-            col, cond = tItem
+            col, cond = tItem[0],tItem[1]
             check = self.checker.check_expn(tname, col, voc)
+            lang = conds_check[cond][3]
+            check.append(lang)
             conds_check[cond] = check
-
         return conds_check
 
 
 if __name__ == "__main__":
     gentor = GenActivity()
     qalist = [('请告诉我苹果产品的类别', 'SELECT DISTINCT category\nFROM product\nWHERE brand = "Apple";'),
-              ('请告诉我风扇的所有价格', 'SELECT actual_price, discounted_price FROM product WHERE category = "fan";'),
+              ('请告诉我风扇的所有价格', 'SELECT actual_price, discounted_price FROM product WHERE category = "风扇";'),
               ('查一下价格大于1000的产品', 'SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";'),
               ('列出品牌是电脑的产品名称', "SELECT product_name\nFROM product\nWHERE brand LIKE '%apple%';")]
     for q, a in qalist:

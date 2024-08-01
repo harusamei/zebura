@@ -177,10 +177,11 @@ class CheckSQL:
 
         val = val.strip('\'"')  # 去掉原始SQL值的引号
         col_Info = self.db_Info[table_name].get(col, None)
-        # 字段不存在
+        # 字段不存在,无值
         if col_Info is None:
             return (False, 'NIL', 'NOTEXIST')
         ty = col_Info.get('type').lower()
+        lang = col_Info.get('lang','')
         ttype = ty.split('(')[0]
         # 数字和日期类型
         if ttype not in ['varchar', 'text', 'virtual_in']:
@@ -195,8 +196,9 @@ class CheckSQL:
             val = f'%{val}%'
             flag = self.is_value_exist(table_name, col, val)
         if flag:
-            check = [False, val, 'EXPN']
-
+            check = [False, val, 'EXPN']    # 条件改为%value%后有值
+        # 增加语言信息
+        check.append(lang)
         return check
 
     # 数字和日期只检查格式

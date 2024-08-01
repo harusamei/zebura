@@ -5,6 +5,8 @@ import os
 import sys
 sys.path.insert(0, os.getcwd())
 import re
+from tabulate import tabulate
+
 from settings import z_config
 import logging
 from zebura_core.knowledges.schema_loader import Loader
@@ -89,6 +91,11 @@ class prompt_generator:
     def get_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
         return self.db_structs
+    
+    @staticmethod
+    def gen_tabulate(data):
+        # 生成简单表格
+        return tabulate(data, headers="firstrow", tablefmt="pipe")
 
 
 # Example usage

@@ -1,6 +1,6 @@
 ##################################################
 # 扫描存放在excel里的table信息，
-# 生成project schema 和 golden cases schema       
+# 生成project schema 和 golden cases schema   
 ##################################################
 import sys
 import os
@@ -70,11 +70,12 @@ class Scanner:
     
     # 所有的table信息存放在一个excel文件中，必须有一个名为project的表，存放整体信息
     # 每个sheet对应一个table
-    # 格式：['no', 'table_name', 'column_name','name', 'name_zh', 'alias', 'alias_zh', 'desc', 'desc_zh', 'type', 'length']
+    # 格式：['no', 'table_name', 'column_name','name', 'name_zh', 'alias', 'alias_zh', 
+    #       'desc', 'desc_zh', 'type', 'length','language']
     def gen_schema(self, file_path):
         musted ={'table_name', 'column_name', 'alias', 'desc', 'type'}
         table_keys = {"table_name","alias", "desc", }
-        column_keys = {"column_name", "alias", "type", "desc","key"}
+        column_keys = {"column_name", "alias", "type", "desc","key","lang"}
 
         xls = pd.ExcelFile(file_path)
 

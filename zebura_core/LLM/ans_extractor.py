@@ -10,7 +10,7 @@ class AnsExtractor:
         self.result = {'status': 'succ', 'msg': ''}
         # "rewrite","nl2sql","sql_revise","term_expansion","db2nl","db2sql"
         self.tasks = {
-            'term_expansion': self.parse_expansion,
+            'term_expansion': self.parse_expansion1,
             'nl2sql': self.parse_sql,
             'sql_revise': self.parse_revised_sql,
             'pattern': self.parse_llm_output
@@ -35,7 +35,23 @@ class AnsExtractor:
             result['msg'] = 'can not match pattern'
         
         return result
-       
+    
+    def parse_expansion1(self, llm_answer) -> dict:
+        result = self.result
+        if 'ERR' in llm_answer:
+            result['status'] = 'failed'
+            result['msg'] = None
+            return result
+        
+        data = self.parse_table(llm_answer)
+        new_terms = {}
+        for row in data[1:]:
+            tList = list(set(row[1].split(',')))
+            tList = [t.strip() for t in tList]
+            new_terms[row[0]] = tList
+        result['msg'] = new_terms
+        return result
+      
     # 解析term_expansion from LLM's answer
     def parse_expansion(self, llm_answer) -> dict:
 
@@ -121,6 +137,29 @@ class AnsExtractor:
 
         # Return the processed information
         return pattern1_result, pattern2_result
+    
+    #解析ascii表格为matric
+    """ 
+    | Keyword    | Label        |
+    |------------|--------------|
+    | apple      | Brand        |
+    | mouse      | Product_name |
+    | innovation | Business     | """
+    # [['Keyword', 'Label'], ['apple', 'Brand'], ['mouse', 'Product_name'], ['innovation', 'Business']]
+    @staticmethod
+    def parse_table(table):
+        # 去掉表格的边框和分隔线
+        lines = table.strip().split('\n')
+        lines = [line for line in lines if not re.match(r'^\|.*[-]+', line)]
+        
+        # 解析每一行
+        data = []
+        for line in lines:
+            # 去掉行首和行尾的竖线，并按竖线分割
+            row = [cell.strip() for cell in line.strip('|').split('|')]
+            data.append(row)
+        
+        return data
     
 if __name__ == "__main__":
     ans_extr = AnsExtractor()
