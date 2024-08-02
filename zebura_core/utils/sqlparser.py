@@ -49,13 +49,16 @@ class ParseSQL:
             if not isinstance(v, list):
                 continue
             all_cols[k] = {'ttype': 'Name', 'name': '', 'as': ''}
+            
             for token in v:
                 if token.is_whitespace:
                     continue
+
                 if token.ttype is Name:
                     full_name = all_cols[k].get('full_name', '') + token.value
                     all_cols[k]['full_name'] = full_name
                     all_cols[k]['name'] = token.value
+                    
                 # full_name保留表名前缀
                 if token.ttype is Punctuation:
                     full_name = all_cols[k].get('full_name', '') + token.value
@@ -72,6 +75,7 @@ class ParseSQL:
                 if isinstance(token, Identifier) and asFlag:
                     all_cols[k]['as'] = token.get_real_name()
                     asFlag = False
+                
         return columns
 
     # 表只有一个

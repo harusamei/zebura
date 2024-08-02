@@ -295,8 +295,8 @@ if __name__ == "__main__":
 
     checker = CheckSQL(cnx, db_name, sch_loader)
     qalist = ['SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";',
-              "SELECT product_name\nFROM product\nWHERE brand LIKE '%apple%';",
+              "SELECT distinct product_name, distinct price\nFROM product\nWHERE brand LIKE '%apple%';",
               "SELECT d.department_name AS Department,COUNT(e.employee_id) AS NumberOfEmployees FROM departments d  LEFT JOIN employees e ON d.department_id = e.department_id  GROUP BY d.department_name  ORDER BY  NumberOfEmployees DESC;"]
-    for qa in qalist[2:]:
+    for qa in qalist[1:2]:
         print(checker.check_sql(qa))
     cnx.close()

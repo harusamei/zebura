@@ -10,7 +10,7 @@ class AnsExtractor:
         self.result = {'status': 'succ', 'msg': ''}
         # "rewrite","nl2sql","sql_revise","term_expansion","db2nl","db2sql"
         self.tasks = {
-            'term_expansion': self.parse_expansion1,
+            'term_expansion': self.parse_expansion,
             'nl2sql': self.parse_sql,
             'sql_revise': self.parse_revised_sql,
             'pattern': self.parse_llm_output
@@ -36,8 +36,8 @@ class AnsExtractor:
         
         return result
     
-    def parse_expansion1(self, llm_answer) -> dict:
-        print(llm_answer)
+    def parse_expansion(self, llm_answer) -> dict:
+        
         result = self.result
         if 'ERR' in llm_answer:
             result['status'] = 'failed'
@@ -55,41 +55,41 @@ class AnsExtractor:
         result['msg'] = new_terms
         return result
       
-    # 解析term_expansion from LLM's answer
-    def parse_expansion(self, llm_answer) -> dict:
+    # 废弃
+    # def parse_expansion(self, llm_answer) -> dict:
 
-        result = self.result
-        if 'ERR' in llm_answer:
-            result['status'] = 'failed'
-            result['msg'] = None
-            return result
+    #     result = self.result
+    #     if 'ERR' in llm_answer:
+    #         result['status'] = 'failed'
+    #         result['msg'] = None
+    #         return result
 
-        tlist = llm_answer.split('\n')
-        tem_dic = {}
-        # LLM 存在格式问题，## 代表非对应到keyword的部分
-        kword = '##'
-        tem_dic[kword] = ''
-        for temstr in tlist:
-            if '[Keyword:' in temstr:
-                kword = temstr.split(':')[1]
-                kword = re.sub(r'\s*]\s*', '', kword).strip()
-                tem_dic[kword] = ''
-            else:
-                temstr = re.sub(r'-.*:', '', temstr).strip()
-                tem_dic[kword] += temstr + '\n'
-        del tem_dic['##']
+    #     tlist = llm_answer.split('\n')
+    #     tem_dic = {}
+    #     # LLM 存在格式问题，## 代表非对应到keyword的部分
+    #     kword = '##'
+    #     tem_dic[kword] = ''
+    #     for temstr in tlist:
+    #         if '[Keyword:' in temstr:
+    #             kword = temstr.split(':')[1]
+    #             kword = re.sub(r'\s*]\s*', '', kword).strip()
+    #             tem_dic[kword] = ''
+    #         else:
+    #             temstr = re.sub(r'-.*:', '', temstr).strip()
+    #             tem_dic[kword] += temstr + '\n'
+    #     del tem_dic['##']
 
-        new_terms = {}
-        for k, v in tem_dic.items():
-            v = v.replace('OR', '\n')
-            v = v.replace('(', '\n')
-            v = v.replace(')', '\n')
-            v = re.sub('[ ]+', ' ', v)
-            v = re.sub(r'(\s*\n\s*)+', '\n', v)
-            v = v.strip()
-            new_terms[k] = list(set(v.split('\n')))
-        result['msg'] = new_terms
-        return result
+    #     new_terms = {}
+    #     for k, v in tem_dic.items():
+    #         v = v.replace('OR', '\n')
+    #         v = v.replace('(', '\n')
+    #         v = v.replace(')', '\n')
+    #         v = re.sub('[ ]+', ' ', v)
+    #         v = re.sub(r'(\s*\n\s*)+', '\n', v)
+    #         v = v.strip()
+    #         new_terms[k] = list(set(v.split('\n')))
+    #     result['msg'] = new_terms
+    #     return result
     
     # Extract the SQL code from the LLM result
     # 提取SQL代码, 提取sql 全部小写

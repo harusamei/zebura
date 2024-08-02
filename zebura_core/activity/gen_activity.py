@@ -110,14 +110,25 @@ class GenActivity:
             sql = sql.replace(col_sub[0], col_sub[1])
 
         return sql
-
+    
+    # 优化SQL使输出更加美观
     def refine_sql(self, sql):
+
         tsql = sql.lower()
+        slots = self.checker.sp.parse_sql(sql)
         # 加limit的情况
         if 'limit' not in tsql and 'count' not in tsql:
             sql = sql.rstrip(";")
             sql = sql + f" LIMIT {k_limit};"
-        # column 去重, 未考虑distince情况，不充分
+
+        # column 去重
+        if slots['columns']['distinct'] == True:
+            matched = re.search(r'DISTINCT\s+([^\s,]+)', sql, re.DOTALL)
+            dist_col = ''
+            if matched:
+                dist_col = matched.group(1)
+                sql = sql.replace('DISTINCT',' ')
+
         matched = re.search(r'SELECT\s+(.*)\s*FROM', sql, re.DOTALL)
         if matched:
             ori_select = matched.group(1)
@@ -128,8 +139,10 @@ class GenActivity:
             sql = sql.replace(ori_select, new_select + '\n')
             sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         
+        if slots['columns']['distinct'] == True and len(dist_col)>0:
+            sql = sql.replace(dist_col, 'DISTINCT '+dist_col)
+
         # select 部分添加condition 中的字段
-        slots = self.checker.sp.parse_sql(sql)
         for cond in slots['conditions']:
             matched = re.search(r'(\S+)\s+(\S+)\s+(\S+)', cond)
             if matched:
@@ -285,8 +298,9 @@ class GenActivity:
                         join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
 
         # conds msg
-        conds_tmpl_1 = "Condition Issues: value {val} was not found in the '{col}'. try to replace the similar column in database schema or similar value in {lang}"
-        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}',and value should be {lang}."
+        lang_tmpl = "value should be {lang}."
+        conds_tmpl_1 = "Condition Issues: value {val} was not found in the '{col}'. try to replace the similar column in database schema or similar value. "
+        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}'. "
         conds_tmpl_3 = "Format Errors: value {vals} are incorrect format."
         checks = all_checks['conds']
         issues = [[], []]
@@ -300,14 +314,18 @@ class GenActivity:
                 issues[0].append((k.split(',')[1],k.split(',')[0],v[1],v[3]))
             else:  # 日期数字格式错误
                 issues[1].append(k)
-
+        lang= ''
         if checks['status'] == 'failed':
             if len(issues[0]) > 0:
                 for x in issues[0]:
                     if len(x) > 3:
-                        checkMsgs['conds'].append(conds_tmpl_2.format(val=x[0], col=x[1], new_val=x[2],lang=x[3]))
+                        checkMsgs['conds'].append(conds_tmpl_2.format(val=x[0], col=x[1], new_val=x[2]))
+                        lang = x[3]
                     else:
-                        checkMsgs['conds'].append(conds_tmpl_1.format(val=x[0], col=x[1], lang=x[2]))
+                        checkMsgs['conds'].append(conds_tmpl_1.format(val=x[0], col=x[1]))
+                        lang = x[2]
+                    if len(lang)>0:
+                        checkMsgs['conds'][-1]+=lang_tmpl.format(lang=lang)
             if len(issues[1]) > 0:
                 vals = [x.split(',')[1] for x in issues[2]]
                 checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals)))

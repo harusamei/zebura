@@ -18,8 +18,7 @@ from zebura_core.activity.gen_activity import GenActivity
 from zebura_core.LLM.llm_agent import LLMAgent
 from msg_maker import (make_a_log, make_a_req)
 import json
-import re
-
+import time
 
 # 一个传递request的pipeline
 # 从 Chatbot request 开始，到 type变为assistant 结束
@@ -133,10 +132,10 @@ class Controller:
         # TODO, prompt 写得有问题
         prompt = tmpl.format(history_context=history_context, query=query)
 
-        outFile = 'output.txt'
-        with open(outFile, 'a', encoding='utf-8') as f:
-            f.write(prompt)
-            f.write("\n----------------------------end\n")
+        # outFile = 'output.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     f.write(prompt)
+        #     f.write("\n----------------------------end\n")
 
         result = await self.llm.ask_query(prompt, "")
         if "ERR" in result:
@@ -232,7 +231,9 @@ class Controller:
 
 # 主函数, assign tasks to different workers
 async def apply(request):
+    start = time.time()
     controller = Controller()
+    print(f"Controller init time: {time.time() - start}")
     pipeline = list()
     request['from'] = "user"
     pipeline.append(request)

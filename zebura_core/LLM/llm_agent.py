@@ -54,13 +54,13 @@ class LLMAgent(LLMBase):
         messages.append({"role": "user", "content": query})
 
         # 输出prompt 和 query check
-        cur_loglevel = logging.getLogger().getEffectiveLevel()
-        if cur_loglevel <= 20:
-            outFile = 'output.txt'
-            with open(outFile, 'a', encoding='utf-8') as f:
-                for message in messages:
-                    f.write(f"{message['role']}: {message['content']}\n")
-                f.write("----------------------------end\n")
+        # cur_loglevel = logging.getLogger().getEffectiveLevel()
+        # if cur_loglevel <= 20:
+        #     outFile = 'output.txt'
+        #     with open(outFile, 'a', encoding='utf-8') as f:
+        #         for message in messages:
+        #             f.write(f"{message['role']}: {message['content']}\n")
+        #         f.write("----------------------------end\n")
 
         try:
             answer = self.postMessage(messages)
