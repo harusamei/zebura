@@ -1,158 +1,134 @@
 # 存放任务指令模板，格式为：<TASK: xxx> ... </TASK>
 # ignore #开头的行
+# !NOTE: taskname, output格式如有修改，需同步修改ans_extractor.py
 
 <TASK: rewrite>
-# 基于上文重写用户输入
-Given a conversation (between Human and Assistant) and a follow up message from Human, using the prior knowledge relationships, rewrite the message to be a standalone and detailed question that captures all relevant context from the conversation. Ensure the rewritten question:
-1. Preserves the original intent of the follow-up message.
-2. If the true intent of the follow-up message cannot be determined, make no modifications to avoid generating an incorrect question.
-3. The length of the rewritten question should not increase significantly compared to the follow-up message, to avoid altering the original intent.
-4. Do not directly use the content of the Assistant's responses to form the rewritten question. Prioritize referring to the information of the Human's historical question.
-5. Maintains the same language as the follow-up message (e.g., reply in Chinese if the question was asked in Chinese and in English if it was asked in English).
+# 将多轮对话，重写为一条查询语句
+During a conversation, when a user asks data-related questions and the agent should provide the corresponding data analysis based on the user's intent. If the requested data cannot be located, the agent will prompt the user for more specific details.
+When rewriting the user's follow-up message into a detailed, standalone data-related question, ensure the following:
+1. Maintain the original intent of the follow-up message.
+2. Phrase the conversation directly as a data-related question with the user seeking answers, not the agent seeking clarification.
+3. Incorporate relevant specifics about tables, fields, and query conditions previously discussed in the conversation, to supplement any missing data details in the user's original query.
+4. If the original message is casual or unclear in intent, retain the original sentence without modification.
+5. Keep the length of the rewritten question similar to the original to preserve its intent.
+6. Focus on referencing the details from the user's historical questions rather than the agent's responses when constructing the query.
 
-Chat History (Sorted by request time from most recent to oldest):
+Examples of Refined Standalone Question:
+1. Find all customers located in Germany
+2. Get all product details and sort them by name
+3. Retrieve the first 5 customers who registered in 2021
+
+Conversation History (Sorted by request time from most recent to oldest):
 {history_context}
 
 Follow Up Input: 
+user: {query}
 
-**NOTE:** Please respond in SAME language as the input message.
-
+**NOTE**: DO NOT prompt the user for additional specific information.
 Refined Standalone Question:
 </TASK>
 
-<TASK: nl2SQL_zero>
-# Follow these guidelines:
-# Conversion Requirement:
-# If the input intention can be converted into SQL, do so.
-# If it cannot be converted, output "NOSQL".
-
-# Database Information:
-# If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
-
-Database Schema:
+<TASK: nl2sql>
+You are a programming assistant, and your task is to convert user’s natural language questions into executable SQL queries. 
+Given the database schema structures, including table names, column names and their data types, and the relationships between tables (foreign keys), for the following user input question, you need to:
+1. Language Parsing:
+- Extract key entities, such as table names and column names, from the input question.
+- Identify SQL keywords and clauses required to construct the query (e.g., SELECT, WHERE, JOIN, ORDER BY).
+2. Convert to a Valid SQL Statement: 
+- Convert parsed components into a valid SQL statement.
+- Ensure correct syntax and logical order of SQL clauses.
+3. Handle edge cases or bad cases:
+- Handle edge cases, such as ambiguous or incomplete questions, by providing the best possible SQL guess or requesting clarification.
+- Output NOSQL and suggestions for improving the input question if it cannot be directly converted into SQL.
+======================
+Example of two kinds of output formats:
+1. if the input question can be converted into SQL:
+   ```sql
+   SELECT brand, COUNT(DISTINCT product_cate1) AS category_count
+   FROM products
+   GROUP BY brand;
+   ```
+2. if the input question cannot be converted into SQL:
+   NOSQL
+   Suggestions: XXX
+======================
+Database schema structures:
 {dbSchema}
-Note: Ensure that any values included in the SQL query exactly match those mentioned in the input.
-# If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
-
-Format:
-Input: [User's natural language statement]
-Output: [Converted SQL query in code format or "NOSQL"]
-
-</TASK>
-<TASK: nl2SQL>
-Follow these guidelines:
-Conversion Requirement:
-If the input intention can be converted into SQL, do so.
-If it cannot be converted, output "NOSQL".
-Value Consistency:
-Ensure that any values included in the SQL query exactly match those mentioned in the input.
-Database Information:
-
-If additional database information (e.g., table names, column names) is required for the conversion and is not provided in the input, ask the user for the necessary details.
-
-Database Schema:
-{dbSchema}
-# Table names and purposes:
-# Table name: users, Purpose: Stores user information
-
-# Table fields and their aliases:
-# users:
-# 
-# id: Unique identifier for the user (Alias: user_id)
-# name: Name of the user (Alias: user_name)
-# email: Email address of the user (Alias: user_email)
-# registration_date: Date when the user registered (Alias: user_registration_date)
-# registration_year: Year when the user registered (Alias: user_registration_year)
-
-Example Input and Output:
-{fewShots}
-# Input: "Find all users who registered in 2021."
-# Output:
-# sql
-# SELECT * FROM users WHERE registration_year = 2021;
-# 
-# Input: "Show me the sales data for March."
-# Output: NOSQL (if table and column names are not provided)
-
-Note: Always ensure the integrity and accuracy of the data values from the input. If a direct conversion is impossible due to missing information, do not make assumptions—ask the user for clarification.
-
-Format:
-Input: [User's natural language statement]
-Output: [Converted SQL query in code format or "NOSQL"]
+======================
 </TASK>
 
-<TASK:nl2SQL_zh>
-# data schema 没有字段说明， zero-shot
-你将会收到一个自然语言查询，任务是将其转换为相应的SQL查询。根据提供的数据模式（schema），在输出时遵循以下规则：
-
-SQL查询使用代码格式。
-如果输入的意图不是数据查询，则直接输出"nosql"。
-如果转换时需要其他数据库信息，请直接向用户询问。
-如果SQL中包含值，这些值需要与输入中提到的值一致。
-数据模式：
-{dbSchema}
-
-示例输入与输出：
-{fewShots}
-
-注意：确保SQL查询中的数据值与输入中提到的值一致。如果由于缺少信息而无法进行直接转换，请勿做出假设，而是向用户寻求澄清。
+<TASK: term_expansion>
+# 术语扩展
+Given the following keywords, generate a set of vocabulary expansions for each keyword including synonyms, related terms, conceptual expansion and translation (If the original word is in Chinese, translate it into English; if it is in English, translate it into Chinese). 
+Ensure to provide a diverse set of expansions to enrich the vocabulary.
+=========================
+Examples of output format:
+[Keyword: Innovation] 
+- Synonym Expansion: Creativity OR Originality OR Novelty OR Ingenuity 
+- Related Terms Expansion: Invention OR Breakthrough OR Disruption OR Modernization OR Revolution 
+#- Spelling Variants: Innovación (Spanish) OR Innovation (French) OR Innovazione (Italian)
+- Conceptual Expansion: Technological Advancements OR Process Improvements OR Creative Solutions OR Business Transformation
+- Translation: 创新
+[Keyword: 电脑]
+- Synonym Expansion: 计算机 (Computer)
+- Related Terms Expansion: 笔记本电脑 (Laptop) OR 台式电脑 (Desktop Computer) OR 平板电脑 (Tablet) OR 个人电脑 (Personal Computer)
+- Conceptual Expansion: 数字设备 (Digital Device) OR 信息技术 (Information Technology) OR 电子产品 (Electronic Product) OR 硬件设备 (Hardware Device)     
+- Translation: Computer
+==========================
+Please generate expansions for each keyword following the format above.
+NOTE: please strictly follow the output format of the example above, with each keyword expansion starting with "[Keyword:"
 </TASK>
 
-<TASK: nl2SQL_lite>
-# dbSchema 没有字段说明， zero-shot
+# 根据错误信息修正SQL
+<TASK: sql_revise>
+You are an SQL programming expert specializing in diagnosing and correcting errors in SQL queries. Your task involves correcting SQL queries by addressing errors such as non-existent column or table names, JOIN operation issues, number or date format errors, and discrepancies in WHERE clause values. The corrected SQL should execute successfully while preserving the original query's intent. Below are the specific requirements:
+1.	Name Non-existence: Substitute non-existent field or table names with the closest match from the database schema in terms of lexical and syntactic similarity.
+2.	Join Errors: Resolve any errors arising from JOIN operations.
+3.	Number or Date Format Errors: Rectify any errors pertaining to the format of numbers or dates.
+4.	Value Issues in WHERE Condition: Replace any non-existent values in the WHERE condition with suggested or semantically similar ones. Use the 'LIKE' operator instead of '=' operator.
+5.	Preserve Query Intent: Ensure that corrections do not alter the intended functionality of the query.
+6.	Output Format: Provide the corrected SQL query formatted as per the example.
 
-You will receive a natural language query, and your task is to convert it into an appropriate SQL query. Based on the provided data schema, follow these rules for output:
-Use code formatting for SQL queries.
-If the input intent is not a data query, output "nosql".
-If additional database information is needed for conversion, directly ask the user.
-If the SQL query includes values, ensure these values match those mentioned in the input.
+An example of a corrected SQL query
+- Database Schema:
 
-Data Schema:
+Table: Employees
+Purpose: save the information of employees
+Fields:
+employee_id, INTEGER, PRIMARY KEY , COMMENT( unique_identifier)
+first_name, VARCHAR, COMMENT(name of employee)
+last_name, VARCHAR, COMMENT(surname of employee)
+department_id, INTEGER, FOREIGN KEY 
+
+Table: Departments
+Fields:
+department_id , INTEGER, PRIMARY KEY ,COMMENT(unique identifier)
+department_name, VARCHAR, COMMENT(name of department)
+
+- Original SQL :
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name FROM Employees e
+
+- Existing errors：
+   Join Error: The query involves two tables that need to be joined using a JOIN clause.
+
+- Corrected SQL：
+```sql
+SELECT e.employee_id, e.first_name, e.last_name, d.department_name
+FROM Employees e
+JOIN Departments d ON e.department_id = d.department_id;
+```
+
+Follow-up inputs:
+- Database Schema:：
 {dbSchema}
 
-# Table names and purposes:
-# Table name: users, Purpose: Stores user information
-# Table name: orders, Purpose: Stores order information
-# Table name: products, Purpose: Stores product information
+- Original SQL：
+{ori_sql}
 
-# Table fields and their aliases:
-# Table: employees (id,name,department,salary,hire_date)
-# Table: departments (id,name)
-# Table: salaries(employee_id,amount,effective_date)
-                   
-Example Inputs and Outputs:
-{fewShots}
-# Input: "List all employees' names and departments."
-# Output:
-# 
-# sql
-# 
-# SELECT employees.name, departments.name
-# FROM employees
-# JOIN departments ON employees.department = departments.id;
-# 
-# Input: "Tell me the average salary for each department."
-# Output:
-# 
-# sql
-# 
-# SELECT departments.name, AVG(salaries.amount) AS average_salary
-# FROM employees
-# JOIN salaries ON employees.id = salaries.employee_id
-# JOIN departments ON employees.department = departments.id
-# GROUP BY departments.name;
-# 
-# Input: "I want to insert a new employee record."
-# Output:
-# nosql
-# 
-# Input: "List the names and hire dates of all employees hired after 2020."
-# Output:
-# 
-# sql
-# SELECT name, hire_date
-# FROM employees
-# WHERE hire_date > '2020-01-01';
+- Existing Errors：
+{err_msgs}
+
+- Corrected SQL:
 
 </TASK>
 
