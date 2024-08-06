@@ -147,8 +147,7 @@ def test_query(cnx, db_name, query):
 
 def usecase():
     cnx = connect()
-    # filePath = os.path.join(os.getcwd(), 'dbaccess/mysql/amazon_meta.json')
-    filePath="E:/zebura/dbaccess/mysql/amazon_meta.json"
+    filePath = os.path.join(os.getcwd(), 'dbaccess/mysql/amazon_meta.json')
     load_schema(filePath)
     db_name = sch_loader.project
     create_db(cnx, db_name)
@@ -161,20 +160,20 @@ def usecase():
 # Example usage
 if __name__ == '__main__':
 
-    usecase()
-    cnx = connect()
+    # usecase()
+    # cnx = connect()
     # filePath = os.path.join(os.getcwd() , 'dbaccess/mysql/amazon.csv')
     # load_data(cnx, 'amazon', 'product', filePath)
 
-    # sql_queries = ["SELECT about_product FROM product WHERE rating > 4",
-    #                # "SELECT brand FROM product;",
-    #                # "SELECT target_audience, service_description FROM products;",
-    #                # "SELECT size, width, foldability FROM products;",
-    #                # "SELECT product_name, screen_size, screen_type FROM products;"
-    #                ]
-    # db_name = 'amazon'
-    # cnx = connect()
-    # for query in sql_queries[:]:
-    #     print(f"Executing query: {query}")
-    #     test_query(cnx, db_name, query)
+    sql_queries = ["SELECT about_product FROM product WHERE rating > 4",
+                   # "SELECT brand FROM product;",
+                   # "SELECT target_audience, service_description FROM products;",
+                   # "SELECT size, width, foldability FROM products;",
+                   # "SELECT product_name, screen_size, screen_type FROM products;"
+                   ]
+    db_name = 'amazon'
+    cnx = connect()
+    for query in sql_queries[:]:
+        print(f"Executing query: {query}")
+        test_query(cnx, db_name, query)
 

@@ -4,7 +4,7 @@ import sys
 import os
 
 sys.path.insert(0, os.getcwd())
-sys.path.append("E:/zebura")
+sys.path.append("D:/zebura")
 import logging
 from zebura_core.utils.embedding import Embedding
 from zebura_core.utils.es_base import ES_BASE
@@ -250,11 +250,11 @@ class ESIndex(ES_BASE):
 # examples usage
 if __name__ == '__main__':
     cwd = os.getcwd()
-    name="E:/zebura/training/amazon/amazon_gcases.json"
-    # name = 'D:/zebura/dbaccess/es/ikura_meta.json'
-    sch_file = os.path.join(cwd, name)
-    print("文件地址",sch_file)
-    creator = ESIndex()
 
-    creator.load_csv('amazon_gcases', "E:/zebura/training/ikura/dbInfo/gcases.csv",sch_file)
+    # name = "D:/zebura/training/ikura/ikura_gcases.json"
+    name = 'E:/zebura/training/amazon/amazon_gcases.json'
+    sch_file = os.path.join(cwd, name)
+    print("文件地址", sch_file)
+    creator = ESIndex()
+    creator.load_csv('amazon_gcases', "E:/zebura/training/amazon/dbInfo/amazon.csv", sch_file)
     # print(creator.test('ikura_gcases','product_name','开关'))

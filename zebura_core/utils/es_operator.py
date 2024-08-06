@@ -177,9 +177,8 @@ def usecase1():
     esoper = ESOps()
     index_name = "ikura_gcases"
     tool = pcsv()
-    csv_file="E:/zebura/training/ikura/dbInfo/gcases.csv"
-    # cwd = os.getcwd()
-    # csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases.csv')
+    cwd = os.getcwd()
+    csv_file = os.path.join(cwd, 'training\\ikura\\dbinfo\\gcases.csv')
     rows = tool.read_csv(csv_file)
     new_rows = []
     cat = rows[0]['category']

@@ -157,15 +157,14 @@ def use_case():
 
 def use_case2():
     caseOps = CaseOps()
-    # cwd = os.getcwd()
-    file_path="E:/zebura/training/amazon/dbInfo/gcases.csv"
-    # file_path = os.path.join(cwd, 'training\\amazon\\dbInfo\\gcases.csv')
+    cwd = os.getcwd()
+    file_path = os.path.join(cwd, 'training\\amazon\\dbInfo\\gcases.csv')
     caseOps.store_cases(file_path)
 
 
 # Example usage
 if __name__ == '__main__':
     caseOps = CaseOps()
-    caseOps.create_index()
+    # caseOps.create_index()
     # print(caseOps.get_doc_count())
-    # use_case2()
+    use_case2()

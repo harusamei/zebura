@@ -49,10 +49,10 @@ class Loader:
 if __name__ == '__main__':
     # Load the SQL patterns
     cwd = os.getcwd()
-    name = 'E:/zebura/training/amazon/amazon_meta.json'
+    name = 'training/amazon/amazon_meta.json'
     file = os.path.join(cwd, name)
     print(file)
-    loader = Loader(name)
+    loader = Loader(file)
     print(loader.tables[0]["table_name"])
     print(loader.get_column('product', 'brand'))
     print(loader.get_table_info('product').get('desc'))

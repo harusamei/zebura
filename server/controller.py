@@ -19,7 +19,7 @@ from zebura_core.LLM.llm_agent import LLMAgent
 from msg_maker import (make_a_log, make_a_req)
 import json
 import re
-
+import time
 
 # 一个传递request的pipeline
 # 从 Chatbot request 开始，到 type变为assistant 结束
@@ -29,7 +29,7 @@ class Controller:
     parser = Parser()
     # 一些应急话术
     utterance = {}
-    with open("E:/zebura/server/utterances.json", "r") as f:
+    with open("server\\utterances.json", "r") as f:
         utterance = json.load(f)
 
 
@@ -69,7 +69,8 @@ class Controller:
 
         # 强制跳转
         if lastLog['type'] == "reset" and lastLog['status'] == "succ":
-            return lastLog['from']
+            method = getattr(self, lastLog['from'])
+            return method
 
         curSt = f'({lastLog["status"]},{lastLog["from"]})'
         count = 1
@@ -128,14 +129,14 @@ class Controller:
 
         history_context = "\n".join(history)
         query = log['msg']
-        tmpl = self.prompter.gen_rewrite_prompt()
+        tmpl = self.prompter.gen_prompt('rewrite')
         # TODO, prompt 写得有问题
         prompt = tmpl.format(history_context=history_context, query=query)
 
-        outFile = 'output.txt'
-        with open(outFile, 'a', encoding='utf-8') as f:
-            f.write(prompt)
-            f.write("\n----------------------------end\n")
+        # outFile = 'output.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     f.write(prompt)
+        #     f.write("\n----------------------------end\n")
 
         result = await self.llm.ask_query(prompt, "")
         if "ERR" in result:
@@ -231,7 +232,9 @@ class Controller:
 
 # 主函数, assign tasks to different workers
 async def apply(request):
+    start = time.time()
     controller = Controller()
+    print(f"Controller init time: {time.time() - start}")
     pipeline = list()
     request['from'] = "user"
     pipeline.append(request)
@@ -248,7 +251,7 @@ async def apply(request):
 
 
 async def main():
-    request = {'msg': '列出所有属于家居与厨房类别的最贵商品。', 'context': [], 'type': 'user', 'format': 'text',
+    request = {'msg': '请查一下联想笔记本的价格', 'context': [], 'type': 'user', 'format': 'text',
                'status': 'new'}
     # request ={'msg':'Find the types of fans available in the database.', 'context': [], 'type': 'user', 'format': 'text', 'status': 'new'}
     context = [request]
@@ -256,7 +259,7 @@ async def main():
     print(resp['msg'])
     print(resp['note'])
     context.append(resp)
-    request1 = {'msg': '帮我查一下电动切菜机套装的单价。', 'context': context, 'type': 'user', 'format': 'text',
+    request1 = {'msg': '列出所有属于家居与厨房类别的最贵商品。', 'context': context, 'type': 'user', 'format': 'text',
                 'status': 'hold'}
     resp = await apply(request1)
     print(resp)

@@ -110,14 +110,25 @@ class GenActivity:
             sql = sql.replace(col_sub[0], col_sub[1])
 
         return sql
-
+    
+    # 优化SQL使输出更加美观
     def refine_sql(self, sql):
+
         tsql = sql.lower()
+        slots = self.checker.sp.parse_sql(sql)
         # 加limit的情况
         if 'limit' not in tsql and 'count' not in tsql:
             sql = sql.rstrip(";")
             sql = sql + f" LIMIT {k_limit};"
-        # column 去重, 未考虑distince情况，不充分
+
+        # column 去重
+        if slots['columns']['distinct'] == True:
+            matched = re.search(r'DISTINCT\s+([^\s,]+)', sql, re.DOTALL)
+            dist_col = ''
+            if matched:
+                dist_col = matched.group(1)
+                sql = sql.replace('DISTINCT',' ')
+
         matched = re.search(r'SELECT\s+(.*)\s*FROM', sql, re.DOTALL)
         if matched:
             ori_select = matched.group(1)
@@ -127,6 +138,21 @@ class GenActivity:
             new_select.strip(',')
             sql = sql.replace(ori_select, new_select + '\n')
             sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
+        
+        if slots['columns']['distinct'] == True and len(dist_col)>0:
+            sql = sql.replace(dist_col, 'DISTINCT '+dist_col)
+
+        # select 部分添加condition 中的字段
+        for cond in slots['conditions']:
+            matched = re.search(r'(\S+)\s+(\S+)\s+(\S+)', cond)
+            if matched:
+                col = matched.group(1)
+                if col not in slots['columns']['all_cols']:
+                    sql = sql.replace('SELECT', f"SELECT {col},")
+        # select 添加字段，* 则多余
+        pattern = r'SELECT\s+([^;]*?),\s*\*'
+        replacement = r'SELECT \1'
+        sql = re.sub(pattern, replacement, sql, flags=re.IGNORECASE)
         return sql
 
     # 主功能, 生成最终用于查询的SQL
@@ -272,32 +298,36 @@ class GenActivity:
                         join_tmpl.format(col=col, table_name=table_name, table_name1=table_name1))
 
         # conds msg
-        conds_tmpl_1 = "Value Issues: value {vals} was not found."
-        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}'."
+        lang_tmpl = "value should be {lang}."
+        conds_tmpl_1 = "Condition Issues: value {val} was not found in the '{col}'. try to replace the similar column in database schema or similar value. "
+        conds_tmpl_2 = "Value Issues: value {val} was not found in the '{col}'. It is recommended to replace it with '{new_val}'. "
         conds_tmpl_3 = "Format Errors: value {vals} are incorrect format."
         checks = all_checks['conds']
-        names = [[], [], []]
+        issues = [[], []]
         for k, v in checks.items():
             if k == 'status' or v == True:
                 continue
+            # 顺序为 [val,col, new_val,lang]
             if v[1].lower() == 'nil':  # 无值，且term expansion 无结果
-                names[0].append(k)
+                issues[0].append((k.split(',')[1],k.split(',')[0],v[3]))
             elif v[2].lower() == 'expn':  # expansion 有结果
-                names[1].append((k, v[1]))
+                issues[0].append((k.split(',')[1],k.split(',')[0],v[1],v[3]))
             else:  # 日期数字格式错误
-                names[2].append(k)
-
+                issues[1].append(k)
+        lang= ''
         if checks['status'] == 'failed':
-            if len(names[0]) > 0:
-                vals = [x.split(',')[1] for x in names[0]]
-                checkMsgs['conds'].append(conds_tmpl_1.format(vals=','.join(vals)))
-            if len(names[1]) > 0:
-                for k, new_val in names[1]:
-                    val = k.split(',')[1]
-                    col = k.split(',')[0]
-                    checkMsgs['conds'].append(conds_tmpl_2.format(val=val, col=col, new_val=new_val))
-            if len(names[2]) > 0:
-                vals = [x.split(',')[1] for x in names[2]]
+            if len(issues[0]) > 0:
+                for x in issues[0]:
+                    if len(x) > 3:
+                        checkMsgs['conds'].append(conds_tmpl_2.format(val=x[0], col=x[1], new_val=x[2]))
+                        lang = x[3]
+                    else:
+                        checkMsgs['conds'].append(conds_tmpl_1.format(val=x[0], col=x[1]))
+                        lang = x[2]
+                    if len(lang)>0:
+                        checkMsgs['conds'][-1]+=lang_tmpl.format(lang=lang)
+            if len(issues[1]) > 0:
+                vals = [x.split(',')[1] for x in issues[2]]
                 checkMsgs['conds'].append(conds_tmpl_3.format(vals=','.join(vals)))
 
         return checkMsgs
@@ -324,8 +354,14 @@ class GenActivity:
 
         query = tmpl.format(dbSchema=db_struct, ori_sql=orisql, err_msgs=errmsg)
         result = await self.llm.ask_query(query, '')
+        parsed = self.ans_extr.output_extr('sql_revise',result)
 
-        parsed = self.ans_extr.output_extr('sql_revise', result)
+        # outFile = 'output.txt'
+        # with open(outFile, 'a', encoding='utf-8') as f:
+        #     f.write(query)
+        #     f.write(result)
+        #     f.write("\n----------------------------end\n")
+
         new_sql = parsed['msg']
         msg = new_sql
         if parsed['status'] == 'succ':
@@ -334,7 +370,7 @@ class GenActivity:
                     msg += hint + '\n'
         else:
             new_sql = None
-            msg = "ERR: revise failed. " + msg
+            msg = "ERR: revise failed. "+ msg
         return new_sql, msg
 
     # 由slots生成SQL,不完善
@@ -381,21 +417,23 @@ class GenActivity:
             if v[2] in ['varchar', 'virtual_in', 'text']:
                 col, word = cond.split(',')
                 word = word.strip('\'"')
-                ni_words[word] = [col, cond]
+                ni_words[word] = [col, cond, v[3]]
 
         if len(ni_words) == 0:
             conds_check['status'] == 'succ'
             return conds_check
-
-        query = ','.join(ni_words.keys())
+        
+        kterms =[[key, val[0], val[2]] for key,val in ni_words.items()]
+        kterms.insert(0, ['Keyword', 'Category','Output Language'])
+        query = self.prompter.gen_tabulate(kterms)
         prompt = self.prompter.tasks['term_expansion']
         result = await self.llm.ask_query(query, prompt)
         parsed = self.ans_extr.output_extr('term_expansion', result)
-
+        
         if parsed['status'] == 'failed':
             conds_check['status'] == 'failed'
             return conds_check
-
+        
         new_terms = parsed['msg']
         table = all_check['table'].keys()
         tname = ' '.join(table).replace('status', '')
@@ -408,22 +446,23 @@ class GenActivity:
             if tItem is None:
                 logging.error(f"Error: {word} not in ni_words")
                 continue
-            col, cond = tItem
+            col, cond = tItem[0],tItem[1]
             check = self.checker.check_expn(tname, col, voc)
+            lang = conds_check[cond][3]
+            check.append(lang)
             conds_check[cond] = check
-
         return conds_check
 
 
 if __name__ == "__main__":
     gentor = GenActivity()
     qalist = [('请告诉我苹果产品的类别', 'SELECT DISTINCT category\nFROM product\nWHERE brand = "Apple";'),
-              ('请告诉我风扇的所有价格', 'SELECT actual_price, discounted_price FROM product WHERE category = "fan";'),
+              ('请告诉我风扇的所有价格', 'SELECT actual_price, discounted_price FROM product WHERE category = "风扇";'),
               ('查一下价格大于1000的产品', 'SELECT *\nFROM product\nWHERE actual_price = 1000 AND brand = "苹果";'),
               ('列出品牌是电脑的产品名称', "SELECT product_name\nFROM product\nWHERE brand LIKE '%apple%';")]
     for q, a in qalist:
         resp = asyncio.run(gentor.gen_activity(q, a))
         print(f"query:{q}\nresp:{resp['msg']}")
 
-    db_stru = gentor.gen_db_structures()
-    gentor.out_db_structures('amazon_struct.txt', db_stru)
+    # db_stru =gentor.gen_db_structures()
+    # gentor.out_db_structures('amazon_struct.txt',db_stru)

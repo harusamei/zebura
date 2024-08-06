@@ -1,0 +1,50 @@
+Table: products
+Purpose: The product database stores product information, inventory, and sales data. The products mainly include Computer, Communication, and Consumer electronics
+Fields:
+brand, varchar(255), COMMENT( manufacturer )
+color, varchar(255), COMMENT( hue; shade; tint )
+cpu_brand, varchar(255), COMMENT( processor_manufacturer; chip_maker; cpu_company; chip_brand )
+cpu_core_number, int, COMMENT( cores )
+cpu_main_frequency, varchar(255), COMMENT( CPU Speed )
+depth, varchar(255), COMMENT( dimensions; measurements; size )
+disk_capacity, varchar(255), COMMENT( storage; memory; size )
+disktype, varchar(255), COMMENT( storage_type; drive_category; disk_category )
+foldability, varchar(255), 
+goods_status, varchar(255), COMMENT( product_status; item_status; inventory_status )
+gpu_brand, varchar(255), COMMENT( graphics_card_manufacturer )
+gpu_series, varchar(255), COMMENT( graphics card series; graphics model; chipset family )
+height, varchar(255), COMMENT( length; tallness; stature )
+intelligence, varchar(255), 
+max_memory_capacity, varchar(255), COMMENT( maximum_ram; memory_limit; ram_capacity )
+memory_capacity, varchar(255), COMMENT( capacity )
+memory_slot_number, int, COMMENT( slots )
+memory_type, varchar(255), COMMENT( type; kind; category )
+mtm_number, varchar(255), COMMENT( model_number )
+os, varchar(255), 
+pre_installed_software, varchar(255), COMMENT( bundled_software )
+product_cate1, varchar(255), COMMENT( category; type; classification )
+product_cate2, varchar(255), COMMENT( category; type; classification )
+product_item_name, varchar(255), COMMENT( name; title; item )
+product_name, varchar(255), COMMENT( name; item; title )
+ram, varchar(255), COMMENT( memory; random access memory; storage; memory module )
+rom, varchar(255), 
+scene, varchar(255), 
+screen_size, varchar(255), COMMENT( display_size )
+screen_type, varchar(255), COMMENT( display; monitor; panel )
+series, varchar(255), COMMENT( product_line; model; collection )
+service_description, varchar(255), COMMENT( description; overview; details )
+size, varchar(255), COMMENT( dimension; measurement; magnitude )
+stock_number, varchar(255), COMMENT( product_code; item_number; SKU )
+target_audience, varchar(255), COMMENT( customer_segment; demographic; market_segment; audience; consumer_type )
+uid, varchar(255), PRIMARY KEY, COMMENT( unique_identifier; product_id; serial_number )
+url, varchar(255), COMMENT( web_address; link; website )
+video_card_type, varchar(255), COMMENT( graphics_card_type )
+width, varchar(255), COMMENT( product_width; width_in_inches; size_dimension )
+
+Table: sales_info
+Purpose: data and details related to the sales of a particular product or a range of products. This information can include various metrics such as sales volume, revenue generated, profit margins, customer demographics, geographic distribution of sales, sales channels utilized (e.g., online, offline, wholesale), and trends over time
+Fields:
+price, decimal(10,2), COMMENT( cost; amount; value )
+time_to_market, date, COMMENT( launch_date; release_date; introduction_date )
+uid, varchar(255), PRIMARY KEY, FOREIGN KEY REFERENCES `products` (`uid`), COMMENT( unique_identifier; product_id; serial_number )
+

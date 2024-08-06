@@ -1,14 +1,23 @@
-# Welcome to Chainlit! 🚀🤖
+### 🚀 Talq小助手是一款可以和你的销售数据直接沟通的智能助手，简直就是你的私人销售助理～再也不用费力去电脑上一个一个菜单查数据啦！💻✨
 
-Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
+### 📊 当前数据集包含亚马逊的1465种产品，主要信息如下：
+                📦产品信息
+        🆔 产品ID        ⭐ 评分
+        📝 产品名称       📊 评分计数
+        🏷️ 类别          📋 产品介绍
+        💰 折扣价格       👤 用户ID
+        💲 实际价格       🙋‍♂️ 用户名
+        💸 折扣百分比     📝 评价者ID
+        📰 评价标题       🗒️ 评价内容
+        🖼️ 图像链接       🔗 产品链接
 
-## Useful Links 🔗
+### 🔍 不妨问问小T：
 
-- **Documentation:** Get started with our comprehensive [Chainlit Documentation](https://docs.chainlit.io) 📚
-- **Discord Community:** Join our friendly [Chainlit Discord](https://discord.gg/k73SQ3FyUh) to ask questions, share your projects, and connect with other developers! 💬
+    1.家居与厨房类别中有多少种产品？
+    2.列出最贵的3个种类的产品。
+    3.列出所有属于家居与厨房类别的最贵商品。
+    4.帮我查一下电动切菜机套装的单价。
+    5.帮我查一下I 系列 4K 超高清安卓智能 LED 电视的折扣率。
+    6.列出评分高于4.5的产品。
 
-We can't wait to see what you create with Chainlit! Happy coding! 💻😊
-
-## Welcome screen
-
-To modify the welcome screen, edit the `chainlit.md` file at the root of your project. If you do not want a welcome screen, just leave this file empty.
+### 📈 Talq 小助手，让你的销售数据查询更便捷！

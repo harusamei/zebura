@@ -3,13 +3,13 @@
 ############################################
 import os
 import sys
-
 sys.path.insert(0, os.getcwd())
 import re
+from tabulate import tabulate
+
 from settings import z_config
 import logging
 from zebura_core.knowledges.schema_loader import Loader
-
 
 # prompt 模板通过文件导入，默认文件为当前目录下prompt.txt
 class prompt_generator:
@@ -29,9 +29,8 @@ class prompt_generator:
             self.load_dbstruct(os.path.join(cwd, name))  # 读取数据库结构
 
             if prompt_file is None:
-                # base = os.getcwd()
-                prompt_file="E:/zebura/zebura_core/LLM/prompt.txt"
-                # prompt_file = os.path.join(base, "zebura_core/LLM/prompt.txt")  # 自带模板文件
+                base = os.getcwd()
+                prompt_file = os.path.join(base, "zebura_core/LLM/prompt.txt")  # 自带模板文件
 
             if self.load_prompt(prompt_file):
                 logging.debug("prompt_generator init success")
@@ -70,12 +69,12 @@ class prompt_generator:
                 else:
                     content += line
         return True
-
+    
     # 获得/合成prompt
     # "rewrite","nl2sql","sql_revise","term_expansion","db2nl","db2sql"
-    def gen_prompt(self, taskname, gcases=None):
+    def gen_prompt(self,taskname, gcases=None):
         if 'nl2sql' in taskname.lower():
-            return self.gen_nl2sql(taskname.lower(), gcases)
+            return self.gen_nl2sql(taskname.lower(),gcases)
         return self.tasks.get(taskname, f"please do {taskname}")
 
     def gen_nl2sql(self, taskname, gcases: list = []) -> dict:
@@ -92,6 +91,11 @@ class prompt_generator:
     def get_dbSchema(self, table_name=None) -> str:
         # TODO， 按table_name拆分
         return self.db_structs
+    
+    @staticmethod
+    def gen_tabulate(data):
+        # 生成简单表格
+        return tabulate(data, headers="firstrow", tablefmt="pipe")
 
 
 # Example usage
